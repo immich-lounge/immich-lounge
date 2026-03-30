@@ -49,7 +49,7 @@ jobs:
 
       - name: Test companion
         working-directory: companion
-        run: dotnet test tests/ImmichLoungeCompanion.Tests/ImmichLoungeCompanion.Tests.csproj --configuration Release
+        run: dotnet test --project tests/ImmichLoungeCompanion.Tests/ImmichLoungeCompanion.Tests.csproj --configuration Release
 
       - name: Publish companion
         working-directory: companion
