@@ -1,0 +1,41 @@
+@inject NavigationManager Nav
+@inject ImmichLoungeCompanion.Storage.IProfileRepository ProfileRepo
+
+<nav class="nav-menu">
+    <div class="nav-brand">
+        <div class="nav-logo-lockup">
+            <img class="nav-logo-icon" src="immich-lounge-icon.png" alt="Immich Lounge" />
+            <div class="nav-wordmark">
+                <div class="nav-title">Immich Lounge</div>
+                <div class="nav-subtitle">Your memories, on the big screen</div>
+            </div>
+        </div>
+        <p class="nav-tagline">Companion for your Roku slideshow and screensaver.</p>
+    </div>
+
+    <div class="nav-section">
+        <div class="nav-section-title">Setup</div>
+        <NavLink href="/connection" Match="NavLinkMatch.All">Connection</NavLink>
+        <NavLink href="/profiles">Profiles</NavLink>
+    </div>
+
+    @if (_profiles.Count > 0)
+    {
+        <div class="nav-section">
+            <div class="nav-section-title">Profile Shortcuts</div>
+            @foreach (var profile in _profiles)
+            {
+                <NavLink href=@($"/profiles/{profile.Id}/edit") class="sub-nav">
+                    @profile.Name
+                </NavLink>
+            }
+        </div>
+    }
+</nav>
+
+@code {
+    private List<ImmichLoungeCompanion.Models.Profile> _profiles = [];
+
+    protected override async Task OnInitializedAsync()
+        => _profiles = await ProfileRepo.GetAllAsync();
+}

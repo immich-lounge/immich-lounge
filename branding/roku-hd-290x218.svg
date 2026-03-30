@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="290" height="218" viewBox="0 0 290 218">
+<defs>
+  <radialGradient id="glow" cx="145" cy="105" r="130" gradientUnits="userSpaceOnUse">
+    <stop offset="0%" stop-color="#2848C0" stop-opacity="0.5"/>
+    <stop offset="100%" stop-color="#0D1120" stop-opacity="0"/>
+  </radialGradient>
+  <linearGradient id="tvFrame" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#D8DCEF"/>
+  </linearGradient>
+  <linearGradient id="tvBezel" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#2D2B48"/><stop offset="100%" stop-color="#17141E"/>
+  </linearGradient>
+  <linearGradient id="tvSky" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#2F73D8"/><stop offset="38%" stop-color="#6748D2"/><stop offset="100%" stop-color="#B56FDB"/>
+  </linearGradient>
+  <linearGradient id="tvMtnA" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#FFB62E"/><stop offset="100%" stop-color="#F15B24"/>
+  </linearGradient>
+  <linearGradient id="tvMtnAS" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#F59E1F"/><stop offset="100%" stop-color="#E45A20"/>
+  </linearGradient>
+  <linearGradient id="tvMtnB" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#99D247"/><stop offset="100%" stop-color="#339D56"/>
+  </linearGradient>
+  <linearGradient id="tvMtnC" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#47A94E"/><stop offset="100%" stop-color="#0F6D64"/>
+  </linearGradient>
+  <radialGradient id="tvSun" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#FFE96F"/><stop offset="100%" stop-color="#FFCA2B"/>
+  </radialGradient>
+  <clipPath id="tvClip">
+    <rect x="230" y="320" width="564" height="352" rx="20"/>
+  </clipPath>
+</defs>
+
+<!-- Background -->
+<rect width="290" height="218" fill="#0D1120"/>
+<ellipse cx="145" cy="105" rx="180" ry="130" fill="url(#glow)"/>
+
+<!-- TV icon: scale=0.221, centered at x=145
+     Frame top ~33, legs bottom ~148
+     Full composition centered at y=109 -->
+<g transform="translate(32, -28) scale(0.221)">
+  <rect x="190" y="278" width="644" height="430" rx="30" fill="url(#tvFrame)"/>
+  <rect x="210" y="298" width="604" height="390" rx="24" fill="url(#tvBezel)"/>
+  <rect x="230" y="320" width="564" height="352" rx="20" fill="url(#tvSky)"/>
+  <g clip-path="url(#tvClip)">
+    <path d="M230 472 C334 432,432 448,522 412 C626 376,726 382,794 436 L794 320 L230 320 Z" fill="#4F31B6" opacity="0.42"/>
+    <path d="M230 526 C328 496,418 502,512 468 C610 434,714 438,794 488 L794 572 L230 572 Z" fill="#8E54D3" opacity="0.47"/>
+    <circle cx="734" cy="390" r="56" fill="url(#tvSun)"/>
+    <path d="M230 584 L398 420 L516 520 L590 450 L794 592 L794 672 L230 672 Z" fill="#FFFFFF"/>
+    <path d="M230 672 L230 566 L398 420 L516 520 L648 672 Z" fill="url(#tvMtnA)"/>
+    <path d="M334 672 L398 420 L516 520 L468 672 Z" fill="url(#tvMtnAS)" opacity="0.42"/>
+    <path d="M468 672 L590 450 L794 592 L794 672 Z" fill="url(#tvMtnB)"/>
+    <path d="M468 672 L590 450 L708 672 Z" fill="url(#tvMtnC)"/>
+    <path d="M590 450 L708 672 L794 672 L794 592 Z" fill="#B8DC4C" opacity="0.34"/>
+  </g>
+  <path d="M294 714 L222 784 L248 794 L324 734 Z" fill="#221A31"/>
+  <path d="M730 714 L802 784 L776 794 L700 734 Z" fill="#221A31"/>
+</g>
+
+<!-- App name — baseline y=170, ~8px gap below legs -->
+<text x="145" y="170" text-anchor="middle"
+  font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+  font-size="19" font-weight="700" letter-spacing="1" fill="#FFFFFF">Immich Lounge</text>
+
+<!-- Tagline — baseline y=186 -->
+<text x="145" y="186" text-anchor="middle"
+  font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
+  font-size="10" font-weight="300" letter-spacing="0.5" fill="#8A9BBF">Your memories, on the big screen</text>
+</svg>

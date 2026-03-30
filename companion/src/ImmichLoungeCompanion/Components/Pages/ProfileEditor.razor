@@ -1,0 +1,518 @@
+@page "/profiles/{Id}/edit"
+@inject IHttpClientFactory HttpFactory
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@using System.Text.Json
+@inject ImmichLoungeCompanion.Services.IDisplayDateFormattingService DateFormatting
+
+<NavigationLock ConfirmExternalNavigation="true" OnBeforeInternalNavigation="@(async context => await ConfirmInternalNavigationAsync(context))" />
+
+@if (_profile == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="editor-header">
+        <h2>Edit: @_profile.Name</h2>
+        <p class="page-intro">Tune what this profile shows, how the slideshow behaves, and which overlays appear on screen.</p>
+        @if (IsDirty)
+        {
+            <div class="editor-dirty-banner">
+                <div class="editor-dirty-copy">
+                    <strong>Unsaved changes</strong>
+                    <span>Save this profile before leaving so your latest settings are kept.</span>
+                </div>
+                <div class="editor-dirty-actions">
+                    <button @onclick="SaveAsync" class="btn btn-primary">Save Changes</button>
+                    <button @onclick='() => Nav.NavigateTo("/profiles")' class="btn btn-secondary">Cancel</button>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="editor-grid">
+        <section class="settings-card editor-card">
+            <h3>Content Sources</h3>
+            <p class="section-intro">Choose which albums, people, tags, and memories feed this profile.</p>
+            <SourcePicker SourceType="album" @bind-Selected="_profile.ContentSources" />
+            <SourcePicker SourceType="person" @bind-Selected="_profile.ContentSources" />
+            <SourcePicker SourceType="tag"    @bind-Selected="_profile.ContentSources" />
+            <label>
+                <input type="checkbox" @bind="_memoriesEnabled" /> Include Memories (On This Day)
+            </label>
+            <div class="btn-row">
+                <button type="button" class="btn btn-secondary" @onclick="PreviewMatchCountAsync" disabled="@_matchCountLoading">
+                    @if (_matchCountLoading) { <span>Counting…</span> } else { <span>Preview Match Count</span> }
+                </button>
+                @if (_matchCount != null)
+                {
+                    <span>Matched @_matchCount.Value assets</span>
+                }
+            </div>
+        </section>
+
+        <section class="settings-card editor-card">
+            <h3>Media</h3>
+            <p class="section-intro">This version is photo-first. Video-related formats stay disabled for now.</p>
+            <label><input type="checkbox" @bind="_profile.MediaTypes.Photos" /> Photos</label>
+            @* <label><input type="checkbox" @bind="_profile.MediaTypes.Videos" /> Videos</label> *@
+            @* <label><input type="checkbox" @bind="_profile.MediaTypes.LivePhotos" /> Live Photos</label> *@
+            @* <label><input type="checkbox" @bind="_profile.MediaTypes.VideoAudio" /> Video Audio</label> *@
+            <label>
+                Image Quality:
+                <select @bind="_profile.ImageQuality">
+                    <option value="preview">Preview (recommended)</option>
+                    <option value="original">Original</option>
+                </select>
+            </label>
+            <label>
+                Minimum file size (KB):
+                <input type="number" value="@GetMinFileSizeKbValue()" @oninput="OnMinFileSizeKbChanged" min="0" step="50" />
+            </label>
+            <p class="section-intro">Leave at 0 to keep all photos. Higher values can hide very small or heavily compressed images.</p>
+            <p class="section-intro">Good starting points: 500 KB is gentle, 1000 KB is moderate, and 2000 KB is stricter.</p>
+        </section>
+
+        <section class="settings-card editor-card">
+            <h3>Slideshow</h3>
+            <p class="section-intro">Control pace, refresh cadence, and transitions between items.</p>
+            <div class="settings-field-grid">
+                <label>Interval (seconds): <input type="number" value="@_profile.Slideshow.IntervalSeconds" @oninput="OnIntervalSecondsChanged" min="3" max="3600" /></label>
+                <label>Refresh interval (minutes): <input type="number" value="@_profile.Slideshow.RefreshIntervalMinutes" @oninput="OnRefreshIntervalMinutesChanged" min="5" max="1440" /></label>
+            </div>
+            <label>
+                Transition:
+                <select @bind="_profile.Slideshow.TransitionEffect">
+                    <option value="fade">Fade</option>
+                    <option value="none">None</option>
+                    <option value="slide">Slide</option>
+                    <option value="zoom">Zoom</option>
+                    <option value="random">Random</option>
+                </select>
+            </label>
+            <label>
+                Photo Motion:
+                <select @bind="_profile.Slideshow.PhotoMotion">
+                    <option value="none">None</option>
+                    <option value="kenBurns">Ken Burns</option>
+                </select>
+            </label>
+            <label><input type="checkbox" @bind="_profile.Slideshow.Shuffle" /> Shuffle</label>
+            <label><input type="checkbox" @bind="_profile.Slideshow.PreventScreensaver" /> Prevent System Screensaver from running</label>
+        </section>
+
+        <section class="settings-card editor-card">
+            <h3>Overlay & Clock</h3>
+            <p class="section-intro">Set how metadata, the clock, and the persistent date appear during playback.</p>
+            <div class="settings-field-grid">
+                <label>
+                    Overlay Style:
+                    <select @bind="_profile.Display.OverlayStyle">
+                        <option value="none">None</option>
+                        <option value="bottom">Bottom Bar</option>
+                        <option value="corner">Corner Pill</option>
+                    </select>
+                </label>
+                <label>
+                    Background:
+                    <select @bind="_profile.Display.BackgroundEffect">
+                        <option value="none">None</option>
+                        <option value="blur">Blur</option>
+                        <option value="ambilight">Ambilight Glow</option>
+                    </select>
+                </label>
+                <label>
+                    Overlay Behavior:
+                    <select @bind="_profile.Display.OverlayBehavior">
+                        <option value="always">Always On</option>
+                        <option value="fade">Auto-Fade</option>
+                        <option value="manual">Manual (OK button)</option>
+                    </select>
+                </label>
+            </div>
+            <p class="section-intro">Use Ambilight Glow for a brighter, room-lighting style backdrop behind the photo.</p>
+            <label><input type="checkbox" @bind="_profile.Display.ClockAlwaysVisible" /> Clock Always Visible</label>
+            <label><input type="checkbox" @bind="_profile.Display.ShowDate" /> Show Date</label>
+            <label><input type="checkbox" @bind="_profile.Display.ShowTimer" /> Show Progress Timer</label>
+        </section>
+
+        <section class="settings-card editor-card">
+            <h3>Date & Time</h3>
+            <p class="section-intro">Choose whether playback dates and the clock follow the Roku device locale or a custom profile format.</p>
+            <label>
+                Formatting Source:
+                <select @bind="_profile.Display.FormatSource">
+                    <option value="@ImmichLoungeCompanion.Models.DisplayFormatSource.Roku">Use Roku locale</option>
+                    <option value="@ImmichLoungeCompanion.Models.DisplayFormatSource.Profile">Use custom locale and format</option>
+                </select>
+            </label>
+            @if (_profile.Display.FormatSource == ImmichLoungeCompanion.Models.DisplayFormatSource.Profile)
+            {
+                <div class="settings-field-grid">
+                    <label>
+                        Time Format:
+                        <select @bind="_profile.Display.ClockFormat">
+                            <option value="HH:mm">24h — 14:05</option>
+                            <option value="HH:mm:ss">24h with seconds — 14:05:30</option>
+                            <option value="h:mm tt">12h — 2:05 PM</option>
+                            <option value="h:mm:ss tt">12h with seconds — 2:05:30 PM</option>
+                        </select>
+                    </label>
+                    <label>
+                        Date Format:
+                        <select @bind="_profile.Display.DateFormat">
+                            @foreach (var option in GetDateFormatOptions(_profile.Display.Locale))
+                            {
+                                <option value="@option.Value">@option.Label</option>
+                            }
+                        </select>
+                    </label>
+                </div>
+                <label>
+                    Date Language:
+                    <select @bind="_profile.Display.Locale">
+                        <option value="en-US">English (US)</option>
+                        <option value="en-GB">English (UK)</option>
+                        <option value="nl-NL">Dutch</option>
+                        <option value="de-DE">German</option>
+                        <option value="fr-FR">French</option>
+                        <option value="es-ES">Spanish</option>
+                        <option value="it-IT">Italian</option>
+                        <option value="pt-BR">Portuguese (Brazil)</option>
+                        <option value="pt-PT">Portuguese (Portugal)</option>
+                        <option value="sv-SE">Swedish</option>
+                        <option value="da-DK">Danish</option>
+                        <option value="nb-NO">Norwegian Bokmål</option>
+                        <option value="fi-FI">Finnish</option>
+                        <option value="pl-PL">Polish</option>
+                        <option value="ja-JP">Japanese</option>
+                        <option value="zh-CN">Chinese (Simplified)</option>
+                    </select>
+                </label>
+            }
+        </section>
+
+        <section class="settings-card editor-card editor-card-wide">
+            <h3>Weather</h3>
+            <p class="section-intro">Add a weather overlay by searching for a location or entering coordinates directly.</p>
+            <label><input type="checkbox" @bind="_weatherEnabled" @bind:after="OnWeatherToggled" /> Show Weather Overlay</label>
+            @if (_weatherEnabled && _profile.Weather != null)
+            {
+                <div class="form-group">
+                    <label>Location</label>
+                    <div class="search-row">
+                        <input @bind="_locationQuery" @bind:event="oninput" placeholder="Search city or address…" />
+                        <button type="button" @onclick="SearchLocationAsync" class="btn btn-secondary" disabled="@_locationSearching">
+                            @if (_locationSearching) { <span>Searching…</span> } else { <span>Search</span> }
+                        </button>
+                    </div>
+                    @if (_locationResults.Count > 0)
+                    {
+                        <ul class="search-results">
+                            @foreach (var r in _locationResults)
+                            {
+                                <li @onclick="() => SelectLocation(r)">@r.DisplayName</li>
+                            }
+                        </ul>
+                    }
+                </div>
+                <div class="settings-field-grid">
+                    <label>Latitude: <input type="number" step="0.0001" value="@_profile.Weather.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)" @oninput="OnWeatherLatitudeChanged" /></label>
+                    <label>Longitude: <input type="number" step="0.0001" value="@_profile.Weather.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)" @oninput="OnWeatherLongitudeChanged" /></label>
+                    <label>Poll interval (minutes): <input type="number" value="@_profile.Weather.PollIntervalMinutes" @oninput="OnWeatherPollIntervalMinutesChanged" min="5" max="1440" /></label>
+                </div>
+            }
+        </section>
+    </div>
+
+    @if (_saveError != null) { <p class="error">@_saveError</p> }
+    <div class="btn-row editor-actions @(IsDirty ? "is-dirty" : "")">
+        <div class="editor-actions-status">@(IsDirty ? "Changes pending" : "All changes saved")</div>
+        <button @onclick="SaveAsync" class="btn btn-primary">@(IsDirty ? "Save Changes" : "Saved")</button>
+        <button @onclick='() => Nav.NavigateTo("/profiles")' class="btn btn-secondary">Cancel</button>
+    </div>
+}
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+
+    private HttpClient Http => HttpFactory.CreateClient("local");
+    private ImmichLoungeCompanion.Models.Profile? _profile;
+    private bool _memoriesEnabled;
+    private bool _weatherEnabled;
+    private string _locationQuery = "";
+    private List<GeocodeResult> _locationResults = [];
+    private bool _locationSearching;
+    private int? _matchCount;
+    private bool _matchCountLoading;
+    private string? _saveError;
+    private string? _initialSnapshot;
+    private string? _loadedProfileId;
+    private bool _skipNavigationPrompt;
+
+    private record GeocodeResult(string DisplayName, string Lat, string Lon);
+    private record ErrorResponse(string Error);
+    private record MatchCountResponse(int MatchedAssets);
+    private record DateFormatOption(string Value, string Label);
+    private bool IsDirty => _profile != null && _initialSnapshot != null && BuildSnapshot() != _initialSnapshot;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Id) || string.Equals(_loadedProfileId, Id, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        await LoadProfileAsync();
+    }
+
+    private async Task LoadProfileAsync()
+    {
+        _saveError = null;
+        _locationQuery = "";
+        _locationResults = [];
+        _locationSearching = false;
+        _profile = null;
+        _initialSnapshot = null;
+        _matchCount = null;
+        _matchCountLoading = false;
+
+        var response = await Http.GetFromJsonAsync<ImmichLoungeCompanion.Models.Profile>($"/api/profiles/{Id}");
+        _profile = response;
+        _memoriesEnabled = _profile?.ContentSources.Any(s => s.Type == "memories") ?? false;
+        _weatherEnabled = _profile?.Weather?.Enabled ?? false;
+        _initialSnapshot = BuildSnapshot();
+        _loadedProfileId = Id;
+        _skipNavigationPrompt = false;
+    }
+
+    private async ValueTask ConfirmInternalNavigationAsync(LocationChangingContext context)
+    {
+        if (!IsDirty || _skipNavigationPrompt)
+        {
+            return;
+        }
+
+        context.PreventNavigation();
+
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm",
+            "You have unsaved changes for this profile. Leave without saving?");
+
+        if (!confirmed)
+        {
+            return;
+        }
+
+        _skipNavigationPrompt = true;
+        Nav.NavigateTo(context.TargetLocation);
+    }
+
+    private async Task SearchLocationAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_locationQuery)) return;
+        _locationSearching = true;
+        _locationResults = [];
+        try
+        {
+            var results = await Http.GetFromJsonAsync<List<GeocodeResult>>(
+                $"/api/geocode?q={Uri.EscapeDataString(_locationQuery)}");
+            _locationResults = results ?? [];
+        }
+        finally
+        {
+            _locationSearching = false;
+        }
+    }
+
+    private void SelectLocation(GeocodeResult r)
+    {
+        if (_profile?.Weather == null) return;
+        _profile.Weather.Latitude = double.Parse(r.Lat, System.Globalization.CultureInfo.InvariantCulture);
+        _profile.Weather.Longitude = double.Parse(r.Lon, System.Globalization.CultureInfo.InvariantCulture);
+        _locationResults = [];
+        _locationQuery = r.DisplayName;
+    }
+
+    private void OnWeatherToggled()
+    {
+        if (_profile == null) return;
+        if (_weatherEnabled)
+            _profile.Weather ??= new() { Enabled = true, PollIntervalMinutes = 20 };
+        else if (_profile.Weather != null)
+            _profile.Weather.Enabled = false;
+    }
+
+    private void OnIntervalSecondsChanged(ChangeEventArgs args)
+    {
+        if (_profile == null) return;
+        if (TryParseInt(args.Value, out var value))
+        {
+            _profile.Slideshow.IntervalSeconds = value;
+        }
+    }
+
+    private void OnRefreshIntervalMinutesChanged(ChangeEventArgs args)
+    {
+        if (_profile == null) return;
+        if (TryParseInt(args.Value, out var value))
+        {
+            _profile.Slideshow.RefreshIntervalMinutes = value;
+        }
+    }
+
+    private void OnWeatherLatitudeChanged(ChangeEventArgs args)
+    {
+        if (_profile?.Weather == null) return;
+        if (TryParseDouble(args.Value, out var value))
+        {
+            _profile.Weather.Latitude = value;
+        }
+    }
+
+    private void OnWeatherLongitudeChanged(ChangeEventArgs args)
+    {
+        if (_profile?.Weather == null) return;
+        if (TryParseDouble(args.Value, out var value))
+        {
+            _profile.Weather.Longitude = value;
+        }
+    }
+
+    private void OnWeatherPollIntervalMinutesChanged(ChangeEventArgs args)
+    {
+        if (_profile?.Weather == null) return;
+        if (TryParseInt(args.Value, out var value))
+        {
+            _profile.Weather.PollIntervalMinutes = value;
+        }
+    }
+
+    private void OnMinFileSizeKbChanged(ChangeEventArgs args)
+    {
+        if (_profile == null) return;
+        if (TryParseInt(args.Value, out var value))
+        {
+            _profile.Quality.MinFileSizeKb = value <= 0 ? null : value;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_profile == null) return;
+        _profile = BuildProfilePayloadForRequest();
+        var response = await Http.PutAsJsonAsync($"/api/profiles/{Id}", _profile);
+        if (response.IsSuccessStatusCode)
+        {
+            _initialSnapshot = BuildSnapshot();
+            _skipNavigationPrompt = true;
+            Nav.NavigateTo("/profiles");
+        }
+        else
+        {
+            var err = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+            _saveError = err?.Error ?? $"Failed to save profile (HTTP {(int)response.StatusCode}).";
+        }
+    }
+
+    private async Task PreviewMatchCountAsync()
+    {
+        if (_profile == null) return;
+
+        _matchCountLoading = true;
+        try
+        {
+            var payload = BuildProfilePayloadForRequest();
+            var response = await Http.PostAsJsonAsync("/api/profiles/preview-count", payload);
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<MatchCountResponse>();
+                _matchCount = result?.MatchedAssets;
+                _saveError = null;
+            }
+            else
+            {
+                var err = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+                _saveError = err?.Error ?? $"Failed to preview match count (HTTP {(int)response.StatusCode}).";
+            }
+        }
+        finally
+        {
+            _matchCountLoading = false;
+        }
+    }
+
+    private string BuildSnapshot()
+    {
+        if (_profile == null) return "";
+
+        var snapshot = new
+        {
+            profile = _profile,
+            memoriesEnabled = _memoriesEnabled,
+            weatherEnabled = _weatherEnabled
+        };
+
+        return JsonSerializer.Serialize(snapshot);
+    }
+
+    private ImmichLoungeCompanion.Models.Profile BuildProfilePayloadForRequest()
+    {
+        if (_profile == null) throw new InvalidOperationException("Profile is not loaded.");
+
+        var clone = JsonSerializer.Deserialize<ImmichLoungeCompanion.Models.Profile>(
+            JsonSerializer.Serialize(_profile)) ?? new();
+
+        clone.MediaTypes.Videos = false;
+        clone.MediaTypes.LivePhotos = false;
+        clone.MediaTypes.VideoAudio = false;
+
+        if (clone.Weather != null) clone.Weather.Enabled = _weatherEnabled;
+
+        clone.ContentSources.RemoveAll(s => s.Type == "memories");
+        if (_memoriesEnabled)
+            clone.ContentSources.Add(new() { Type = "memories", Id = "memories", Label = "Memories" });
+
+        return clone;
+    }
+
+    private static bool TryParseInt(object? value, out int parsed)
+        => int.TryParse(
+            Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture),
+            System.Globalization.NumberStyles.Integer,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out parsed);
+
+    private static bool TryParseDouble(object? value, out double parsed)
+    {
+        var input = Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture);
+        return double.TryParse(
+            input,
+            System.Globalization.NumberStyles.Float | System.Globalization.NumberStyles.AllowThousands,
+            System.Globalization.CultureInfo.InvariantCulture,
+            out parsed)
+            || double.TryParse(
+                input,
+                System.Globalization.NumberStyles.Float | System.Globalization.NumberStyles.AllowThousands,
+                System.Globalization.CultureInfo.CurrentCulture,
+                out parsed);
+    }
+
+    private IReadOnlyList<DateFormatOption> GetDateFormatOptions(string? locale)
+    {
+        var previewDate = new DateOnly(2025, 1, 1);
+
+        return
+        [
+            new("d MMMM yyyy", DateFormatting.FormatDate(previewDate, "d MMMM yyyy", locale)),
+            new("MMMM d, yyyy", DateFormatting.FormatDate(previewDate, "MMMM d, yyyy", locale)),
+            new("dd/MM/yyyy", DateFormatting.FormatDate(previewDate, "dd/MM/yyyy", locale)),
+            new("MM/dd/yyyy", DateFormatting.FormatDate(previewDate, "MM/dd/yyyy", locale)),
+            new("yyyy-MM-dd", DateFormatting.FormatDate(previewDate, "yyyy-MM-dd", locale)),
+            new("dddd, d MMMM", DateFormatting.FormatDate(previewDate, "dddd, d MMMM", locale))
+        ];
+    }
+
+    private int GetMinFileSizeKbValue() => _profile?.Quality.MinFileSizeKb ?? 0;
+}

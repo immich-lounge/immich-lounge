@@ -1,0 +1,32 @@
+namespace tests
+  ' Network tests are tagged @integration and excluded from default test run.
+  ' To run them: set tags to [] in bsconfig.test.json rooibos config.
+  @suite("HttpClient Helpers")
+  class HttpClientTests extends rooibos.BaseTestSuite
+
+    @describe("HttpGet")
+
+    @tags("integration")
+    @it("Valid URL returns status 200")
+    function test_getValid()
+      result = HttpGet("http://httpbin.org/get", {})
+      m.assertEqual(result.statusCode, 200)
+    end function
+
+    @tags("integration")
+    @it("Unreachable URL returns negative status code")
+    function test_getInvalid()
+      result = HttpGet("http://0.0.0.1:1/nope", {})
+      m.assertTrue(result.statusCode < 0)
+    end function
+
+    @describe("BuildImmichHeaders")
+
+    @it("Includes x-api-key header")
+    function test_headers()
+      headers = BuildImmichHeaders("mykey123")
+      m.assertEqual(headers["x-api-key"], "mykey123")
+    end function
+
+  end class
+end namespace

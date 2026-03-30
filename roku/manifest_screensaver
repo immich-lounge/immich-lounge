@@ -1,0 +1,16 @@
+screensaver_title=Immich Lounge Screensaver
+screensaver_private=0
+hidden=1
+major_version=1
+minor_version=0
+build_version=0006
+mm_icon_focus_fhd=pkg:/images/roku-fhd-540x405.png
+mm_icon_focus_hd=pkg:/images/roku-hd-290x218.png
+mm_icon_focus_sd=pkg:/images/roku-sd-246x140.png
+splash_screen_hd=pkg:/images/splash_hd.png
+splash_screen_fhd=pkg:/images/splash_fhd.png
+splash_color=#0F1218
+splash_min_time=0
+ui_resolutions=hd,fhd
+rsg_version=1.3
+firmware_version=15.1

@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <DefaultItemExcludes>$(DefaultItemExcludes);**\_out\**</DefaultItemExcludes>
+  </PropertyGroup>
+</Project>

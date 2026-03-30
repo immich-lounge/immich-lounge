@@ -1,0 +1,44 @@
+name: Feature request
+description: Suggest an improvement or new idea for Immich Lounge.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Explain the user need or pain point first.
+      placeholder: It is hard to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the change you would like to see.
+      placeholder: I would like Immich Lounge to...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Share any workaround or alternative you have already considered.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Companion app
+        - Roku channel
+        - Roku screensaver
+        - Documentation / website
+        - Developer tooling / CI
+    validations:
+      required: true

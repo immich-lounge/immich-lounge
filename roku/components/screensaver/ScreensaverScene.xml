@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="ScreensaverScene" extends="Scene">
+  <interface>
+    <field id="profile"        type="assocarray" value="{}" />
+    <field id="playlist"       type="array"      value="[]" />
+    <field id="companionUrl"   type="string"     value="" />
+    <field id="profileId"      type="string"     value="" />
+    <field id="isScreensaver"  type="boolean"    value="true" />
+    <field id="useLocalDateFormatting" type="boolean" value="false" />
+    <field id="playlistOffset" type="integer"    value="0" />
+    <field id="nextPlaylistOffset" type="integer" value="0" />
+    <field id="totalPlaylistCount" type="integer" value="0" />
+    <field id="startPlaylistIndex" type="integer" value="0" />
+    <field id="paused"         type="boolean"    value="false" onChange="OnPausedChanged" />
+    <field id="triggerRefresh" type="boolean"    value="false" onChange="OnTriggerRefresh" />
+  </interface>
+  <children>
+    <PlaybackCanvas id="playbackCanvas" />
+
+    <!-- Overlay component -->
+    <OverlayComponent id="overlay" />
+
+    <WeatherAndClockOverlay id="persistentLayer" translation="[1524, 54]" opacity="0.82" />
+
+    <PlaybackStatusOverlay id="statusOverlay" />
+  </children>
+  <script type="text/brightscript" uri="pkg:/source/Utils.brs" />
+  <script type="text/brightscript" uri="pkg:/source/MediaUrls.brs" />
+  <script type="text/brightscript" uri="pkg:/source/DateTimeFormatting.brs" />
+  <script type="text/brightscript" uri="pkg:/source/PlaybackConstants.brs" />
+  <script type="text/brightscript" uri="pkg:/components/playback/PlaybackRing.brs" />
+  <script type="text/brightscript" uri="pkg:/components/playback/PlaybackCycle.brs" />
+  <script type="text/brightscript" uri="pkg:/components/playback/PlaybackLoading.brs" />
+  <script type="text/brightscript" uri="pkg:/components/playback/PlaybackTransitions.brs" />
+  <script type="text/brightscript" uri="pkg:/components/playback/PlaybackBatching.brs" />
+  <script type="text/brightscript" uri="pkg:/components/playback/PlaybackAdvance.brs" />
+  <script type="text/brightscript" uri="pkg:/components/playback/PlaybackRecovery.brs" />
+  <script type="text/brightscript" uri="pkg:/components/playback/PlaybackState.brs" />
+  <script type="text/brightscript" uri="pkg:/components/playback/PlaybackRefresh.brs" />
+  <script type="text/brightscript" uri="pkg:/components/playback/PlaybackProfile.brs" />
+  <script type="text/brightscript" uri="pkg:/components/playback/PlaybackSetup.brs" />
+  <script type="text/brightscript" uri="pkg:/components/playback/PlaybackEffects.brs" />
+  <script type="text/brightscript" uri="pkg:/source/PlaylistRegistry.brs" />
+  <script type="text/brightscript" uri="pkg:/source/WeatherAndClock.brs" />
+  <script type="text/brightscript" uri="pkg:/source/WeatherAndClockController.brs" />
+  <script type="text/brightscript" uri="pkg:/source/Registry.brs" />
+  <script type="text/brightscript" uri="pkg:/source/HttpClient.brs" />
+  <script type="text/brightscript" uri="pkg:/components/screensaver/ScreensaverScene.brs" />
+</component>

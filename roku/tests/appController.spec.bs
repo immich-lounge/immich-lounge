@@ -1,0 +1,61 @@
+namespace tests
+  @suite("AppController Resume Helpers")
+  class AppControllerResumeTests extends rooibos.BaseTestSuite
+
+    @describe("Resume Resolution")
+
+    @it("Prefers matching asset id when restoring playlist index")
+    function test_resolveResumePlaylistIndexByAssetId()
+      playlist = [
+        { id: "a" }
+        { id: "b" }
+        { id: "c" }
+      ]
+      resumeState = {
+        assetId: "b"
+        playlistIndex: 0
+      }
+
+      idx = ResolveResumePlaylistIndex(playlist, resumeState)
+
+      m.assertEqual(idx, 1)
+    end function
+
+    @it("Falls back to stored playlist index when asset id is missing")
+    function test_resolveResumePlaylistIndexFallback()
+      playlist = [
+        { id: "a" }
+        { id: "b" }
+        { id: "c" }
+      ]
+      resumeState = {
+        assetId: "missing"
+        playlistIndex: 2
+      }
+
+      idx = ResolveResumePlaylistIndex(playlist, resumeState)
+
+      m.assertEqual(idx, 2)
+    end function
+
+    @it("Builds launch playlist metadata from resume state")
+    function test_buildLaunchPlaylistResultFromResume()
+      playlist = [
+        { id: "a" }
+        { id: "b" }
+      ]
+      resumeState = {
+        playlistOffset: 50
+        nextPlaylistOffset: 100
+        totalPlaylistCount: 320
+      }
+
+      result = BuildLaunchPlaylistResultFromResume(playlist, resumeState)
+
+      m.assertEqual(result.offset, 50)
+      m.assertEqual(result.nextOffset, 100)
+      m.assertEqual(result.totalCount, 320)
+    end function
+
+  end class
+end namespace

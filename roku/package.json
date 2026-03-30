@@ -1,0 +1,33 @@
+{
+  "name": "immich-lounge",
+  "version": "1.0.0",
+  "private": true,
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "lint": "bslint --project bsconfig.json",
+    "lint:screensaver": "bslint --project bsconfig.screensaver.json",
+    "analyze": "pwsh -File scripts/run-static-analysis.ps1 -InputPath _out/build/channel -Severity warning -ExitOn error",
+    "analyze:screensaver": "pwsh -File scripts/run-static-analysis.ps1 -InputPath _out/build/screensaver -Severity warning -ExitOn error",
+    "check:screensaver-settings": "node scripts/check-screensaver-settings.js",
+    "build": "bsc --project bsconfig.json",
+    "build:screensaver": "npm run check:screensaver-settings && bsc --project bsconfig.screensaver.json",
+    "build:test": "bsc --project bsconfig.test.json",
+    "launch:stick": "dotenv -- node -e \"require('http').request({host:process.env.ROKU_HOST,port:8060,path:'/launch/dev',method:'POST'},r=>console.log('Launched stick:',r.statusCode)).end()\"",
+    "launch": "npm run launch:stick",
+    "deploy:stick": "dotenv -- node scripts/deploy.js stick",
+    "deploy:screensaver": "dotenv -- node scripts/deploy.js screensaver",
+    "deploy": "npm run deploy:stick",
+    "deploy:template": "dotenv -- node scripts/deploy.js stick",
+    "test": "dotenv -- node scripts/run-tests.js",
+    "test:deploy": "dotenv -- node scripts/deploy.js test",
+    "test:list": "node scripts/list-tests.js",
+    "telnet": "dotenv -- node -e \"require('child_process').spawnSync('telnet',[process.env.ROKU_HOST,'8085'],{stdio:'inherit'})\""
+  },
+  "devDependencies": {
+    "@rokucommunity/bslint": "^0.8.39",
+    "brighterscript": "^0.67.8",
+    "dotenv-cli": "^11.0.0",
+    "roku-deploy": "^3.12.0",
+    "rooibos-roku": "^5.15.7"
+  }
+}

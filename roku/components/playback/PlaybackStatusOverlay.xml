@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="PlaybackStatusOverlay" extends="Group">
+  <children>
+    <Group id="fallbackPanel" translation="[0,0]" opacity="0.0">
+      <Rectangle color="#0D1120FF" width="1920" height="1080" />
+      <Poster id="fallbackPoster" width="1200" height="300" loadDisplayMode="scaleToFit"
+              uri="pkg:/images/immich-lounge-horizontal-dark.png"
+              translation="[360,228]" opacity="1.0" />
+    </Group>
+
+    <ToastComponent id="toast" />
+
+    <Label id="statusLabel" color="#FFFFFFFF" font="font:MediumBoldSystemFont"
+           width="1200" height="72" horizAlign="center" vertAlign="top"
+           translation="[360,648]" visible="false" />
+
+    <ProgressBar id="progressBar" visible="false" />
+
+    <Group id="loadingIndicator" visible="false" translation="[942, 1022]">
+      <Rectangle color="#FFFFFFFF" width="8" height="8" />
+      <Rectangle color="#FFFFFFFF" width="8" height="8" translation="[14, 0]" />
+      <Rectangle color="#FFFFFFFF" width="8" height="8" translation="[28, 0]" />
+    </Group>
+
+    <BusySpinner id="spinner" visible="false" />
+
+    <Group id="errorGroup" visible="false" translation="[0,0]">
+      <Rectangle color="#000000CC" width="1920" height="1080" />
+      <Label id="errorLabel" color="#FFFFFFFF" font="font:MediumBoldSystemFont"
+             width="1920" horizAlign="center" vertAlign="center" height="1080" />
+    </Group>
+
+    <Group id="pauseIndicator" visible="false" translation="[1740, 942]" opacity="0.72">
+      <Rectangle color="#00000066" width="84" height="84" />
+      <Rectangle color="#FFFFFFCC" width="12" height="36" translation="[24, 24]" />
+      <Rectangle color="#FFFFFFCC" width="12" height="36" translation="[48, 24]" />
+    </Group>
+  </children>
+</component>

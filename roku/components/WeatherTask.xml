@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="WeatherTask" extends="Task">
+  <interface>
+    <field id="latitude"        type="float"      value="0.0" />
+    <field id="longitude"       type="float"      value="0.0" />
+    <field id="temperatureUnit" type="string"     value="celsius" />
+    <field id="command"         type="string"     value="" />
+    <field id="weatherResult"   type="assocarray" value="{}" />
+  </interface>
+  <script type="text/brightscript" uri="pkg:/source/Utils.brs" />
+  <script type="text/brightscript" uri="pkg:/source/HttpClient.brs" />
+  <script type="text/brightscript" uri="pkg:/components/WeatherTask.brs" />
+</component>

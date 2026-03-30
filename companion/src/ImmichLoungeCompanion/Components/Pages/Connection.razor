@@ -1,0 +1,81 @@
+@page "/connection"
+@page "/"
+@inject IHttpClientFactory HttpFactory
+@inject NavigationManager Nav
+
+<h2>Immich Connection</h2>
+
+<div class="settings-card">
+    <div class="form-group">
+        <label>Immich Server URL</label>
+        <input @bind="_serverUrl" class="form-control" placeholder="http://192.168.1.10:2283" />
+    </div>
+    <div class="form-group">
+        <label>API Key</label>
+        <input @bind="_apiKey" class="form-control" type="password" />
+    </div>
+
+    <div class="btn-row">
+        <button @onclick="SaveAsync" class="btn btn-primary">Save</button>
+        <button @onclick="TestConnectionAsync" class="btn btn-secondary">Test Connection</button>
+    </div>
+
+    @if (_saved)
+    {
+        <div class="alert alert-success">Settings saved.</div>
+    }
+
+    @if (_testResult != null)
+    {
+        <div class="alert @(_testResult.Ok ? "alert-success" : "alert-error")">
+            @if (_testResult.Ok)
+            {
+                <span>Connected — @_testResult.ImageCount images, @_testResult.VideoCount videos</span>
+            }
+            else
+            {
+                <span>Failed: @_testResult.Error</span>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private HttpClient Http => HttpFactory.CreateClient("local");
+    private string _friendlyName = "";
+    private string _serverUrl = "";
+    private string _apiKey = "";
+    private bool _saved;
+    private TestResult? _testResult;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var settings = await Http.GetFromJsonAsync<ImmichLoungeCompanion.Models.GlobalSettings>("/api/settings");
+        if (settings != null)
+        {
+            _friendlyName = settings.FriendlyName;
+            _serverUrl = settings.Immich.ServerUrl;
+            _apiKey = settings.Immich.ApiKey;
+        }
+    }
+
+    private async Task SaveAsync()
+    {
+        await Http.PutAsJsonAsync("/api/settings", new
+        {
+            friendlyName = _friendlyName,
+            immich = new { serverUrl = _serverUrl, apiKey = _apiKey }
+        });
+        _saved = true;
+        _testResult = null;
+    }
+
+    private async Task TestConnectionAsync()
+    {
+        await SaveAsync();
+        _saved = false;
+        _testResult = await Http.GetFromJsonAsync<TestResult>("/api/immich/test");
+    }
+
+    private record TestResult(bool Ok, int ImageCount, int VideoCount, string? Error);
+}

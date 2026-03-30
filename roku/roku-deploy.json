@@ -1,0 +1,7 @@
+{
+  "host": "${ROKU_HOST}",
+  "password": "${ROKU_PASSWORD}",
+  "rootDir": "_out/build/channel",
+  "stagingDir": "_out/.roku-deploy-staging-stick",
+  "files": ["**/*"]
+}

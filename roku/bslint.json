@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "assign-all-paths": "error",
+    "unsafe-path-loop": "error",
+    "unsafe-iterators": "error",
+    "unreachable-code": "info",
+    "case-sensitivity": "warn",
+    "unused-variable": "warn",
+    "consistent-return": "error"
+  }
+}

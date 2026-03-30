@@ -1,0 +1,80 @@
+namespace tests
+  @suite("Registry Helpers")
+  class RegistryTests extends rooibos.BaseTestSuite
+    private registrySnapshot = {}
+    private keysToRestore = [
+      "companionUrl"
+      "channelProfileId"
+      "cachedChannelProfile"
+      "cachedChannelPlaylist"
+      "channelResumeState"
+      "screensaverResumeState"
+      "testKey"
+    ]
+
+    protected override function beforeEach()
+      m.registrySnapshot = {}
+      for each key in m.keysToRestore
+        value = RegistryRead(key)
+        if value <> invalid then
+          m.registrySnapshot[key] = value
+        end if
+      end for
+    end function
+
+    protected override function afterEach()
+      for each key in m.keysToRestore
+        RegistryDelete(key)
+        if m.registrySnapshot.DoesExist(key) then
+          RegistryWrite(key, m.registrySnapshot[key])
+        end if
+      end for
+    end function
+
+    @describe("Read/Write")
+
+    @it("Write then read returns same value")
+    function test_writeAndRead()
+      RegistryWrite("companionUrl", "http://192.168.1.10:4383")
+      m.assertEqual(RegistryRead("companionUrl"), "http://192.168.1.10:4383")
+    end function
+
+    @it("Reading a missing key returns invalid")
+    function test_missingKey()
+      m.assertInvalid(RegistryRead("__nonexistent_key_xyz__"))
+    end function
+
+    @it("Deleting a key makes it unreadable")
+    function test_delete()
+      RegistryWrite("testKey", "testVal")
+      RegistryDelete("testKey")
+      m.assertInvalid(RegistryRead("testKey"))
+    end function
+
+    @it("Clearing cached data preserves saved setup")
+    function test_clearCachedData()
+      RegistryWrite("companionUrl", "http://192.168.1.10:4383")
+      RegistryWrite("channelProfileId", "living-room")
+      RegistryWrite("cachedChannelProfile", "{""id"":""living-room""}")
+      RegistryWrite("cachedChannelPlaylist", "[]")
+      RegistryWrite("channelResumeState", "{""profileId"":""living-room"",""assetId"":""abc""}")
+      RegistryWrite("screensaverResumeState", "{""profileId"":""bedroom"",""assetId"":""xyz""}")
+
+      RegistryClearCachedData()
+
+      m.assertEqual(RegistryRead("companionUrl"), "http://192.168.1.10:4383")
+      m.assertEqual(RegistryRead("channelProfileId"), "living-room")
+      m.assertInvalid(RegistryRead("cachedChannelProfile"))
+      m.assertInvalid(RegistryRead("cachedChannelPlaylist"))
+      m.assertInvalid(RegistryRead("channelResumeState"))
+      m.assertInvalid(RegistryRead("screensaverResumeState"))
+    end function
+
+    @it("Resume state keys are separate for channel and screensaver")
+    function test_resumeStateKeys()
+      m.assertEqual(ResumeStateRegistryKey(false), "channelResumeState")
+      m.assertEqual(ResumeStateRegistryKey(true), "screensaverResumeState")
+    end function
+
+  end class
+end namespace

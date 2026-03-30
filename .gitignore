@@ -1,0 +1,40 @@
+# .NET
+**/bin/
+**/obj/
+**/.vs/
+**/TestResults/
+**/artifacts/
+**/_out/
+
+# Roku
+roku/pkg/
+roku/*.zip
+roku/_out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local tooling
+.claude/
+.superpowers/
+.planning/
+.cache/
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# Build output
+_out/
+node_modules/
+out/
+companion/src/ImmichLoungeCompanion/artifacts/
+
+# Roku dev secrets
+roku/.env
+roku/roku-deploy.local.json
+roku/roku-deploy.test.local.json
+roku/rokudeploy.json
+roku/rokudeploy.*.json
+roku/node_modules/
+.playwright-mcp/

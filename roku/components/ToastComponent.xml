@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="ToastComponent" extends="Group">
+  <interface>
+    <field id="message" type="string" value="" onChange="OnMessageChanged" />
+  </interface>
+  <children>
+    <Rectangle id="bg" color="#000000CC" width="700" height="70"
+               translation="[610, 980]" />
+    <Label id="label" color="#FFFFFFFF" font="font:SmallSystemFont"
+           width="680" height="70" horizAlign="center" vertAlign="center"
+           translation="[620, 980]" />
+  </children>
+  <script type="text/brightscript" uri="pkg:/components/ToastComponent.brs" />
+</component>

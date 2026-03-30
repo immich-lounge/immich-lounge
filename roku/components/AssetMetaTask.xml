@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="AssetMetaTask" extends="Task">
+  <interface>
+    <field id="command"       type="string"     value="" />
+    <field id="assetId"       type="string"     value="" />
+    <field id="immichBaseUrl" type="string"     value="" />
+    <field id="apiKey"        type="string"     value="" />
+    <field id="companionUrl"  type="string"     value="" />
+    <field id="profileId"     type="string"     value="" />
+    <field id="formatSource"  type="string"     value="roku" />
+    <field id="useLocalDateFormatting" type="boolean" value="false" />
+    <field id="dateFormat"    type="string"     value="d MMMM yyyy" />
+    <field id="locale"        type="string"     value="en-US" />
+    <!-- Output: asset metadata AA from GET /api/assets/:id -->
+    <field id="metaResult"    type="assocarray" value="{}" />
+  </interface>
+  <script type="text/brightscript" uri="pkg:/source/Utils.brs" />
+  <script type="text/brightscript" uri="pkg:/source/HttpClient.brs" />
+  <script type="text/brightscript" uri="pkg:/source/DateTimeFormatting.brs" />
+  <script type="text/brightscript" uri="pkg:/components/AssetMetaTask.brs" />
+</component>

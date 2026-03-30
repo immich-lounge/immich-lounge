@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="ManualEntryForm" extends="Group">
+  <interface>
+    <field id="protocol" type="string" value="http://" />
+    <field id="host" type="string" value="" />
+    <field id="port" type="string" value="4383" />
+    <field id="visible" type="boolean" value="false" />
+    <field id="selectedIndex" type="integer" value="0" />
+    <field id="focusIndex" type="integer" value="0" alwaysNotify="true" />
+    <!-- Output signals (alwaysNotify so repeated taps on the same row re-fire) -->
+    <field id="editField" type="assocarray" value="{}" alwaysNotify="true" />  <!-- { name: "host", value: "..." } -->
+    <field id="connectRequested" type="boolean" value="false" alwaysNotify="true" />
+  </interface>
+  <children>
+    <Label text="Connect to Companion"
+           color="#FFFFFFFF" font="font:MediumBoldSystemFont"
+           translation="[0, 0]" />
+
+    <LabelList id="list"
+               translation="[0, 80]"
+               itemSize="[1200, 70]"
+               itemSpacing="[0, 15]"
+               numRows="4" />
+  </children>
+  <script type="text/brightscript" uri="ManualEntryForm.brs" />
+</component>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="ProgressBar" extends="Group">
+  <interface>
+    <!-- 0.0 to 1.0 -->
+    <field id="progress" type="float" value="0.0" onChange="OnProgressChanged" />
+  </interface>
+  <children>
+    <Rectangle id="track" color="#333333FF" width="1920" height="4"
+               translation="[0, 1076]" />
+    <Rectangle id="fill"  color="#FFFFFFFF" width="0"    height="4"
+               translation="[0, 1076]" />
+  </children>
+  <script type="text/brightscript" uri="pkg:/components/ProgressBar.brs" />
+</component>

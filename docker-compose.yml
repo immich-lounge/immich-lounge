@@ -1,0 +1,17 @@
+# docker-compose.yml
+# Add this service to your existing Immich docker-compose.yml.
+services:
+  immich-lounge-companion:
+    image: ghcr.io/immich-lounge/immich-lounge-companion:latest
+    container_name: immich-lounge-companion
+    pull_policy: always
+    ports:
+      - "4383:4383" # change the left side if 4383 is already in use; do NOT expose publicly
+    volumes:
+      - immich-lounge-data:/data
+    environment:
+      - ASPNETCORE_URLS=http://+:4383
+    restart: unless-stopped
+
+volumes:
+  immich-lounge-data:

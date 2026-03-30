@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="ProfileSelector" extends="Group">
+  <interface>
+    <field id="profiles" type="array" value="[]" />
+    <field id="visible" type="boolean" value="false" />
+    <!-- Output signal -->
+    <field id="profileSelected" type="assocarray" value="{}" />
+  </interface>
+  <children>
+    <Label id="title" text="Select a Profile"
+           color="#FFFFFFFF" font="font:MediumBoldSystemFont"
+           translation="[0, 0]" />
+    <LabelList id="list"
+               translation="[0, 80]" 
+               itemSize="[1200, 70]"
+               itemSpacing="[0, 15]"
+               numRows="9" />
+  </children>
+  <script type="text/brightscript" uri="ProfileSelector.brs" />
+</component>

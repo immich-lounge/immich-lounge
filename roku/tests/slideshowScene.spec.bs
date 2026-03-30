@@ -1,0 +1,45 @@
+namespace tests
+  @suite("SlideshowScene Helpers")
+  class SlideshowSceneTests extends rooibos.BaseTestSuite
+
+    @describe("HistoryBuffer")
+
+    @it("Pop returns most recently pushed entry")
+    function test_historyPushPop()
+      hist = []
+      HistoryPush(hist, { id: "a", type: "photo" })
+      HistoryPush(hist, { id: "b", type: "photo" })
+      entry = HistoryPop(hist)
+      m.assertEqual(entry.id, "b")
+    end function
+
+    @it("Buffer is capped at 20 entries")
+    function test_historyMax()
+      hist = []
+      for i = 1 to 25
+        HistoryPush(hist, { id: "id" + Str(i).Trim(), type: "photo" })
+      end for
+      m.assertTrue(hist.Count() <= 20)
+    end function
+
+    @describe("ResetFailureCounter")
+
+    @it("Always returns zero")
+    function test_failureReset()
+      m.assertEqual(ResetFailureCounter(21), 0)
+    end function
+
+    @describe("GetDisplayInterval")
+
+    @it("Video returns 0 to play to completion")
+    function test_intervalVideo()
+      m.assertEqual(GetDisplayInterval({ type: "video" }, 10), 0)
+    end function
+
+    @it("Photo returns the configured interval")
+    function test_intervalPhoto()
+      m.assertEqual(GetDisplayInterval({ type: "photo" }, 10), 10)
+    end function
+
+  end class
+end namespace

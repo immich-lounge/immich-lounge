@@ -1,0 +1,56 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Companion: Build Debug",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "${workspaceFolder}/companion/src/ImmichLoungeCompanion/ImmichLoungeCompanion.csproj",
+        "--configuration",
+        "Debug"
+      ],
+      "problemMatcher": "$msCompile",
+      "group": "build"
+    },
+    {
+      "label": "Roku: Build Debug Channel",
+      "type": "process",
+      "command": "npx",
+      "args": [
+        "bsc",
+        "--project",
+        "bsconfig.json",
+        "--stagingDir",
+        "_out/vscode/channel",
+        "--createPackage",
+        "false"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/roku"
+      },
+      "problemMatcher": "$msCompile",
+      "group": "build"
+    },
+    {
+      "label": "Roku: Build Debug Screensaver",
+      "type": "process",
+      "command": "npx",
+      "args": [
+        "bsc",
+        "--project",
+        "bsconfig.screensaver.json",
+        "--stagingDir",
+        "_out/vscode/screensaver",
+        "--createPackage",
+        "false"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/roku"
+      },
+      "problemMatcher": "$msCompile",
+      "group": "build"
+    }
+  ]
+}

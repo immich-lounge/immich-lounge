@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="ScreensaverSettingsScene" extends="Scene">
+  <children>
+    <Rectangle color="#000000FF" width="1920" height="1080" />
+    <Label color="#FFFFFFFF" font="font:MediumBoldSystemFont"
+           width="1728" horizAlign="center" translation="[96,330]"
+           text="Immich Lounge Screensaver" />
+    <Label id="statusLabel" color="#DDDDDDFF" font="font:SmallSystemFont"
+           width="1536" horizAlign="center" translation="[192,450]"
+           text="Use the Immich Lounge channel to choose the companion and profile used by the screensaver." />
+    <Label color="#AAAAAAFF" font="font:SmallSystemFont"
+           width="1536" horizAlign="center" translation="[192,555]"
+           text="Press Back to close this screen." />
+  </children>
+</component>

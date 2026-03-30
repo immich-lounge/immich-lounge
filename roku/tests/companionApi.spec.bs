@@ -1,0 +1,35 @@
+namespace tests
+  @suite("CompanionApiTask Helpers")
+  class CompanionApiTaskTests extends rooibos.BaseTestSuite
+
+    @describe("TruncatePlaylistForRegistry")
+
+    @it("Caps playlist at 50 entries")
+    function test_truncate()
+      entries = []
+      for i = 1 to 150
+        entries.Push({ id: "id" + Str(i).Trim(), type: "photo" })
+      end for
+      truncated = TruncatePlaylistForRegistry(entries)
+      m.assertEqual(truncated.Count(), 50)
+    end function
+
+    @describe("PrepareEntryForRegistry")
+
+    @it("Truncates sourceLabel to 20 characters")
+    function test_truncateLabel()
+      entry = { id: "abc", type: "photo", sourceLabel: "This Label Is Way Too Long For Registry" }
+      result = PrepareEntryForRegistry(entry)
+      m.assertTrue(Len(result.sourceLabel) <= 20)
+    end function
+
+    @describe("BuildPlaylistUrl")
+
+    @it("Builds URL with profile ID and count")
+    function test_url()
+      url = BuildPlaylistUrl("http://192.168.1.10:4383", "living-room", 500, 100)
+      m.assertEqual(url, "http://192.168.1.10:4383/api/profiles/living-room/playlist?count=500&offset=100")
+    end function
+
+  end class
+end namespace

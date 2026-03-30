@@ -1,0 +1,61 @@
+services:
+  immich-server:
+    container_name: immich_reviewer_server
+    image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:-release}
+    volumes:
+      - ${UPLOAD_LOCATION:-../../reviewer-data/immich-library}:/usr/src/app/upload
+    env_file:
+      - .env.reviewer
+    ports:
+      - "2283:2283"
+    depends_on:
+      - redis
+      - database
+    restart: unless-stopped
+
+  immich-machine-learning:
+    container_name: immich_reviewer_machine_learning
+    image: ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION:-release}
+    env_file:
+      - .env.reviewer
+    volumes:
+      - reviewer-model-cache:/cache
+    restart: unless-stopped
+
+  redis:
+    container_name: immich_reviewer_redis
+    image: docker.io/valkey/valkey:8-bookworm
+    restart: unless-stopped
+
+  database:
+    container_name: immich_reviewer_postgres
+    image: docker.io/tensorchord/pgvecto-rs:pg14-v0.2.0
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_DB: ${DB_DATABASE_NAME:-immich}
+      POSTGRES_INITDB_ARGS: --data-checksums
+    volumes:
+      - ${DB_DATA_LOCATION:-../../reviewer-data/postgres}:/var/lib/postgresql/data
+    command: >-
+      postgres -c shared_preload_libraries=vectors.so
+      -c 'search_path="$$user", public, vectors'
+      -c logging_collector=on
+      -c max_wal_size=2GB
+      -c shared_buffers=512MB
+      -c wal_compression=on
+    restart: unless-stopped
+
+  immich-lounge-companion:
+    container_name: immich_lounge_reviewer_companion
+    image: ghcr.io/immich-lounge/immich-lounge-companion:${IMMICH_LOUNGE_TAG:-latest}
+    ports:
+      - "4383:4383"
+    environment:
+      DataDirectory: /data
+    volumes:
+      - ../../reviewer-data/companion-data:/data
+    restart: unless-stopped
+
+volumes:
+  reviewer-model-cache:

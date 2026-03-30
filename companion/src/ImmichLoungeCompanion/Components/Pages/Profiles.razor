@@ -1,0 +1,102 @@
+@page "/profiles"
+@inject IHttpClientFactory HttpFactory
+@inject NavigationManager Nav
+
+<h2>Profiles</h2>
+
+<div class="btn-row">
+    <button @onclick="NewProfile" class="btn btn-primary">+ New Profile</button>
+    <button @onclick="RefreshAllAsync" class="btn btn-secondary">↺ Refresh All Caches</button>
+</div>
+
+@foreach (var p in _profiles)
+{
+    <div class="profile-card">
+        <div class="profile-info">
+            <strong>@p.Name</strong>
+            <p>@p.Description</p>
+        </div>
+        <div class="profile-actions">
+            <button @onclick='() => Nav.NavigateTo($"/profiles/{p.Id}/edit")' class="btn btn-secondary">Edit</button>
+            <button @onclick="() => RefreshAsync(p.Id)" class="btn btn-secondary">↺</button>
+            <button @onclick="() => DeleteAsync(p.Id)" class="btn btn-danger">Delete</button>
+        </div>
+    </div>
+}
+
+@if (_showNewDialog)
+{
+    <div class="dialog">
+        <h3>New Profile</h3>
+        <label>ID (slug)</label>
+        <input @bind="_newId" placeholder="living-room" />
+        <label>Name</label>
+        <input @bind="_newName" placeholder="Living Room" />
+        <div class="btn-row">
+            <button @onclick="CreateAsync" class="btn btn-primary">Create</button>
+            <button @onclick="() => _showNewDialog = false" class="btn btn-secondary">Cancel</button>
+        </div>
+        @if (_createError != null) { <p class="error">@_createError</p> }
+    </div>
+}
+
+@code {
+    private HttpClient Http => HttpFactory.CreateClient("local");
+    private List<ProfileSummary> _profiles = [];
+    private bool _showNewDialog;
+    private string _newId = "", _newName = "", _createError = "";
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _profiles = await Http.GetFromJsonAsync<List<ProfileSummary>>("/api/profiles") ?? [];
+    }
+
+    private void NewProfile() { _showNewDialog = true; _createError = ""; }
+
+    private async Task CreateAsync()
+    {
+        var response = await Http.PostAsJsonAsync("/api/profiles", new
+        {
+            id = _newId,
+            name = _newName,
+            contentSources = Array.Empty<object>(),
+            mediaTypes = new { photos = true, videos = false, videoAudio = false, livePhotos = false },
+            slideshow = new { intervalSeconds = 10, shuffle = true, transitionEffect = "fade", photoMotion = "none", refreshIntervalMinutes = 60 },
+            display = new { formatSource = "roku", overlayStyle = "bottom", backgroundEffect = "blur", overlayFields = new[] { "date", "location", "album", "people" }, overlayBehavior = "fade", overlayFadeSeconds = 5, clockAlwaysVisible = true, clockFormat = "HH:mm", weatherUnit = "celsius", showTimer = true, showDate = true, dateFormat = "d MMMM yyyy", locale = "en-US" },
+            quality = new { minFileSizeKb = (int?)null },
+            imageQuality = "preview"
+        });
+
+        if (response.IsSuccessStatusCode)
+        {
+            _showNewDialog = false;
+            Nav.NavigateTo($"/profiles/{_newId}/edit");
+        }
+        else
+        {
+            var err = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+            _createError = err?.Error ?? "Failed to create profile.";
+        }
+    }
+
+    private async Task DeleteAsync(string id)
+    {
+        await Http.DeleteAsync($"/api/profiles/{id}");
+        await LoadAsync();
+    }
+
+    private async Task RefreshAsync(string id)
+    {
+        await Http.DeleteAsync($"/api/profiles/{id}/playlist");
+    }
+
+    private async Task RefreshAllAsync()
+    {
+        await Http.DeleteAsync("/api/playlists");
+    }
+
+    private record ProfileSummary(string Id, string Name, string? Description);
+    private record ErrorResponse(string Error);
+}

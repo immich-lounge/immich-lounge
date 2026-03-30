@@ -1,0 +1,23 @@
+namespace tests
+  @suite("WeatherComponent Helpers")
+  class WeatherComponentTests extends rooibos.BaseTestSuite
+
+    @describe("WmoToIconName")
+
+    @it("WMO code 0 maps to clear")
+    function test_iconClear()
+      m.assertEqual(WmoToIconName(0), "clear")
+    end function
+
+    @it("WMO code 95 maps to thunderstorm")
+    function test_iconThunderstorm()
+      m.assertEqual(WmoToIconName(95), "thunderstorm")
+    end function
+
+    @it("Unknown WMO code falls back to overcast")
+    function test_iconUnknown()
+      m.assertEqual(WmoToIconName(4), "overcast")
+    end function
+
+  end class
+end namespace

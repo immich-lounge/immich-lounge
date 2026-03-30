@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  companion:
+    name: Companion Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: companion
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore tests/ImmichLoungeCompanion.Tests/ImmichLoungeCompanion.Tests.csproj
+
+      - name: Build
+        run: dotnet build src/ImmichLoungeCompanion/ImmichLoungeCompanion.csproj --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test tests/ImmichLoungeCompanion.Tests/ImmichLoungeCompanion.Tests.csproj --configuration Release --no-restore
+
+      - name: Build Docker image
+        run: docker build -t immich-lounge-companion:test .
+
+  roku:
+    name: Roku Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: roku
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: roku/package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint channel
+        run: npm run lint
+
+      - name: Lint screensaver
+        run: npm run lint:screensaver
+
+      - name: Build channel
+        run: npm run build
+
+      - name: Build screensaver
+        run: npm run build:screensaver
+
+      - name: Run Roku static analysis on channel
+        run: npm run analyze
+
+      - name: Run Roku static analysis on screensaver
+        run: npm run analyze:screensaver

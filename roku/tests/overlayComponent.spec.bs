@@ -1,0 +1,50 @@
+namespace tests
+  @suite("OverlayComponent Helpers")
+  class OverlayComponentTests extends rooibos.BaseTestSuite
+
+    @describe("FormatAssetDate")
+
+    @it("Uses dateTimeOriginal when present")
+    function test_formatDate()
+      asset = { exifInfo: { dateTimeOriginal: "2024-06-15T10:30:00.000Z" } }
+      m.assertEqual(FormatAssetDateForDisplay(asset, "MMMM d, yyyy", "en-US"), "June 15, 2024")
+    end function
+
+    @it("Falls back to fileCreatedAt when exif date is absent")
+    function test_dateFallback()
+      asset = { exifInfo: {}, fileCreatedAt: "2023-01-05T08:00:00.000Z" }
+      m.assertEqual(FormatAssetDateForDisplay(asset, "MMMM d, yyyy", "en-US"), "January 5, 2023")
+    end function
+
+    @it("Formats German dates with a trailing day period")
+    function test_germanDatePunctuation()
+      parsed = {
+        year: 2026
+        month: 3
+        day: 22
+        weekday: 0
+      }
+      m.assertEqual(FormatLocalizedDate(parsed, "d MMMM yyyy", "de-DE"), "22. März 2026")
+    end function
+
+    @it("Formats Polish dates with localized month forms")
+    function test_polishDateLocalization()
+      parsed = {
+        year: 2026
+        month: 3
+        day: 24
+        weekday: 2
+      }
+      m.assertEqual(FormatLocalizedDate(parsed, "d MMMM yyyy", "pl-PL"), "24 marca 2026")
+    end function
+
+    @describe("BuildPeopleString")
+
+    @it("Joins people names with comma separator")
+    function test_people()
+      asset = { people: [{ name: "Alice" }, { name: "Bob" }] }
+      m.assertEqual(BuildPeopleString(asset), "Alice, Bob")
+    end function
+
+  end class
+end namespace

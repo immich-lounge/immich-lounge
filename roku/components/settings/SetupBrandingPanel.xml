@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="SetupBrandingPanel" extends="Group">
+  <children>
+    <Rectangle color="#0D1120FF" width="1920" height="1080" />
+    <Rectangle color="#2A355EFF" width="1920" height="2" translation="[0,0]" />
+
+    <Rectangle color="#0D1120FF" width="560" height="1080"
+               translation="[0,0]" opacity="1.0" />
+
+    <Group id="brandingGroup" translation="[72, 0]">
+      <Poster id="brandingLogo"
+              width="480" height="156" loadDisplayMode="scaleToFit"
+              uri="pkg:/images/immich-lounge-horizontal-dark.png"
+              translation="[0, 360]" opacity="1.0" />
+
+      <Label text="Documentation"
+             color="#AAB7FFFF" font="font:SmallSystemFont"
+             translation="[0, 570]" width="410" />
+      <Poster id="qrCode"
+              width="160" height="160" loadDisplayMode="scaleToFit"
+              uri="pkg:/images/qrcode_website.png"
+              translation="[0, 606]" opacity="0.9" />
+      <Label id="docsUrlLabel"
+             text="immich-lounge.github.io"
+             color="#8A9BBFFF" font="font:SmallSystemFont"
+             translation="[0, 780]" width="410"
+             wrap="true" />
+    </Group>
+
+    <Rectangle color="#2A355EFF" width="1" height="972"
+               translation="[560, 54]" opacity="0.5" />
+
+    <Rectangle color="#101624FF" width="1360" height="1080"
+               translation="[560, 0]" opacity="0.78" />
+
+    <Label id="statusLabel"
+           text="Looking for companion..."
+           font="font:MediumBoldSystemFont"
+           color="#FFFFFFFF"
+           horizAlign="center"
+           vertAlign="center"
+           width="1280" height="1080"
+           translation="[640, 0]" />
+  </children>
+</component>

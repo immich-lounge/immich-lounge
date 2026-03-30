@@ -1,0 +1,82 @@
+namespace tests
+  @suite("Utils Helpers")
+  class UtilsTests extends rooibos.BaseTestSuite
+
+    @describe("TruncateStr")
+
+    @it("Short string is returned unchanged")
+    function test_truncateShort()
+      m.assertEqual(TruncateStr("hello", 10), "hello")
+    end function
+
+    @it("Long string is truncated to maxLen")
+    function test_truncateLong()
+      m.assertEqual(TruncateStr("hello world", 5), "hello")
+    end function
+
+    @describe("Clamp")
+
+    @it("Value below min returns min")
+    function test_clampMin()
+      m.assertEqual(Clamp(-5.0, 0.0, 10.0), 0.0)
+    end function
+
+    @it("Value above max returns max")
+    function test_clampMax()
+      m.assertEqual(Clamp(15.0, 0.0, 10.0), 10.0)
+    end function
+
+    @it("Value in range is returned unchanged")
+    function test_clampMid()
+      m.assertEqual(Clamp(5.0, 0.0, 10.0), 5.0)
+    end function
+
+    @describe("BuildMediaUrl")
+
+    @it("Photo with preview quality")
+    function test_mediaUrlPhotoPreview()
+      entry = { id: "abc123", type: "photo" }
+      profile = { immich: { serverUrl: "http://192.168.1.10:2283" }, imageQuality: "preview" }
+      m.assertEqual(BuildMediaUrl(entry, profile), "http://192.168.1.10:2283/api/assets/abc123/thumbnail?size=preview")
+    end function
+
+    @it("Photo with original quality")
+    function test_mediaUrlPhotoOriginal()
+      entry = { id: "abc123", type: "photo" }
+      profile = { immich: { serverUrl: "http://192.168.1.10:2283" }, imageQuality: "original" }
+      m.assertEqual(BuildMediaUrl(entry, profile), "http://192.168.1.10:2283/api/assets/abc123/original")
+    end function
+
+    @it("Video uses video/playback endpoint")
+    function test_mediaUrlVideo()
+      entry = { id: "vid001", type: "video" }
+      profile = { immich: { serverUrl: "http://192.168.1.10:2283" }, imageQuality: "preview" }
+      m.assertEqual(BuildMediaUrl(entry, profile), "http://192.168.1.10:2283/api/assets/vid001/video/playback")
+    end function
+
+    @it("Live photo uses livePhotoVideoId")
+    function test_mediaUrlLivePhoto()
+      entry = { id: "photo001", type: "livePhoto", livePhotoVideoId: "video001" }
+      profile = { immich: { serverUrl: "http://192.168.1.10:2283" }, imageQuality: "preview" }
+      m.assertEqual(BuildMediaUrl(entry, profile), "http://192.168.1.10:2283/api/assets/video001/video/playback")
+    end function
+
+    @describe("WmoToIconName")
+
+    @it("WMO code 0 maps to clear")
+    function test_wmoClear()
+      m.assertEqual(WmoToIconName(0), "clear")
+    end function
+
+    @it("WMO code 45 maps to fog")
+    function test_wmoFog()
+      m.assertEqual(WmoToIconName(45), "fog")
+    end function
+
+    @it("WMO code 71 maps to snow")
+    function test_wmoSnow()
+      m.assertEqual(WmoToIconName(71), "snow")
+    end function
+
+  end class
+end namespace

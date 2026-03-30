@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="PlaybackCanvas" extends="Group">
+  <children>
+    <Rectangle id="bg" color="#000000FF" width="1920" height="1080" />
+
+    <Poster id="bg0" width="2106" height="1185" loadDisplayMode="scaleToZoom"
+            loadWidth="240" loadHeight="135"
+            translation="[-93,-54]" opacity="0.0" />
+    <Poster id="bg1" width="2106" height="1185" loadDisplayMode="scaleToZoom"
+            loadWidth="240" loadHeight="135"
+            translation="[-93,-54]" opacity="0.0" />
+    <Poster id="bg2" width="2106" height="1185" loadDisplayMode="scaleToZoom"
+            loadWidth="240" loadHeight="135"
+            translation="[-93,-54]" opacity="0.0" />
+    <Poster id="bg3" width="2106" height="1185" loadDisplayMode="scaleToZoom"
+            loadWidth="240" loadHeight="135"
+            translation="[-93,-54]" opacity="0.0" />
+
+    <Rectangle id="bgTint" color="#08101888" width="1920" height="1080" translation="[0,0]" />
+    <Rectangle id="bgGlowLeft" color="#4A90E233" width="300" height="1080" translation="[0,0]" visible="false" />
+    <Rectangle id="bgGlowRight" color="#E26D5A26" width="300" height="1080" translation="[1620,0]" visible="false" />
+    <Rectangle id="bgGlowTop" color="#FFF2B31A" width="1920" height="180" translation="[0,0]" visible="false" />
+
+    <Poster id="main0" width="1920" height="1080" loadDisplayMode="scaleToFit"
+            loadWidth="1920" loadHeight="1080"
+            translation="[0,0]" opacity="0.0" />
+    <Poster id="main1" width="1920" height="1080" loadDisplayMode="scaleToFit"
+            loadWidth="1920" loadHeight="1080"
+            translation="[0,0]" opacity="0.0" />
+    <Poster id="main2" width="1920" height="1080" loadDisplayMode="scaleToFit"
+            loadWidth="1920" loadHeight="1080"
+            translation="[0,0]" opacity="0.0" />
+    <Poster id="main3" width="1920" height="1080" loadDisplayMode="scaleToFit"
+            loadWidth="1920" loadHeight="1080"
+            translation="[0,0]" opacity="0.0" />
+  </children>
+</component>

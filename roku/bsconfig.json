@@ -1,0 +1,21 @@
+{
+  "rootDir": ".",
+  "stagingDir": "_out/build/channel",
+  "files": [
+    "manifest",
+    "source/**/*.brs",
+    "components/**/*.brs",
+    "components/**/*.xml",
+    "images/**/*",
+    "!source/test_main.brs",
+    "!source/PlaybackEngine.brs",
+    "!components/PlaybackEngine.brs",
+    "!source/main_screensaver.brs",
+    "!source/PlaybackEffects.brs",
+    "!source/AppControllerScreensaver.brs",
+    "!source/TestSuiteWrappers.brs"
+  ],
+  "autoImportComponentScript": false,
+  "createPackage": false,
+  "sourceMap": false
+}

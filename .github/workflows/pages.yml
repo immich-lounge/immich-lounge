@@ -1,0 +1,46 @@
+name: Deploy Docs
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "docs/website/**"
+      - "mkdocs.yml"
+      - "docker-compose.yml"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install docs dependencies
+        run: pip install -r docs/website/requirements.txt
+
+      - name: Build site
+        run: zensical build --clean
+
+      - name: Publish to root Pages repo
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          personal_token: ${{ secrets.PAGES_DEPLOY_TOKEN }}
+          external_repository: immich-lounge/immich-lounge.github.io
+          publish_branch: master
+          publish_dir: _out/website
+          force_orphan: true

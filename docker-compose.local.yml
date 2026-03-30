@@ -1,0 +1,16 @@
+services:
+  immich-lounge-companion:
+    build:
+      context: ./companion
+      dockerfile: Dockerfile
+    image: immich-lounge-companion:local
+    ports:
+      - "4383:4383"
+    volumes:
+      - immich-lounge-local-data:/data
+    environment:
+      - ASPNETCORE_URLS=http://+:4383
+    restart: unless-stopped
+
+volumes:
+  immich-lounge-local-data:

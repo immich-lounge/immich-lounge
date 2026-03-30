@@ -1,0 +1,62 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Companion: Debug",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "Companion: Build Debug",
+      "program": "${workspaceFolder}/companion/src/ImmichLoungeCompanion/bin/Debug/net10.0/ImmichLoungeCompanion.dll",
+      "cwd": "${workspaceFolder}/companion/src/ImmichLoungeCompanion",
+      "env": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "ASPNETCORE_URLS": "http://localhost:4383"
+      },
+      "serverReadyAction": {
+        "action": "openExternally",
+        "pattern": "\\bNow listening on:\\s+(https?://\\S+)"
+      },
+      "console": "integratedTerminal",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Roku: Debug Channel",
+      "type": "brightscript",
+      "request": "launch",
+      "preLaunchTask": "Roku: Build Debug Channel",
+      "injectRdbOnDeviceComponent": true,
+      "envFile": "${workspaceFolder}/roku/.env",
+      "host": "${env:ROKU_HOST}",
+      "username": "rokudev",
+      "password": "${env:ROKU_PASSWORD}",
+      "rootDir": "${workspaceFolder}/roku/_out/vscode/channel",
+      "sourceDirs": [
+        "${workspaceFolder}/roku"
+      ]
+    },
+    {
+      "name": "Roku: Debug Screensaver",
+      "type": "brightscript",
+      "request": "launch",
+      "preLaunchTask": "Roku: Build Debug Screensaver",
+      "injectRdbOnDeviceComponent": true,
+      "envFile": "${workspaceFolder}/roku/.env",
+      "host": "${env:ROKU_HOST}",
+      "username": "rokudev",
+      "password": "${env:ROKU_PASSWORD}",
+      "rootDir": "${workspaceFolder}/roku/_out/vscode/screensaver",
+      "sourceDirs": [
+        "${workspaceFolder}/roku"
+      ]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug Companion + Roku Channel",
+      "configurations": [
+        "Companion: Debug",
+        "Roku: Debug Channel"
+      ]
+    }
+  ]
+}

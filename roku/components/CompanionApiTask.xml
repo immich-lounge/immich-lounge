@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="CompanionApiTask" extends="Task">
+  <interface>
+    <!-- Inputs -->
+    <field id="command"        type="string"     value="" />
+    <field id="baseUrl"        type="string"     value="" />
+    <field id="profileId"      type="string"     value="" />
+    <field id="isScreensaver"  type="boolean"    value="false" />
+    <field id="playlistOffset" type="integer"    value="0" />
+    <field id="playlistCount"  type="integer"    value="50" />
+    <field id="maxWaitSec"     type="integer"    value="0" />
+    <!-- Outputs -->
+    <field id="profilesResult" type="assocarray" value="{}" />
+    <field id="profileResult"  type="assocarray" value="{}" />
+    <field id="playlistResult" type="assocarray" value="{}" />
+    <field id="clockResult"    type="assocarray" value="{}" />
+  </interface>
+  <script type="text/brightscript" uri="pkg:/source/Utils.brs" />
+  <script type="text/brightscript" uri="pkg:/source/PlaylistRegistry.brs" />
+  <script type="text/brightscript" uri="pkg:/source/Registry.brs" />
+  <script type="text/brightscript" uri="pkg:/source/HttpClient.brs" />
+  <script type="text/brightscript" uri="pkg:/components/CompanionApiTask.brs" />
+</component>

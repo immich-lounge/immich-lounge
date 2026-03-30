@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="DiscoveryTask" extends="Task">
+  <interface>
+    <!-- Input: set to "start" to begin discovery -->
+    <field id="command"   type="string" value="" />
+    <!-- Output: array of { friendlyName: String, baseUrl: String } -->
+    <field id="companions" type="array"  value="[]" />
+    <!-- Output: "found" | "timeout" (avoids collision with Task built-in "state" field) -->
+    <field id="discoveryState" type="string" value="" />
+  </interface>
+  <script type="text/brightscript" uri="pkg:/source/Utils.brs" />
+  <script type="text/brightscript" uri="pkg:/source/HttpClient.brs" />
+  <script type="text/brightscript" uri="pkg:/components/settings/DiscoveryTask.brs" />
+</component>

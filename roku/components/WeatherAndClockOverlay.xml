@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="WeatherAndClockOverlay" extends="Group">
+  <interface>
+    <field id="clockText" type="string" value="" onChange="OnDataChanged" />
+    <field id="dateText" type="string" value="" onChange="OnDataChanged" />
+    <field id="showDate" type="boolean" value="false" onChange="OnDataChanged" />
+    <field id="showClock" type="boolean" value="true" onChange="OnDataChanged" />
+    <field id="weatherVisible" type="boolean" value="false" onChange="OnDataChanged" />
+    <field id="temperature" type="float" value="0.0" onChange="OnDataChanged" />
+    <field id="iconName" type="string" value="" onChange="OnDataChanged" />
+    <field id="unit" type="string" value="celsius" onChange="OnDataChanged" />
+  </interface>
+  <children>
+    <Label id="clockShadowLabel" color="#000000AA" font="font:MediumBoldSystemFont"
+           width="300" horizAlign="right" translation="[2, 2]" />
+    <Label id="clockLabel" color="#FFFFFFFF" font="font:MediumBoldSystemFont"
+           width="300" horizAlign="right" />
+    <Label id="dateShadowLabel" color="#00000088" font="font:SmallSystemFont"
+           width="300" horizAlign="right" translation="[2, 44]" visible="false" />
+    <Label id="dateLabel" color="#FFFFFFFF" font="font:SmallSystemFont"
+           width="300" horizAlign="right" translation="[0, 42]" visible="false" />
+    <WeatherComponent id="weatherWidget" translation="[164, 72]" visible="false" />
+  </children>
+  <script type="text/brightscript" uri="pkg:/components/WeatherAndClockOverlay.brs" />
+</component>

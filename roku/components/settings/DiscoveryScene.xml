@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="DiscoveryScene" extends="Scene">
+  <interface>
+    <field id="isScreensaver" type="boolean" value="false" />
+    <field id="suspendStartup" type="boolean" value="false" onChange="OnSuspendStartupChanged" />
+    <field id="changeProfileMode" type="boolean" value="false" />
+    <field id="changeCompanionMode" type="boolean" value="false" />
+    <field id="allowCancelToSlideshow" type="boolean" value="false" />
+    <!-- Output signals to AppController -->
+    <field id="profileSelected" type="assocarray" value="{}" />
+    <field id="setupComplete"   type="boolean"    value="false" />
+    <field id="cancelled"       type="boolean"    value="false" />
+  </interface>
+  <children>
+    <SetupBrandingPanel id="setupBrandingPanel" />
+
+    <!-- ── Companion selector — right panel ────────────────────────────── -->
+    <CompanionSelector id="companionSelector"
+                       translation="[640, 200]"
+                       visible="false" />
+
+    <!-- ── Profile selector — right panel ──────────────────────────────── -->
+    <ProfileSelector id="profileSelector"
+                     translation="[640, 200]"
+                     visible="false" />
+
+    <!-- ── Manual entry form — right panel ────────────────────────────────── -->
+    <ManualEntryForm id="manualForm"
+                     translation="[640, 200]"
+                     visible="false" />
+
+  </children>
+  <script type="text/brightscript" uri="pkg:/source/Utils.brs" />
+  <script type="text/brightscript" uri="pkg:/source/PlaylistRegistry.brs" />
+  <script type="text/brightscript" uri="pkg:/source/Registry.brs" />
+  <script type="text/brightscript" uri="pkg:/source/HttpClient.brs" />
+  <script type="text/brightscript" uri="pkg:/components/settings/DiscoverySetup.brs" />
+  <script type="text/brightscript" uri="pkg:/components/settings/DiscoveryFetch.brs" />
+  <script type="text/brightscript" uri="pkg:/components/settings/DiscoveryDialogs.brs" />
+  <script type="text/brightscript" uri="pkg:/components/settings/DiscoveryScene.brs" />
+</component>

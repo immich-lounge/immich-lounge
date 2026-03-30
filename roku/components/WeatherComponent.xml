@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="WeatherComponent" extends="Group">
+  <interface>
+    <field id="temperature" type="float"  value="0.0" onChange="OnDataChanged" />
+    <field id="iconName"    type="string" value=""    onChange="OnDataChanged" />
+    <field id="unit"        type="string" value="celsius" />
+  </interface>
+  <children>
+    <!-- 136px total: [48px icon][8px gap][80px text right-aligned] -->
+    <Poster id="icon" width="48" height="48" translation="[0, 0]"
+            loadDisplayMode="scaleToFit" loadWidth="48" loadHeight="48" />
+    <Label  id="tempShadowLabel" color="#00000088" font="font:SmallBoldSystemFont"
+            translation="[58, 10]" width="80" horizAlign="right" />
+    <Label  id="tempLabel" color="#FFFFFFFF" font="font:SmallBoldSystemFont"
+            translation="[56, 8]" width="80" horizAlign="right" />
+  </children>
+  <script type="text/brightscript" uri="pkg:/components/WeatherComponent.brs" />
+</component>

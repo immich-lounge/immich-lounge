@@ -1,0 +1,76 @@
+@* Reusable chip-picker for albums, people, or tags.
+   Loads items from /api/immich/<type>s and allows add/remove. *@
+
+@inject IHttpClientFactory HttpFactory
+
+<div class="source-picker">
+    <div class="chips">
+        @* Filter chips to only show sources matching this picker's SourceType *@
+        @foreach (var selected in Selected.Where(s => s.Type == SourceType))
+        {
+            <span class="chip">
+                @selected.Label
+                <button @onclick="() => Remove(selected)">×</button>
+            </span>
+        }
+    </div>
+    <input @bind="_search" @bind:event="oninput" @bind:after="FilterItems"
+           placeholder="Search @SourceType..." class="search-input" />
+    <div class="dropdown" @onmouseleave="() => _showDropdown = false">
+        @if (_showDropdown)
+        {
+            @foreach (var item in _filtered.Take(10))
+            {
+                <div class="dropdown-item" @onclick="() => Add(item)">@item.Name</div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string SourceType { get; set; } = "album";  // "album" | "person" | "tag"
+    [Parameter] public List<ImmichLoungeCompanion.Models.ContentSource> Selected { get; set; } = [];
+    [Parameter] public EventCallback<List<ImmichLoungeCompanion.Models.ContentSource>> SelectedChanged { get; set; }
+
+    private HttpClient Http => HttpFactory.CreateClient("local");
+    private List<SourceItem> _items = [], _filtered = [];
+    private string _search = "";
+    private bool _showDropdown;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var endpoint = SourceType switch
+        {
+            "album"  => "/api/immich/albums",
+            "person" => "/api/immich/people",
+            "tag"    => "/api/immich/tags",
+            _ => throw new ArgumentException("Invalid source type")
+        };
+        _items = await Http.GetFromJsonAsync<List<SourceItem>>(endpoint) ?? [];
+        _filtered = _items;
+    }
+
+    private void FilterItems()
+    {
+        _filtered = string.IsNullOrWhiteSpace(_search)
+            ? _items
+            : _items.Where(i => i.Name.Contains(_search, StringComparison.OrdinalIgnoreCase)).ToList();
+        _showDropdown = _filtered.Any();
+    }
+
+    private async Task Add(SourceItem item)
+    {
+        if (Selected.Any(s => s.Id == item.Id)) return;
+        Selected.Add(new() { Type = SourceType, Id = item.Id, Label = item.Name });
+        await SelectedChanged.InvokeAsync(Selected);
+        _search = ""; _showDropdown = false;
+    }
+
+    private async Task Remove(ImmichLoungeCompanion.Models.ContentSource source)
+    {
+        Selected.Remove(source);
+        await SelectedChanged.InvokeAsync(Selected);
+    }
+
+    private record SourceItem(string Id, string Name);
+}

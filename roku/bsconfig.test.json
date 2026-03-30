@@ -1,0 +1,44 @@
+{
+  "rootDir": ".",
+  "stagingDir": "_out/build/test",
+  "files": [
+    "manifest",
+    { "src": "source/test_main.brs", "dest": "source/main.brs" },
+    "source/HttpClient.brs",
+    "source/MediaUrls.brs",
+    "source/PlaybackConstants.brs",
+    "source/DateTimeFormatting.brs",
+    "components/playback/PlaybackEffects.brs",
+    "source/PlaylistRegistry.brs",
+    "source/Registry.brs",
+    "source/Utils.brs",
+    { "src": "tests/TestSupport.brs", "dest": "source/TestSupport.brs" },
+    { "src": "tests/appController.spec.bs", "dest": "source/tests/appController.spec.bs" },
+    { "src": "tests/companionApi.spec.bs", "dest": "source/tests/companionApi.spec.bs" },
+    { "src": "tests/discoveryTask.spec.bs", "dest": "source/tests/discoveryTask.spec.bs" },
+    { "src": "tests/httpClient.spec.bs", "dest": "source/tests/httpClient.spec.bs" },
+    { "src": "tests/overlayComponent.spec.bs", "dest": "source/tests/overlayComponent.spec.bs" },
+    { "src": "tests/registry.spec.bs", "dest": "source/tests/registry.spec.bs" },
+    { "src": "tests/slideshowScene.spec.bs", "dest": "source/tests/slideshowScene.spec.bs" },
+    { "src": "tests/utils.spec.bs", "dest": "source/tests/utils.spec.bs" },
+    { "src": "tests/weatherComponent.spec.bs", "dest": "source/tests/weatherComponent.spec.bs" },
+    "images/**/*"
+  ],
+  "autoImportComponentScript": false,
+  "diagnosticFilters": [
+    { "codes": [1013] }
+  ],
+  "createPackage": false,
+  "sourceMap": false,
+  "plugins": ["rooibos-roku"],
+  "rooibos": {
+    "isRecordingCodeCoverage": false,
+    "printTestTimes": true,
+    "showOnlyFailures": false,
+    "catchCrashes": true,
+    "lineWidth": 70,
+    "failFast": false,
+    "sendHomeOnFinish": true,
+    "tags": ["!integration"]
+  }
+}

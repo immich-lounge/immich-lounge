@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="OverlayComponent" extends="Group">
+  <interface>
+    <!-- "bottom" | "corner" | "none" -->
+    <field id="overlayStyle"    type="string"     value="none" />
+    <field id="overlayFields"   type="array"      value="[]" />
+    <!-- "always" | "fade" | "manual" -->
+    <field id="overlayBehavior" type="string"     value="manual" />
+    <field id="fadeSeconds"     type="float"      value="5.0" />
+    <field id="visible"         type="boolean"    value="true" onChange="OnVisibleChanged" />
+    <!-- Asset metadata (AA from GET /api/assets/:id) -->
+    <field id="assetMeta"       type="assocarray" value="{}" onChange="OnMetaChanged" />
+    <field id="clockFormat"     type="string"     value="HH:mm" />
+    <field id="dateFormat"      type="string"     value="d MMMM yyyy" />
+    <field id="locale"          type="string"     value="en-US" />
+    <!-- sourceLabel for this asset (from playlist entry) -->
+    <field id="sourceLabel"     type="string"     value="" />
+  </interface>
+  <children>
+    <!-- Overlay text lines (bottom style) -->
+    <Label id="dateShadowLine"     color="#000000AA" font="font:MediumBoldSystemFont"
+           translation="[62, 882]"  width="1800" visible="false" />
+    <Label id="locationShadowLine" color="#00000088" font="font:SmallSystemFont"
+           translation="[62, 932]"  width="1800" visible="false" />
+    <Label id="albumShadowLine"    color="#00000070" font="font:SmallSystemFont"
+           translation="[62, 972]"  width="900"  visible="false" />
+    <Label id="peopleShadowLine"   color="#00000070" font="font:SmallSystemFont"
+           translation="[62, 1012]" width="1800" visible="false" />
+    <Label id="dateLine"     color="#FFFFFFEE" font="font:MediumBoldSystemFont"
+           translation="[60, 880]"  width="1800" visible="false" />
+    <Label id="locationLine" color="#DDDDDDCC" font="font:SmallSystemFont"
+           translation="[60, 930]"  width="1800" visible="false" />
+    <Label id="albumLine"    color="#AAAAAA99" font="font:SmallSystemFont"
+           translation="[60, 970]"  width="900"  visible="false" />
+    <Label id="peopleLine"   color="#AAAAAA99" font="font:SmallSystemFont"
+           translation="[60, 1010]" width="1800" visible="false" />
+
+    <!-- Corner style labels -->
+    <Label id="cornerDateShadow"     color="#000000AA" font="font:SmallBoldSystemFont"
+           translation="[57, 52]"  width="400" visible="false" />
+    <Label id="cornerLocationShadow" color="#00000088" font="font:VerySmallSystemFont"
+           translation="[57, 92]"  width="400" visible="false" />
+    <Label id="cornerDate"     color="#FFFFFFEE" font="font:SmallBoldSystemFont"
+           translation="[55, 50]"  width="400" visible="false" />
+    <Label id="cornerLocation" color="#CCCCCCCC" font="font:VerySmallSystemFont"
+           translation="[55, 90]"  width="400" visible="false" />
+  </children>
+  <script type="text/brightscript" uri="pkg:/source/Utils.brs" />
+  <script type="text/brightscript" uri="pkg:/source/DateTimeFormatting.brs" />
+  <script type="text/brightscript" uri="pkg:/components/OverlayComponent.brs" />
+</component>

@@ -1,0 +1,32 @@
+namespace tests
+  @suite("DiscoveryTask Helpers")
+  class DiscoveryTaskTests extends rooibos.BaseTestSuite
+
+    @describe("ParseSsdpLocation")
+
+    @it("Extracts LOCATION header from SSDP response")
+    function test_parseLocation()
+      crlf = Chr(13) + Chr(10)
+      raw  = "HTTP/1.1 200 OK" + crlf
+      raw  = raw + "LOCATION: http://192.168.1.10:4383/api/profiles" + crlf
+      raw  = raw + "ST: urn:immich-lounge:service:companion:1" + crlf
+      m.assertEqual(ParseSsdpLocation(raw), "http://192.168.1.10:4383/api/profiles")
+    end function
+
+    @it("Returns invalid when LOCATION header is absent")
+    function test_noLocation()
+      crlf = Chr(13) + Chr(10)
+      raw  = "HTTP/1.1 200 OK" + crlf + "ST: something" + crlf
+      m.assertInvalid(ParseSsdpLocation(raw))
+    end function
+
+    @describe("BuildMSearchPacket")
+
+    @it("Packet contains the channel service type ST")
+    function test_mSearchPacket()
+      pkt = BuildMSearchPacket()
+      m.assertTrue(InStr(1, pkt, "urn:immich-lounge:service:companion:1") > 0)
+    end function
+
+  end class
+end namespace

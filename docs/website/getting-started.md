@@ -1,0 +1,84 @@
+---
+icon: material/rocket-launch-outline
+---
+
+# Getting Started
+
+This is the fastest path to a first working setup.
+
+You need:
+
+- an **immich** server on your LAN
+- an **immich API key**
+- **Docker** on a machine that stays on
+- a **Roku** on the same network
+
+## 1. Start the companion
+
+If you already use Docker Compose for immich, add the companion service from the repo-root `docker-compose.yml`.
+
+```yaml title="docker-compose.yml"
+--8<-- "https://raw.githubusercontent.com/immich-lounge/immich-lounge/master/docker-compose.yml"
+```
+
+```bash
+docker compose up -d
+```
+
+This keeps the companion on port `4383` and persists its `/data` directory in a Docker volume.
+
+## 2. Connect the companion to immich
+
+Open:
+
+```text
+http://<your-docker-host-ip>:4383
+```
+
+On the Connection page, enter:
+
+- a friendly name
+- your immich server URL, for example `http://192.168.1.10:2283`
+- an API key from immich
+
+Then click **Test Connection** and save.
+
+![Immich Lounge companion connection page](./assets/screenshots/companion-connection.png){ .doc-screenshot }
+<p class="doc-caption">Connect the companion to immich first. The Roku setup comes later.</p>
+
+## 3. Create a profile
+
+A profile decides what the Roku shows and how it should look.
+
+Pick one or more content sources, then save the profile. The companion starts building the playlist in the background.
+
+![Immich Lounge companion profile editor](./assets/screenshots/companion-profile-editor.png){ .doc-screenshot }
+<p class="doc-caption">A profile controls content, slideshow behavior, overlays, and weather.</p>
+
+## 4. Connect the Roku
+
+Launch **Immich Lounge** on Roku, enter the companion URL, and choose a profile.
+
+![Roku companion connection screen](./assets/screenshots/change-companion.png){ .doc-screenshot }
+<p class="doc-caption">Enter the companion host and keep the default port <code>4383</code>.</p>
+
+![Roku profile selection screen](./assets/screenshots/change-profile.png){ .doc-screenshot }
+<p class="doc-caption">After the Roku reaches the companion, choose the profile you want to use for this device.</p>
+
+If you also want the Roku screensaver, go to Roku Settings, choose **Immich Lounge Screensaver**, and open **Configure Screensaver**.
+
+## API key notes
+
+If your immich version supports scoped API keys, this is the practical minimum set for most setups:
+
+- `asset.read`
+- `asset.statistics`
+- `asset.view`
+- `album.read`
+- `person.read`
+- `tag.read`
+- `memory.read`
+
+Add `asset.download` only if you plan to use **Original** image quality.
+
+Immich Lounge does not create, update, or delete your immich library content.
