@@ -14,7 +14,10 @@ Immich Lounge is an independent project and is not affiliated with Roku or immic
 
 The companion currently has no authentication. It is intended for trusted home networks only. Do not expose it directly to the internet.
 
-The Roku apps are not published in the Roku Channel Store yet. Store submission is planned and will take a little time. A beta access code is available on request in the meantime.
+Roku install links:
+
+- [Add Immich Lounge](https://my.roku.com/account/add/immichlounge)
+- [Add Immich Lounge Screensaver](https://my.roku.com/account/add/immichloungesaver)
 
 ## What It Does
 
@@ -25,7 +28,7 @@ The Roku apps are not published in the Roku Channel Store yet. Store submission 
 
 ## Screenshots
 
-![Roku artwork](./branding/roku-fhd-540x405.png)
+![Immich Lounge slideshow on Roku](./docs/website/assets/screenshots/slideshow.png)
 
 
 ## Getting Started
