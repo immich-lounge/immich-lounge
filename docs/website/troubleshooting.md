@@ -32,6 +32,8 @@ That usually means one side of the startup path is offline:
 
 Important detail: the Roku talks to immich directly for media and most metadata.
 
+See [Using the Roku Apps](./roku-apps.md) for the difference between cached config, cached playlist, and the Roku menu actions that can refresh or clear state.
+
 ## The companion web UI does not load
 
 Start with the easy checks:
@@ -72,9 +74,13 @@ To force a refresh:
 2. Open settings.
 3. Choose **Refresh Now**.
 
+See [Using the Roku Apps](./roku-apps.md) for the rest of the channel controls and settings menu options.
+
 ## I want to reset everything
 
 For the Roku, use **Clear Cache** from the Roku settings menu inside the app.
+
+See [Using the Roku Apps](./roku-apps.md) for what `Clear Cache` affects on the device.
 
 For the companion, stop it, remove `./companion-data`, and start it again:
 

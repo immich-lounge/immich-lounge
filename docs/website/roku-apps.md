@@ -4,9 +4,9 @@ icon: material/television-play
 
 # Using the Roku Apps
 
-How the Roku channel and screensaver behave once setup is complete.
+This page covers the day-to-day Roku experience after the companion and profiles are already set up.
 
----
+For companion setup and profile editing, see [Getting Started](./getting-started.md), [Configuration](./configuration.md), and [Using the Companion](./companion-app.md).
 
 ## Channel vs Screensaver
 
@@ -18,8 +18,6 @@ The Roku screensaver uses the same companion connection, but it behaves a little
 - If no screensaver profile is selected yet, it falls back to the channel profile.
 - If no profile is configured at all, it shows a setup reminder and exits.
 - If the companion is rebuilding a playlist and a cached playlist exists, the screensaver uses the cached playlist immediately.
-
----
 
 ## First-Run Flow
 
@@ -36,41 +34,50 @@ The Roku screensaver uses the same companion connection, but it behaves a little
 ![Roku profile selection screen](./assets/screenshots/change-profile.png){ .doc-screenshot }
 <p class="doc-caption">Choose the Roku profile after the companion returns the available list.</p>
 
----
-
 ## Remote Controls
 
 In channel mode:
 
-- `Left` — previous photo
-- `Right` — next photo
-- `OK` — show or hide the overlay
-- `Up` — show the overlay
-- `Down` — hide the overlay
-- `Play/Pause` — pause or resume playback
-- `*` — open the settings menu
-- `Back` — open the exit dialog
+| Button | Action |
+|---|---|
+| `Left` | Previous photo |
+| `Right` | Next photo |
+| `OK` | Show or hide the overlay |
+| `Up` | Show the overlay |
+| `Down` | Hide the overlay |
+| `Play/Pause` | Pause or resume playback |
+| `*` | Open the settings menu |
+| `Back` | Open the exit dialog |
 
 In screensaver mode, Roku handles key presses at the system level and the screensaver exits instead of opening app controls.
 
----
-
 ## Roku Settings Menu
 
-Press `*` during playback in the channel to open the settings dialog. From there you can:
+Press `*` during playback in the channel to open the settings dialog.
 
-- Refresh the current playlist
-- Change profile
-- Change companion
-- Clear cached data
+| Action | What it does |
+|---|---|
+| `Refresh Now` | Re-fetches the current profile and playlist immediately. |
+| `Change Profile` | Keeps the companion URL but lets you pick a different profile for channel mode. |
+| `Change Companion` | Switches the Roku to a different companion host. |
+| `Clear Cache` | Removes cached profile and playlist data for the current mode. |
 
 ![Roku settings dialog](./assets/screenshots/config-dialog.png){ .doc-screenshot }
 <p class="doc-caption">The Roku settings dialog is available from the <code>*</code> button during channel playback.</p>
-
----
 
 ## Typical Setup Patterns
 
 - Use one profile for the channel and another for the screensaver if you want different rooms or moods.
 - Use the channel for setup and troubleshooting, even if your main goal is the screensaver.
 - If the companion host changes, use **Change Companion** from the Roku settings menu instead of reinstalling the apps.
+
+## When to use the channel for troubleshooting
+
+Prefer the normal channel when you need to:
+
+- confirm the companion URL
+- switch profiles
+- force a refresh
+- clear cached state
+
+The screensaver is best treated as playback-only once it is configured.

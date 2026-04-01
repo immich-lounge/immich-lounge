@@ -62,8 +62,9 @@ nav:
       - Getting Started: getting-started.md
       - Installation: installation.md
       - Configuration: configuration.md
+  - Guide / App:
+      - Using the Companion: companion-app.md
       - Using the Roku Apps: roku-apps.md
-  - Product:
       - Architecture: architecture.md
       - Changelog: changelog.md
   - Help:

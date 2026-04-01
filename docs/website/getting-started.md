@@ -6,6 +6,8 @@ icon: material/rocket-launch-outline
 
 This is the fastest path to a first working setup.
 
+For a fuller Docker setup reference, Roku install links, and network notes, see [Installation](./installation.md).
+
 You need:
 
 - an **immich** server on your LAN
@@ -82,3 +84,9 @@ If your immich version supports scoped API keys, this is the practical minimum s
 Add `asset.download` only if you plan to use **Original** image quality.
 
 Immich Lounge does not create, update, or delete your immich library content.
+
+## Next steps
+
+- Use [Configuration](./configuration.md) to understand the available profile and connection settings.
+- Use [Using the Companion](./companion-app.md) for the day-to-day companion pages after setup.
+- Use [Using the Roku Apps](./roku-apps.md) for the channel controls, Roku settings menu, and screensaver behavior after setup.

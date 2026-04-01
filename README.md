@@ -16,8 +16,10 @@ The companion currently has no authentication. It is intended for trusted home n
 
 Roku install links:
 
-- [Add Immich Lounge](https://my.roku.com/account/add/immichlounge)
-- [Add Immich Lounge Screensaver](https://my.roku.com/account/add/immichloungesaver)
+| App | Channel Store | Add Link |
+|---|---|---|
+| Immich Lounge | [Open](https://channelstore.roku.com/details/b07c35a07c79ab9a68c29c923ac481ce:bdf9083c719f8f235036b2c91bcef535/immich-lounge) | [Add](https://my.roku.com/account/add/immichlounge) |
+| Immich Lounge Screensaver | [Open](https://channelstore.roku.com/details/1dbc550b0d535eebf60d6fc4b77ec0fb:a6fafa094f6a14e19c10f0bb1e06e315/immich-lounge-screensaver) | [Add](https://my.roku.com/account/add/immichloungesaver) |
 
 ## What It Does
 

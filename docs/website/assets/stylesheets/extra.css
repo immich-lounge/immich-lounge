@@ -170,6 +170,57 @@
   color: var(--md-default-fg-color--light);
 }
 
+.roku-links-card {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 176, 102, 0.22);
+  background: linear-gradient(180deg, rgba(255, 176, 102, 0.08) 0%, rgba(13, 17, 32, 0.92) 100%);
+  overflow-x: auto;
+}
+
+.md-typeset table.roku-links-table {
+  width: 100%;
+  margin: 0;
+  border: 0;
+  background: transparent;
+}
+
+.md-typeset table.roku-links-table th,
+.md-typeset table.roku-links-table td {
+  border-color: rgba(255, 255, 255, 0.1);
+  vertical-align: middle;
+}
+
+.md-typeset table.roku-links-table th {
+  color: var(--md-default-fg-color--light);
+}
+
+.roku-link-pill {
+  display: inline-block;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 176, 102, 0.28);
+  background: rgba(255, 176, 102, 0.12);
+  color: inherit;
+  text-decoration: none;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.roku-link-pill:hover {
+  background: rgba(255, 176, 102, 0.18);
+}
+
+.roku-link-pill-secondary {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.roku-link-pill-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 .screenshot-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));

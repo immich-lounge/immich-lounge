@@ -8,6 +8,10 @@ icon: material/tune-variant
 Most users only need three things here: connect the companion to immich, create one or more profiles, and tune how the slideshow should look on Roku.
 </div>
 
+For the companion pages you use after setup, see [Using the Companion](./companion-app.md).
+
+For channel controls, profile switching on the Roku, cache clearing, and screensaver behavior after setup, see [Using the Roku Apps](./roku-apps.md).
+
 ## Connection settings
 
 These settings are shared by every profile:
@@ -51,36 +55,16 @@ A profile decides what to show and how to show it. You can create as many as you
 
 ## What you can configure
 
-### Content
-
-- albums
-- people
-- tags
-- memories
-- optional date filtering
-
-### Playback
-
-- interval
-- shuffle
-- transition effect
-- photo motion
-- playlist refresh interval
-
-### Display
-
-- overlay style
-- overlay behavior
-- background effect
-- overlay fields
-- date and time formatting
-- weather
-- image quality
+| Area | What it covers |
+|---|---|
+| Content | Albums, people, tags, memories, and optional date filtering |
+| Playback | Interval, shuffle, transition effect, photo motion, and playlist refresh interval |
+| Display | Overlay style and fields, background effect, date and time formatting, weather, and image quality |
 
 ![Immich Lounge slideshow with overlay, clock, and weather](./assets/screenshots/slideshow.png){ .doc-screenshot }
 <p class="doc-caption">Example slideshow with a left-side overlay, persistent clock, and weather.</p>
 
-## Roku screensaver behavior
+## Profile planning
 
 The channel and screensaver share the same companion URL, but they can use different profiles.
 
@@ -92,3 +76,5 @@ That means you can:
 
 ![Roku settings dialog](./assets/screenshots/config-dialog.png){ .doc-screenshot }
 <p class="doc-caption">Use the Roku settings menu to refresh, switch profile, change companion, or clear cache.</p>
+
+For the actual Roku-side behavior and menu actions, see [Using the Roku Apps](./roku-apps.md).

@@ -40,11 +40,33 @@ docker compose up -d
 
 ## Roku apps
 
-Immich Lounge is not published in the Roku Channel Store yet. Store submission is in progress and may take a little time.
+Add the Roku apps to your account:
 
-If you want to try it before then, ask for a beta access code.
+<div class="roku-links-card">
+  <table class="roku-links-table">
+    <thead>
+      <tr>
+        <th>App</th>
+        <th>Channel Store</th>
+        <th>Add Link</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Immich Lounge</td>
+        <td><a class="roku-link-pill" href="https://channelstore.roku.com/details/b07c35a07c79ab9a68c29c923ac481ce:bdf9083c719f8f235036b2c91bcef535/immich-lounge">Open in Store</a></td>
+        <td><a class="roku-link-pill roku-link-pill-secondary" href="https://my.roku.com/account/add/immichlounge">Add to Account</a></td>
+      </tr>
+      <tr>
+        <td>Immich Lounge Screensaver</td>
+        <td><a class="roku-link-pill" href="https://channelstore.roku.com/details/1dbc550b0d535eebf60d6fc4b77ec0fb:a6fafa094f6a14e19c10f0bb1e06e315/immich-lounge-screensaver">Open in Store</a></td>
+        <td><a class="roku-link-pill roku-link-pill-secondary" href="https://my.roku.com/account/add/immichloungesaver">Add to Account</a></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 
-Install when available:
+Install on your Roku:
 
 - **Immich Lounge**
 - **Immich Lounge Screensaver**
@@ -78,3 +100,9 @@ You usually only need two paths to work:
 - Roku to immich on your immich server port, usually `2283`
 
 The Roku fetches media and most metadata directly from immich. The companion is not a media proxy.
+
+## After install
+
+- Use [Configuration](./configuration.md) to understand the available connection and profile settings.
+- Use [Using the Companion](./companion-app.md) for the normal companion workflow after setup.
+- Use [Using the Roku Apps](./roku-apps.md) for first-run flow, remote controls, and the Roku settings menu.
