@@ -39,6 +39,24 @@ It does not copy your full photo library into the companion.
 
 ---
 
+## Which immich API key permissions does Immich Lounge need?
+
+If your immich version supports scoped API keys, use:
+
+- `asset.read`
+- `asset.statistics`
+- `asset.view`
+- `album.read`
+- `person.read`
+- `tag.read`
+- `memory.read`
+
+Add `asset.download` only if you plan to use **Original** image quality.
+
+For the current immich steps to create the key, see [Immich API Key](./api-key.md).
+
+---
+
 ## Can the channel and screensaver use different profiles?
 
 Yes. They share the same companion connection, but the Roku channel and Roku screensaver can use different selected profiles.

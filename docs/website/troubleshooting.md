@@ -50,6 +50,8 @@ Check:
 - the API key
 - whether the companion host can reach immich on the network
 
+If needed, generate a fresh key and confirm the recommended permissions from [Immich API Key](./api-key.md).
+
 ## Photos are not loading
 
 The most common causes are:

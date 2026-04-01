@@ -61,6 +61,7 @@ nav:
   - Setup:
       - Getting Started: getting-started.md
       - Installation: installation.md
+      - Immich API Key: api-key.md
       - Configuration: configuration.md
   - Guide / App:
       - Using the Companion: companion-app.md

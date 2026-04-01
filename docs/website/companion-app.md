@@ -19,6 +19,8 @@ Use it when you need to:
 - replace the API key
 - verify access with **Test Connection**
 
+If you need to generate or rotate the key, see [Immich API Key](./api-key.md).
+
 ![Immich Lounge companion connection page](./assets/screenshots/companion-connection.png){ .doc-screenshot }
 <p class="doc-caption">The connection page is the one shared integration point between the companion and immich.</p>
 

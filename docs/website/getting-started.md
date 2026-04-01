@@ -45,6 +45,8 @@ On the Connection page, enter:
 
 Then click **Test Connection** and save.
 
+If you have not created the key yet, see [Immich API Key](./api-key.md).
+
 ![Immich Lounge companion connection page](./assets/screenshots/companion-connection.png){ .doc-screenshot }
 <p class="doc-caption">Connect the companion to immich first. The Roku setup comes later.</p>
 
@@ -71,17 +73,7 @@ If you also want the Roku screensaver, go to Roku Settings, choose **Immich Loun
 
 ## API key notes
 
-If your immich version supports scoped API keys, this is the practical minimum set for most setups:
-
-- `asset.read`
-- `asset.statistics`
-- `asset.view`
-- `album.read`
-- `person.read`
-- `tag.read`
-- `memory.read`
-
-Add `asset.download` only if you plan to use **Original** image quality.
+See [Immich API Key](./api-key.md) for the current immich steps to generate a key and the recommended permission set.
 
 Immich Lounge does not create, update, or delete your immich library content.
 
