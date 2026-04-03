@@ -29,6 +29,14 @@ docker compose -f docker-compose.local.yml up -d --force-recreate
 docker compose -f docker-compose.local.yml down
 ```
 
+If you prefer the same shorthand used in immich-reversegeo, the repo root also includes:
+
+```bash
+npm run docker:build
+npm run docker:up
+npm run docker:down
+```
+
 The repo-root [`docker-compose.yml`](./docker-compose.yml) is the end-user reference snippet for published companion images. [`docker-compose.local.yml`](./docker-compose.local.yml) is the contributor-local variant that builds from the current source.
 
 ### Roku

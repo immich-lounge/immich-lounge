@@ -34,6 +34,17 @@ public class JsonSettingsRepositoryTests
     }
 
     [TestMethod]
+    public async Task LoadAsync_WhenFileDoesNotExist_DoesNotCreateSettingsFile()
+    {
+        using var dir = new TempDataDirectory();
+        var repo = new JsonSettingsRepository(dir.Path);
+
+        _ = await repo.LoadAsync();
+
+        Assert.IsFalse(File.Exists(Path.Combine(dir.Path, "settings.json")));
+    }
+
+    [TestMethod]
     public async Task SaveAndLoad_RoundTrips()
     {
         using var dir = new TempDataDirectory();

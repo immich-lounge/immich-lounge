@@ -26,17 +26,40 @@
 
 @if (_showNewDialog)
 {
-    <div class="dialog">
-        <h3>New Profile</h3>
-        <label>ID (slug)</label>
-        <input @bind="_newId" placeholder="living-room" />
-        <label>Name</label>
-        <input @bind="_newName" placeholder="Living Room" />
-        <div class="btn-row">
-            <button @onclick="CreateAsync" class="btn btn-primary">Create</button>
-            <button @onclick="() => _showNewDialog = false" class="btn btn-secondary">Cancel</button>
+    <div class="modal-shell" @onclick="CloseNewDialog">
+        <div class="dialog dialog-profile" @onclick:stopPropagation="true">
+            <div class="dialog-header">
+                <div>
+                    <p class="dialog-eyebrow">Create profile</p>
+                    <h3>New Profile</h3>
+                    <p class="dialog-copy">Start with a name and slug. You can fine-tune the slideshow, overlays, and content sources on the next screen.</p>
+                </div>
+                <button type="button" class="dialog-close" @onclick="CloseNewDialog" aria-label="Close new profile dialog">×</button>
+            </div>
+
+            <div class="dialog-fields">
+                <div class="form-group">
+                    <label>ID (slug)</label>
+                    <input @bind="_newId" class="form-control dialog-input-mono" placeholder="living-room" />
+                    <p class="field-hint">Used in the profile URL and local storage.</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Name</label>
+                    <input @bind="_newName" class="form-control" placeholder="Living Room" />
+                </div>
+            </div>
+
+            <div class="btn-row dialog-actions">
+                <button @onclick="CreateAsync" class="btn btn-primary">Create Profile</button>
+                <button @onclick="CloseNewDialog" class="btn btn-secondary">Cancel</button>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(_createError))
+            {
+                <p class="error dialog-error">@_createError</p>
+            }
         </div>
-        @if (_createError != null) { <p class="error">@_createError</p> }
     </div>
 }
 
@@ -54,6 +77,8 @@
     }
 
     private void NewProfile() { _showNewDialog = true; _createError = ""; }
+
+    private void CloseNewDialog() => _showNewDialog = false;
 
     private async Task CreateAsync()
     {

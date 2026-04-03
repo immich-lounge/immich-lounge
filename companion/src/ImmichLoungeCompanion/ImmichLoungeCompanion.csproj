@@ -4,5 +4,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <RootNamespace>ImmichLoungeCompanion</RootNamespace>
+    <RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
+	<BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+	<UseAppHost>false</UseAppHost>
   </PropertyGroup>
 </Project>

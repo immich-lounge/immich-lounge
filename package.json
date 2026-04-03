@@ -1,0 +1,10 @@
+{
+  "name": "immich-lounge",
+  "private": true,
+  "description": "Task runner for Immich Lounge local workflows",
+  "scripts": {
+    "docker:build": "docker compose -f docker-compose.local.yml build --no-cache immich-lounge-companion",
+    "docker:up": "docker compose -f docker-compose.local.yml build --no-cache immich-lounge-companion && docker compose -f docker-compose.local.yml up -d --force-recreate",
+    "docker:down": "docker compose -f docker-compose.local.yml down"
+  }
+}

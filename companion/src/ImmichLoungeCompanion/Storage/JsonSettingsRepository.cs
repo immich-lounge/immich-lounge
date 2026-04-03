@@ -10,6 +10,7 @@ public class JsonSettingsRepository(string dataDirectory) : ISettingsRepository
 {
     private readonly string _filePath = Path.Combine(dataDirectory, "settings.json");
     private readonly SemaphoreSlim _lock = new(1, 1);
+    private GlobalSettings? _cachedDefaults;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -23,12 +24,13 @@ public class JsonSettingsRepository(string dataDirectory) : ISettingsRepository
         {
             if (!File.Exists(_filePath))
             {
-                var defaults = new GlobalSettings();
-                await WriteAsync(defaults);
-                return defaults;
+                return _cachedDefaults ??= new GlobalSettings();
             }
+
             var json = await File.ReadAllTextAsync(_filePath);
-            return JsonSerializer.Deserialize<GlobalSettings>(json, JsonOptions) ?? new GlobalSettings();
+            var settings = JsonSerializer.Deserialize<GlobalSettings>(json, JsonOptions) ?? new GlobalSettings();
+            _cachedDefaults = settings;
+            return settings;
         }
         finally { _lock.Release(); }
     }
@@ -45,5 +47,6 @@ public class JsonSettingsRepository(string dataDirectory) : ISettingsRepository
         Directory.CreateDirectory(Path.GetDirectoryName(_filePath)!);
         var json = JsonSerializer.Serialize(settings, JsonOptions);
         await File.WriteAllTextAsync(_filePath, json);
+        _cachedDefaults = settings;
     }
 }
