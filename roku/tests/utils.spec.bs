@@ -47,6 +47,13 @@ namespace tests
       m.assertEqual(BuildMediaUrl(entry, profile), "http://192.168.1.10:2283/api/assets/abc123/original")
     end function
 
+    @it("Photo URL trims trailing slash from server URL")
+    function test_mediaUrlPhotoTrailingSlash()
+      entry = { id: "abc123", type: "photo" }
+      profile = { immich: { serverUrl: "http://192.168.1.10:2283/" }, imageQuality: "preview" }
+      m.assertEqual(BuildMediaUrl(entry, profile), "http://192.168.1.10:2283/api/assets/abc123/thumbnail?size=preview")
+    end function
+
     @it("Video uses video/playback endpoint")
     function test_mediaUrlVideo()
       entry = { id: "vid001", type: "video" }
