@@ -13,7 +13,7 @@ end sub
 
 sub FetchMeta()
     assetId = m.top.assetId
-    base    = m.top.immichBaseUrl
+    base    = NormalizeImmichBaseUrl(m.top.immichBaseUrl)
     key     = m.top.apiKey
     url     = base + "/api/assets/" + assetId
     headers = BuildImmichHeaders(key)
@@ -45,6 +45,17 @@ sub AttachFormattedDate(meta as Object)
         meta.formattedDate = fallbackDate
     end if
 end sub
+
+function NormalizeImmichBaseUrl(serverUrl as Dynamic) as String
+    if serverUrl = invalid then return ""
+
+    base = serverUrl.ToStr().Trim()
+    while Len(base) > 0 and Right(base, 1) = "/"
+        base = Left(base, Len(base) - 1)
+    end while
+
+    return base
+end function
 
 function ExtractAssetDateValue(meta as Object) as String
     if meta.exifInfo <> invalid and meta.exifInfo.dateTimeOriginal <> invalid then
