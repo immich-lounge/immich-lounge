@@ -1,0 +1,122 @@
+namespace tests
+  @suite("Empty Playlist Recovery")
+  class PlaylistRecoveryTests extends rooibos.BaseTestSuite
+
+    @describe("Refresh and resume")
+
+    @it("Photos added to an empty playlist load immediately in both modes")
+    function test_emptyToPhotos()
+      for each mode in [false, true]
+        ctx = m.makeContext(mode)
+        OnRefreshPlaylistResultForScene(ctx, mode)
+        m.assertEqual(ctx.slideLoads, 1)
+        m.assertEqual(ctx.playlist[0].id, "new-photo")
+        m.assertEqual(ctx.playlistIndex, 0)
+        m.assertFalse(ctx.top.emptyGroup.visible)
+        m.assertFalse(ctx.resumeNeedsSlideLoad)
+      end for
+    end function
+
+    @it("Paused empty playlists wait until resume to load the first new photo")
+    function test_pausedRecovery()
+      for each mode in [false, true]
+        ctx = m.makeContext(mode)
+        ctx.paused = true
+        OnRefreshPlaylistResultForScene(ctx, mode)
+        m.assertEqual(ctx.slideLoads, 0)
+        m.assertTrue(ctx.paused)
+        m.assertTrue(ctx.resumeNeedsSlideLoad)
+        m.assertTrue(ctx.top.emptyGroup.visible)
+        ResumeSlideshowForScene(ctx)
+        m.assertEqual(ctx.slideLoads, 1)
+        m.assertFalse(ctx.top.emptyGroup.visible)
+        m.assertFalse(ctx.resumeNeedsSlideLoad)
+      end for
+    end function
+
+    @it("Empty refreshes keep waiting and failed refreshes do not start playback")
+    function test_emptyAndFailedRefresh()
+      for each ok in [true, false]
+        ctx = m.makeContext(false)
+        ctx.refreshPlaylistTask.playlistResult = { ok: ok, assets: [], offset: 0, nextOffset: 0, totalCount: 0, playlistVersion: "empty" }
+        OnRefreshPlaylistResultForScene(ctx, false)
+        m.assertEqual(ctx.slideLoads, 0)
+        m.assertTrue(ctx.top.emptyGroup.visible)
+        m.assertFalse(ctx.resumeNeedsSlideLoad)
+      end for
+    end function
+
+    @it("Refreshing a nonempty playlist preserves the current slide")
+    function test_warmRefresh()
+      ctx = m.makeContext(false)
+      ctx.playlist = [{ id: "current" }]
+      ctx.top.emptyGroup.visible = false
+      OnRefreshPlaylistResultForScene(ctx, false)
+      m.assertEqual(ctx.slideLoads, 0)
+      m.assertFalse(ctx.resumeNeedsSlideLoad)
+    end function
+
+    @it("A playlist that becomes empty can recover again on a later refresh")
+    function test_warmToEmptyToPhotos()
+      ctx = m.makeContext(false)
+      ctx.playlist = [{ id: "current" }]
+      ctx.refreshPlaylistTask.playlistResult.assets = []
+      OnRefreshPlaylistResultForScene(ctx, false)
+      m.assertEqual(ctx.slideLoads, 0)
+      ctx.refreshPlaylistTask = m.makeTask()
+      OnRefreshPlaylistResultForScene(ctx, false)
+      m.assertEqual(ctx.slideLoads, 1)
+      m.assertEqual(ctx.currentPairAssetId, "")
+    end function
+
+    @it("Recovery does not require an empty-playlist overlay node")
+    function test_missingOverlay()
+      ctx = m.makeContext(true)
+      ctx.top.emptyGroup = invalid
+      OnRefreshPlaylistResultForScene(ctx, true)
+      m.assertEqual(ctx.slideLoads, 1)
+    end function
+
+    @beforeEach
+    private function setupPlaybackMocks()
+      m.stubCall(ShowCurrentSlideForScene(invalid), sub(context as object)
+        context.slideLoads++
+      end sub)
+      m.stubCall(PersistActivePlaylistCacheForScene(invalid, false), sub(context as object, mode as boolean)
+      end sub)
+    end function
+
+    private function makeTask() as object
+      return {
+        playlistResult: { ok: true, assets: [{ id: "new-photo", type: "photo" }], offset: 0, nextOffset: 0, totalCount: 1, playlistVersion: "new" }
+        unobserveField: sub(field as string)
+        end sub
+      }
+    end function
+
+    private function makeContext(mode as boolean) as object
+      return {
+        top: {
+          isScreensaver: mode
+          profileId: "profile"
+          emptyGroup: { visible: true }
+          findNode: function(id as string) as dynamic
+            return m.emptyGroup
+          end function
+        }
+        refreshPlaylistTask: m.makeTask()
+        pendingRefreshProfile: invalid
+        playlist: []
+        playlistIndex: 0
+        playlistOffset: 0
+        playlistVersion: ""
+        currentPairAssetId: "old-pair"
+        portraitPairs: {}
+        paused: false
+        resumeNeedsSlideLoad: false
+        slideLoads: 0
+      }
+    end function
+  end class
+end namespace
+
