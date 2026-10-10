@@ -971,3 +971,8 @@ button:not([class]):hover, button.btn:not(.btn-primary):not(.btn-secondary):not(
         justify-content: center;
     }
 }
+.field-hint a { color: var(--accent); }
+.alert a { color: var(--text-primary); text-decoration: underline; }
+.dropdown:empty { display: none; }
+button.dropdown-item { display: block; width: 100%; text-align: left; border: 0; background: transparent; font-family: inherit; }
+button.dropdown-item:hover, button.dropdown-item:focus-visible { background: var(--bg-hover); color: var(--text-primary); }

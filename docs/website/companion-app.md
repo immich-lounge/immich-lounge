@@ -50,6 +50,8 @@ Deleting a profile requires confirmation. It removes the companion profile, not 
 
 Each profile controls both what the Roku shows and how playback should feel.
 
+You can edit display settings before connecting Immich. Follow **Configure connection** to enable source selection and match previews. If sources cannot load, check the connection and use the picker’s retry button; the rest of the editor remains usable.
+
 | Area | What you manage there |
 |---|---|
 | Content | Albums, people, tags, memories, and optional date filters |

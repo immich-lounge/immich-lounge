@@ -18,6 +18,10 @@ else
     <div class="editor-header">
         <h2>Edit: @_profile.Name</h2>
         <p class="page-intro">Tune what this profile shows, how the slideshow behaves, and which overlays appear on screen.</p>
+        @if (!_connectionConfigured)
+        {
+            <p class="alert alert-error" role="status">Connect Immich to choose albums, people, and tags or preview matching photos. You can still edit display settings. <a href="/connection">Configure connection</a>.</p>
+        }
         @if (IsDirty)
         {
             <div class="editor-dirty-banner">
@@ -47,9 +51,12 @@ else
                     </select>
                 </label>
                 <p class="section-intro">Any includes photos from any selected album, person, or tag. All requires every selection to match. With no sources or memories selected, use the whole library.</p>
-                <SourcePicker SourceType="album" @bind-Selected="_profile.ContentSources" />
-                <SourcePicker SourceType="person" @bind-Selected="_profile.ContentSources" />
-                <SourcePicker SourceType="tag"    @bind-Selected="_profile.ContentSources" />
+                @if (_connectionConfigured)
+                {
+                    <SourcePicker SourceType="album" @bind-Selected="_profile.ContentSources" />
+                    <SourcePicker SourceType="person" @bind-Selected="_profile.ContentSources" />
+                    <SourcePicker SourceType="tag"    @bind-Selected="_profile.ContentSources" />
+                }
             }
             else
             {
@@ -82,11 +89,14 @@ else
             </label>
             <p class="section-intro">Controls which day's memories are added. The companion refreshes them when the day changes; playback updates on the Roku's next playlist refresh.</p>
             <p class="section-intro">Memories are added to the source results. Excluded people are removed from both.</p>
-            <label>Exclude people (NOT):</label>
-            <SourcePicker SourceType="person" @bind-Selected="_profile.ExcludedPeople" />
+            @if (_connectionConfigured)
+            {
+                <label>Exclude people (NOT):</label>
+                <SourcePicker SourceType="person" @bind-Selected="_profile.ExcludedPeople" />
+            }
             <p class="section-intro">Remove photos containing any of these people, even if they match another source.</p>
             <div class="btn-row">
-                <button type="button" class="btn btn-secondary" @onclick="PreviewMatchCountAsync" disabled="@_matchCountLoading">
+                <button type="button" class="btn btn-secondary" @onclick="PreviewMatchCountAsync" disabled="@(_matchCountLoading || !_connectionConfigured)">
                     @if (_matchCountLoading) { <span>Counting…</span> } else { <span>Preview Match Count</span> }
                 </button>
                 @if (_matchCount != null)
@@ -308,6 +318,7 @@ else
     private bool _birthdayMemoriesAvailable;
     private List<MemoryTimeZone> _memoryTimeZones = [];
     private bool _canEditContentSources;
+    private bool _connectionConfigured;
     private AssetFilterGroupOperator _sourceMatchOperator = AssetFilterGroupOperator.Or;
     private AssetFilterGroupOperator _initialSourceMatchOperator;
     private string? _initialContentSourcesSnapshot;
@@ -349,6 +360,8 @@ else
         _initialSnapshot = null;
         _matchCount = null;
         _matchCountLoading = false;
+        var settings = await Http.GetFromJsonAsync<GlobalSettings>("/api/settings");
+        _connectionConfigured = !string.IsNullOrWhiteSpace(settings?.Immich.ServerUrl) && !string.IsNullOrWhiteSpace(settings?.Immich.ApiKey);
 
         var response = await Http.GetFromJsonAsync<ImmichLoungeCompanion.Models.Profile>($"/api/profiles/{Id}");
         _profile = response;
@@ -542,6 +555,10 @@ else
                 var err = await response.Content.ReadFromJsonAsync<ErrorResponse>();
                 _saveError = err?.Error ?? $"Failed to preview match count (HTTP {(int)response.StatusCode}).";
             }
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or TaskCanceledException)
+        {
+            _saveError = "Could not preview matching photos. Check the Immich connection and try again.";
         }
         finally
         {
