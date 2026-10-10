@@ -6,6 +6,10 @@
 sub ApplyProfile()
 end sub
 
+' Startup tests use no loading scene; production UI is exercised on the device.
+sub ShowPlaybackStartupStatusInScene(scene as Object, message as String)
+end sub
+
 function BuildPlaylistUrl(baseUrl as String, profileId as String, count as Integer, offset = 0 as Integer) as String
     return baseUrl + "/api/profiles/" + profileId + "/playlist?count=" + Str(count).Trim() + "&offset=" + Str(offset).Trim()
 end function

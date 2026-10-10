@@ -11,6 +11,8 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 ## Unreleased
 
+- Start cached channel and screensaver photos in about five seconds plus image-loading time when the companion is unavailable.
+
 - Added reusable schedules that switch between profiles at set times and days, with a fallback profile. Choose a fixed profile or a schedule on each Roku.
 
 

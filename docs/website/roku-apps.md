@@ -87,6 +87,8 @@ If an empty playlist gains photos, playback starts when the next playlist refres
 
 Offline fallback uses only cached data from the selected companion and profile. Changing a profile clears that mode's cache and resume position; changing the shared companion clears both modes. If the screensaver inherits the channel profile, changing that profile also clears the screensaver cache. The new selection must load successfully before it is available offline.
 
+When matching cached settings and photos are available, both apps wait up to two seconds for settings and three seconds for a playlist before using the cache. Photos normally appear in about five seconds plus image-loading time when the companion is unavailable. Without a usable cache, startup keeps the longer connection and playlist-building wait. Playback checks the companion again through its normal refresh cycle.
+
 After updating from a version that did not record the cache's companion and profile, open each Roku app while the companion is reachable to refresh its offline cache.
 
 ## Typical Setup Patterns
