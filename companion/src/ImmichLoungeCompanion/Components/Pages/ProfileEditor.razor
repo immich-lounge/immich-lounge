@@ -258,6 +258,7 @@ else
     private ImmichLoungeCompanion.Models.Profile? _profile;
     private bool _memoriesEnabled;
     private bool _canEditContentSources;
+    private string? _initialContentSourcesSnapshot;
     private bool _weatherEnabled;
     private string _locationQuery = "";
     private List<GeocodeResult> _locationResults = [];
@@ -307,9 +308,10 @@ else
                 Type = rule.Type!.Value.ToString().ToLowerInvariant(),
                 Id = rule.Id!,
                 Label = rule.Label ?? rule.Id!
-            }).Concat(_profile.ContentSources.Where(source => source.Type == "memories")).ToList();
+            }).Concat(_profile.ContentSources.Where(source => source.Type.Equals("memories", StringComparison.OrdinalIgnoreCase))).ToList();
         }
-        _memoriesEnabled = _profile?.ContentSources.Any(s => s.Type == "memories") ?? false;
+        _initialContentSourcesSnapshot = _profile == null ? null : BuildContentSourcesSnapshot(_profile);
+        _memoriesEnabled = _profile?.HasMemoriesSource() ?? false;
         _weatherEnabled = _profile?.Weather?.Enabled ?? false;
         _initialSnapshot = BuildSnapshot();
         _loadedProfileId = Id;
@@ -499,15 +501,19 @@ else
 
         if (clone.Weather != null) clone.Weather.Enabled = _weatherEnabled;
 
-        clone.ContentSources.RemoveAll(s => s.Type == "memories");
+        clone.ContentSources.RemoveAll(s => s.Type.Equals("memories", StringComparison.OrdinalIgnoreCase));
         if (_memoriesEnabled)
             clone.ContentSources.Add(new() { Type = "memories", Id = "memories", Label = "Memories" });
 
-        if (_canEditContentSources)
+        if (_canEditContentSources && BuildContentSourcesSnapshot(clone) != _initialContentSourcesSnapshot)
             clone.AssetFilter = ProfileAssetFilterExtensions.BuildAssetFilterFromContentSources(clone.ContentSources);
 
         return clone;
     }
+
+    private static string BuildContentSourcesSnapshot(Profile profile) =>
+        JsonSerializer.Serialize(profile.ContentSources.Where(source =>
+            !source.Type.Equals("memories", StringComparison.OrdinalIgnoreCase)));
 
     private static bool TryParseInt(object? value, out int parsed)
         => int.TryParse(

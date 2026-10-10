@@ -66,6 +66,27 @@ public sealed class ProfileEditorTests : IDisposable
     }
 
     [TestMethod]
+    public async Task UnchangedFlatRules_PreserveMissingLabelsAndMemories()
+    {
+        using var client = _factory.CreateClient();
+        var original = new Profile
+        {
+            Id = "unchanged-flat", Name = "Unchanged flat rules",
+            ContentSources = [new() { Type = "Memories", Id = "memories" }],
+            AssetFilter = new()
+            {
+                Kind = AssetFilterRuleKind.Group, Operator = AssetFilterGroupOperator.Or,
+                Children = [new() { Kind = AssetFilterRuleKind.Condition, Type = AssetFilterConditionType.Album, Id = "album-1" }]
+            }
+        };
+        var (editor, profile) = await LoadEditorAsync(client, original);
+        profile.Slideshow.IntervalSeconds = 25;
+        var payload = BuildPayload(editor);
+        Assert.AreEqual(JsonSerializer.Serialize(original.AssetFilter), JsonSerializer.Serialize(payload.AssetFilter));
+        Assert.AreEqual(1, payload.ContentSources.Count(source => source.Type.Equals("memories", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    [TestMethod]
     public async Task AddingFirstSource_KeepsMemoriesAndBuildsFilter()
     {
         using var client = _factory.CreateClient();
