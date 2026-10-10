@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('Start', 'Stop', 'Status')]
-    [string] $Action = 'Start',
+    [ValidateSet('Start', 'Test', 'Stop', 'Status')]
+    [string] $Action = 'Test',
     [ValidateSet('Both', 'Development', 'Legacy')]
     [string] $Target = 'Both'
 )
@@ -35,7 +35,7 @@ if (!(Test-Path -LiteralPath $output) -and (Test-Path -LiteralPath $legacyOutput
 New-Item -ItemType Directory -Force -Path $output | Out-Null
 # Also ignore state while this setup branch has not yet merged into the primary checkout.
 [IO.File]::WriteAllText((Join-Path $output '.gitignore'), "*`n")
-if ($Action -eq 'Start') {
+if ($Action -in 'Start', 'Test') {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'compose.yml') -Destination $compose -Force
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'immich.json') -Destination (Join-Path $output 'immich.json') -Force
     dotnet build $project --configuration Release --nologo
@@ -67,7 +67,7 @@ Legacy: immich-lounge-compat-v31-immich, immich-lounge-compat-v31-postgres, immi
 
 This folder is in the primary checkout and is gitignored. Docker volumes hold the photos and database; JSON/.env files hold the credentials needed to reuse them. Keep both. Existing volumes retain their original immich-lounge-search-v31/v32 names; renaming containers does not migrate or delete data.
 
-Do not publish this directory or commit credentials. Start regenerates this guide; keep personal notes in a separate local file.
+Do not publish this directory or commit credentials. Start/Test regenerates this guide; keep personal notes in a separate local file.
 "@
 [IO.File]::WriteAllText((Join-Path $output 'ACCOUNTS.local.md'), $accountGuide)
 foreach ($stack in $stacks) {
@@ -79,7 +79,7 @@ foreach ($stack in $stacks) {
         [IO.File]::WriteAllText($envFile, "IMMICH_VERSION=$($stack.Version)`nIMMICH_PORT=$($stack.Port)`nIMMICH_RESTART=$($stack.Restart)`nDB_PASSWORD=$password`nIMMICH_CONFIG_PATH=$configPath`nIMMICH_STACK_NAME=$($stack.ContainerPrefix)`nIMMICH_VOLUME_PREFIX=$($stack.Project)`n")
     }
     # Repoint the bind mount after a state-directory migration; preserve all credentials.
-    if ($Action -eq 'Start') {
+    if ($Action -in 'Start', 'Test') {
         $configPath = (Join-Path $output 'immich.json').Replace('\', '/')
         $environment = [IO.File]::ReadAllText($envFile)
         $environment = [regex]::Replace($environment, '(?m)^IMMICH_CONFIG_PATH=.*$', "IMMICH_CONFIG_PATH=$configPath")
@@ -123,5 +123,9 @@ foreach ($stack in $stacks) {
     Get-Content -LiteralPath $sqlPath -Raw -Encoding utf8 |
         & docker @composeArgs exec -T database psql -U postgres -d immich -v ON_ERROR_STOP=1
     if ($LASTEXITCODE -ne 0) { throw "Fixture metadata setup failed for $($stack.Name)." }
+    if ($Action -eq 'Test') {
+        dotnet run --project $project --configuration Release --no-build -- test $stack.Name $output
+        if ($LASTEXITCODE -ne 0) { throw "Live checks failed for $($stack.Name)." }
+    }
     Write-Host "$($stack.Name) available at $url; account details: $output/$($stack.Name)-account.json"
 }

@@ -9,8 +9,20 @@ public class ProfileDocumentService(ISettingsRepository settings) : IProfileDocu
     public Profile Normalize(Profile profile)
     {
         profile.NormalizeAssetFilter();
+        if (profile.LocationFilter is { } location)
+        {
+            location.Country = CleanLocation(location.Country);
+            location.State = CleanLocation(location.State);
+            location.City = CleanLocation(location.City);
+            if (location.Country == null && location.State == null && location.City == null)
+            {
+                profile.LocationFilter = null;
+            }
+        }
         return profile;
     }
+
+    private static string? CleanLocation(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     public async Task<object> BuildResponseAsync(Profile profile)
     {
@@ -27,6 +39,7 @@ public class ProfileDocumentService(ISettingsRepository settings) : IProfileDocu
             profile.AssetFilter,
             profile.MediaTypes,
             profile.DateFilter,
+            profile.LocationFilter,
             profile.Slideshow,
             profile.Display,
             profile.Quality,

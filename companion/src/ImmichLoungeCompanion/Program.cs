@@ -57,7 +57,7 @@ builder.Services.AddHttpClient("local", (sp, client) =>
     }
 });
 
-// ImmichClient is stateless (uses IHttpClientFactory per call) — Singleton is correct.
+// ImmichClient uses IHttpClientFactory per call and a synchronized server-capability cache.
 // Do NOT use AddScoped; PlaylistCacheWorker (Singleton) depends on IImmichClient,
 // and a Singleton cannot capture a Scoped service without causing a captive dependency error.
 builder.Services.AddSingleton<ImmichLoungeCompanion.Immich.IImmichClient,

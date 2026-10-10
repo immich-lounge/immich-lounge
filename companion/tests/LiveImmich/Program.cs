@@ -5,10 +5,15 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using ImmichLoungeCompanion.Immich;
+using ImmichLoungeCompanion.Immich.Dtos;
+using ImmichLoungeCompanion.Models;
+using ImmichLoungeCompanion.Playlist;
+using Microsoft.Extensions.Logging.Abstractions;
 
-if (args.Length != 3 || args[0] != "seed" || args[1] is not ("v31" or "v32"))
+if (args.Length != 3 || args[0] is not ("seed" or "test") || args[1] is not ("v31" or "v32"))
 {
-    throw new ArgumentException("Usage: LiveImmich seed <v31|v32> <output-directory>");
+    throw new ArgumentException("Usage: LiveImmich <seed|test> <v31|v32> <output-directory>");
 }
 var stack = args[1];
 var baseUrl = stack == "v31" ? "http://127.0.0.1:12283" : "http://127.0.0.1:13283";
@@ -127,6 +132,85 @@ if (args[0] == "seed")
     return;
 }
 
+Require(state.Assets.Count == 4 && state.ApiKey.Length > 0, "Run seed and fixture SQL first.");
+var checks = new List<string>();
+await RunChecks(forceLegacy: false);
+if (stack == "v32")
+{
+    await RunChecks(forceLegacy: true); // real 3.2 legacy API with only version detection unavailable
+}
+var report = new { server = baseUrl, version = $"3.{expectedMinor}.0", passed = checks.Count, checks, testedAtUtc = DateTime.UtcNow };
+await File.WriteAllTextAsync(Path.Combine(output, $"{stack}-results.json"), JsonSerializer.Serialize(report, jsonOptions));
+Console.WriteLine($"{stack}: PASS — {checks.Count} live checks.");
+
+async Task RunChecks(bool forceLegacy)
+{
+    var mode = forceLegacy ? "fallback" : "auto";
+    using var handler = new RecordingHandler(forceLegacy);
+    using var liveHttp = new HttpClient(handler);
+    var client = new ImmichClient(new Factory(liveHttp), NullLogger<ImmichClient>.Instance);
+    var settings = new ImmichSettings { ServerUrl = baseUrl, ApiKey = state.ApiKey };
+    var capabilities = await client.GetSearchApiCapabilitiesAsync(settings);
+    Check("selected API", capabilities.StructuredSearch == (expectedMinor >= 2 && !forceLegacy));
+    var connected = await client.TestConnectionAsync(settings);
+    Check("connection with minimum read permissions", connected.Ok && connected.ImageCount == 4);
+    var request = new SearchAssetsRequest { Size = 1 };
+    await Expect("all assets / full pagination", request, 0, 1, 2, 3);
+    Check("pagination really sent four pages", handler.Searches.Count == 4);
+    Check("wire format", handler.Searches.All(x =>
+        x.TryGetProperty("filter", out _) == capabilities.StructuredSearch &&
+        x.TryGetProperty("page", out _) != capabilities.StructuredSearch));
+
+    await Expect("country", new() { Country = "Switzerland", Size = 1 }, 0, 1);
+    await Expect("country/state/city", new() { Country = "Switzerland", State = "Zürich", City = "Zürich" }, 0);
+    await Expect("city alone", new() { City = "Vancouver" }, 2);
+    await Expect("no matching location", new() { Country = "Canada", City = "Zürich" });
+    await Expect("inclusive date boundaries", new() { TakenAfter = "2020-01-01", TakenBefore = "2021-01-01", Size = 1 }, 0, 1, 2);
+    await Expect("location and dates", new() { Country = "Switzerland", TakenAfter = "2020-06-15T12:00:00.000Z" }, 1);
+    await Expect("album A", new() { AlbumIds = [state.AlbumA], Size = 1 }, 0, 1);
+    await Expect("album intersection preserves ALL", new() { AlbumIds = [state.AlbumA, state.AlbumB] }, 1);
+    await Expect("album plus country", new() { AlbumIds = [state.AlbumB], Country = "Canada" }, 2);
+    var countries = await client.GetLocationSuggestionsAsync(settings, "country");
+    Check("country suggestions", countries.Order().SequenceEqual(new[] { "Canada", "Switzerland" }.Order()));
+    var cities = await client.GetLocationSuggestionsAsync(settings, "city", "Switzerland", "Zürich");
+    Check("scoped city suggestions", cities.SequenceEqual(new[] { "Zürich" }));
+    Check("albums available with minimum permissions", (await client.GetAlbumsAsync(settings)).Count == 2);
+    await client.GetPeopleAsync(settings);
+    await client.GetTagsAsync(settings);
+    await client.GetMemoriesAsync(settings, DateOnly.FromDateTime(DateTime.UtcNow));
+    Check("people/tags/memories permission smoke", true);
+    var collector = new PlaylistAssetCollector(client);
+    var results = await collector.CollectAsync(new Profile
+    {
+        ContentSources = [new() { Type = "album", Id = state.AlbumA }],
+        LocationFilter = new() { Country = "Switzerland", State = "Bern" }
+    }, settings);
+    Check("actual playlist collector", results.Keys.Order().SequenceEqual(new[] { state.Assets[1].Id }.Order()));
+
+    var failed = false;
+    try
+    {
+        await client.SearchAssetsAllPagesAsync(new() { ServerUrl = baseUrl, ApiKey = "invalid-test-key" }, new() { Country = "Canada" });
+    }
+    catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.Unauthorized)
+    {
+        failed = true;
+    }
+    Check("invalid key is an error", failed);
+
+    async Task Expect(string name, SearchAssetsRequest search, params int[] expected)
+    {
+        var actual = await client.SearchAssetsAllPagesAsync(settings, search);
+        Check(name, actual.Select(x => x.Id).Order().SequenceEqual(expected.Select(i => state.Assets[i].Id).Order()));
+    }
+    void Check(string name, bool condition)
+    {
+        Require(condition, $"{stack}/{mode}: {name} failed.");
+        checks.Add($"{mode}: {name}");
+        Console.WriteLine($"PASS {stack}/{mode}: {name}");
+    }
+}
+
 async Task<JsonElement> SendJson(HttpMethod method, string path, object body)
 {
     using var request = new HttpRequestMessage(method, path) { Content = JsonContent.Create(body) };
@@ -202,3 +286,23 @@ sealed class TestState
     public List<Fixture> Assets { get; set; } = [];
 }
 sealed record Fixture(string Id, string Date, string? Country, string? State, string? City);
+sealed class Factory(HttpClient client) : IHttpClientFactory
+{
+    public HttpClient CreateClient(string name) => client;
+}
+sealed class RecordingHandler(bool forceLegacy) : DelegatingHandler(new HttpClientHandler())
+{
+    public List<JsonElement> Searches { get; } = [];
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        if (forceLegacy && request.RequestUri!.AbsolutePath == "/api/server/version")
+        {
+            return new(HttpStatusCode.NotFound);
+        }
+        if (request.RequestUri!.AbsolutePath == "/api/search/metadata")
+        {
+            Searches.Add(JsonDocument.Parse(await request.Content!.ReadAsStringAsync(cancellationToken)).RootElement.Clone());
+        }
+        return await base.SendAsync(request, cancellationToken);
+    }
+}

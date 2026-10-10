@@ -61,6 +61,13 @@ else
         </section>
 
         <section class="settings-card editor-card">
+            <h3>Location</h3>
+            <p class="section-intro">Limit this profile to a country, state / province, or city. Filled fields must all match, including for memories. Leave fields blank for any location.</p>
+            <LocationFilterPicker Value="_locationFilter" OnChanged="StateHasChanged" />
+            <p class="section-intro">Use place names from Immich. Photos without matching location metadata are excluded.</p>
+        </section>
+
+        <section class="settings-card editor-card">
             <h3>Media</h3>
             <p class="section-intro">This version is photo-first. Video-related formats stay disabled for now.</p>
             <label><input type="checkbox" @bind="_profile.MediaTypes.Photos" /> Photos</label>
@@ -258,6 +265,7 @@ else
 
     private HttpClient Http => HttpFactory.CreateClient("local");
     private ImmichLoungeCompanion.Models.Profile? _profile;
+    private ImmichLoungeCompanion.Models.LocationFilter _locationFilter = new();
     private bool _memoriesEnabled;
     private bool _canEditContentSources;
     private string? _initialContentSourcesSnapshot;
@@ -301,6 +309,7 @@ else
 
         var response = await Http.GetFromJsonAsync<ImmichLoungeCompanion.Models.Profile>($"/api/profiles/{Id}");
         _profile = response;
+        _locationFilter = _profile?.LocationFilter ?? new();
         _canEditContentSources = _profile?.CanEditContentSources() ?? true;
         if (_profile?.AssetFilter != null && _canEditContentSources)
         {
@@ -483,6 +492,7 @@ else
         var snapshot = new
         {
             profile = _profile,
+            locationFilter = _locationFilter,
             memoriesEnabled = _memoriesEnabled,
             weatherEnabled = _weatherEnabled
         };
@@ -497,6 +507,7 @@ else
         var clone = JsonSerializer.Deserialize<ImmichLoungeCompanion.Models.Profile>(
             JsonSerializer.Serialize(_profile)) ?? new();
 
+        clone.LocationFilter = _locationFilter;
         clone.MediaTypes.Videos = false;
         clone.MediaTypes.LivePhotos = false;
         clone.MediaTypes.VideoAudio = false;

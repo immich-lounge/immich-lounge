@@ -19,6 +19,32 @@ public class ProfilesApiTests : IDisposable
     public ProfilesApiTests() => _client = _factory.CreateClient();
     public void Dispose() => _factory.Dispose();
 
+    [TestMethod]
+    public async Task LocationFilter_RoundTripsThroughCreateGetUpdateAndDisk()
+    {
+        var profile = new Profile
+        {
+            Id = "location-profile", Name = "Location",
+            LocationFilter = new() { Country = " Canada ", State = "British Columbia", City = "Vancouver" }
+        };
+        var created = await _client.PostAsJsonAsync("/api/profiles", profile);
+        Assert.AreEqual(HttpStatusCode.Created, created.StatusCode);
+        var saved = await _client.GetFromJsonAsync<Profile>("/api/profiles/location-profile");
+        Assert.IsNotNull(saved?.LocationFilter);
+        Assert.AreEqual("Canada", saved.LocationFilter.Country);
+        Assert.AreEqual("British Columbia", saved.LocationFilter.State);
+        Assert.AreEqual("Vancouver", saved.LocationFilter.City);
+        saved.LocationFilter.City = "Victoria";
+        var updated = await _client.PutAsJsonAsync("/api/profiles/location-profile", saved);
+        Assert.AreEqual(HttpStatusCode.OK, updated.StatusCode);
+        var loaded = await _client.GetFromJsonAsync<Profile>("/api/profiles/location-profile");
+        Assert.AreEqual("Victoria", loaded!.LocationFilter!.City);
+        loaded.LocationFilter = new() { Country = " " };
+        var cleared = await _client.PutAsJsonAsync("/api/profiles/location-profile", loaded);
+        Assert.AreEqual(HttpStatusCode.OK, cleared.StatusCode);
+        Assert.IsNull((await _client.GetFromJsonAsync<Profile>("/api/profiles/location-profile"))!.LocationFilter);
+    }
+
     private static object NewProfileBody(string id, object[]? contentSources = null) => new
     {
         id,

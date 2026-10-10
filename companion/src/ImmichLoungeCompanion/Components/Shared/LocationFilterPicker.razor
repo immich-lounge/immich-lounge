@@ -1,0 +1,71 @@
+@using ImmichLoungeCompanion.Models
+@inject IHttpClientFactory HttpFactory
+
+<div class="settings-field-grid">
+    <label>Country
+        <input @bind="Value.Country" @bind:after="LocationChangedAsync" list="location-countries" placeholder="Any country" />
+        <datalist id="location-countries">
+            @foreach (var name in _countries) { <option value="@name"></option> }
+        </datalist>
+    </label>
+    <label>State / province
+        <input @bind="Value.State" @bind:after="LocationChangedAsync" list="location-states" placeholder="Any state / province" />
+        <datalist id="location-states">
+            @foreach (var name in _states) { <option value="@name"></option> }
+        </datalist>
+    </label>
+    <label>City
+        <input @bind="Value.City" @bind:after="NotifyChangedAsync" list="location-cities" placeholder="Any city" />
+        <datalist id="location-cities">
+            @foreach (var name in _cities) { <option value="@name"></option> }
+        </datalist>
+    </label>
+</div>
+@if (_suggestionError != null) { <p class="alert alert-error">@_suggestionError</p> }
+
+@code {
+    [Parameter, EditorRequired] public LocationFilter Value { get; set; } = new();
+    [Parameter] public EventCallback OnChanged { get; set; }
+    private List<string> _countries = [];
+    private List<string> _states = [];
+    private List<string> _cities = [];
+    private string? _suggestionError;
+    private int _loadVersion;
+
+    protected override Task OnInitializedAsync() => LoadSuggestionsAsync();
+
+    private Task NotifyChangedAsync() => OnChanged.InvokeAsync();
+
+    private async Task LocationChangedAsync()
+    {
+        await NotifyChangedAsync();
+        await LoadSuggestionsAsync();
+    }
+
+    private async Task LoadSuggestionsAsync()
+    {
+        var version = ++_loadVersion;
+        var country = Value.Country?.Trim();
+        var state = Value.State?.Trim();
+        try
+        {
+            var http = HttpFactory.CreateClient("local");
+            var countryQuery = string.IsNullOrWhiteSpace(country) ? "" : "&country=" + Uri.EscapeDataString(country);
+            var stateQuery = string.IsNullOrWhiteSpace(state) ? "" : "&state=" + Uri.EscapeDataString(state);
+            var countries = await http.GetFromJsonAsync<List<string>>("/api/immich/locations?type=country") ?? [];
+            var states = await http.GetFromJsonAsync<List<string>>("/api/immich/locations?type=state" + countryQuery) ?? [];
+            var cities = await http.GetFromJsonAsync<List<string>>("/api/immich/locations?type=city" + countryQuery + stateQuery) ?? [];
+            if (version != _loadVersion) return;
+            _countries = countries;
+            _states = states;
+            _cities = cities;
+            _suggestionError = null;
+        }
+        catch (Exception)
+        {
+            if (version != _loadVersion) return;
+            _countries = []; _states = []; _cities = [];
+            _suggestionError = "Location suggestions are unavailable. You can still enter exact place names from Immich.";
+        }
+    }
+}
