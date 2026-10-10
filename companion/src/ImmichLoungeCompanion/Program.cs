@@ -16,7 +16,8 @@ var dataDir = builder.Configuration["DataDirectory"] ?? "/data";
 
 // Storage
 builder.Services.AddSingleton<ISettingsRepository>(_ => new JsonSettingsRepository(dataDir));
-builder.Services.AddSingleton<IProfileRepository>(_ => new JsonProfileRepository(dataDir));
+builder.Services.AddSingleton<IProfileRepository>(sp => new JsonProfileRepository(dataDir,
+    sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<JsonProfileRepository>>()));
 
 // Playlist cache + builder + background worker
 builder.Services.AddSingleton<IPlaylistCache>(

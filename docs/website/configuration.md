@@ -35,6 +35,10 @@ Detection refreshes automatically after five minutes; **Test Connection** refres
 
 A profile decides what to show and how to show it. You can create as many as you want.
 
+After changing a profile's content sources, **Preview Match Count** uses the new selection. Save the profile to apply it to the playlist when the Roku next refreshes it.
+
+Profiles with advanced content rules created through the API keep those rules when edited in the companion. Their album, people, and tag selectors are unavailable; edit the rules through the API. Memories and display settings can still be changed in the companion.
+
 ![Immich Lounge companion profiles page](./assets/screenshots/companion-profiles.png){ .doc-screenshot }
 <p class="doc-caption">Each profile can target a different room, use case, or screensaver setup.</p>
 

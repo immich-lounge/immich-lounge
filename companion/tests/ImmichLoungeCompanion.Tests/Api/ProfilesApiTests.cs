@@ -67,6 +67,29 @@ public class ProfilesApiTests : IDisposable
     }
 
     [TestMethod]
+    public async Task CorruptProfile_DoesNotBreakHealthyProfilesOrPlaylistRefresh()
+    {
+        var created = await _client.PostAsJsonAsync("/api/profiles", NewProfileBody("healthy-profile"));
+        Assert.AreEqual(HttpStatusCode.Created, created.StatusCode);
+        var brokenPath = System.IO.Path.Combine(_factory.DataDirectory, "profiles", "broken.json");
+        await File.WriteAllTextAsync(brokenPath, "{");
+
+        var response = await _client.GetAsync("/api/profiles");
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        var list = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.AreEqual("healthy-profile", list.EnumerateArray().Single().GetProperty("id").GetString());
+        Assert.AreEqual(HttpStatusCode.NotFound, (await _client.GetAsync("/api/profiles/broken")).StatusCode);
+
+        var worker = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions
+            .GetRequiredService<ImmichLoungeCompanion.Playlist.PlaylistCacheWorker>(_factory.Services);
+        await (Task)typeof(ImmichLoungeCompanion.Playlist.PlaylistCacheWorker)
+            .GetMethod("RebuildExpiredCachesAsync", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .Invoke(worker, [CancellationToken.None])!;
+        Assert.AreEqual(HttpStatusCode.OK, (await _client.GetAsync("/healthz")).StatusCode);
+        Assert.AreEqual("{", await File.ReadAllTextAsync(brokenPath));
+    }
+
+    [TestMethod]
     public async Task PostProfile_Creates_Returns201WithEnrichedProfile()
     {
         var response = await _client.PostAsJsonAsync("/api/profiles", NewProfileBody("living-room",
