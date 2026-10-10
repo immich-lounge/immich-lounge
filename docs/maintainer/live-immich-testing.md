@@ -38,13 +38,13 @@ Start Docker Desktop first if the script reports that the engine is unavailable.
 
 ## Docker names
 
-The development project is **immich-lounge-dev**, with containers:
+The development project is **immich-lounge-dev-immich**, with containers:
 
-- `immich-lounge-dev-server`
-- `immich-lounge-dev-database`
+- `immich-lounge-dev-immich`
+- `immich-lounge-dev-postgres`
 - `immich-lounge-dev-redis`
 
-The legacy project is **immich-lounge-compat-v31**, with equivalent `-server`, `-database`, and `-redis` container names.
+The legacy project is **immich-lounge-compat-v31**, with equivalent `-immich`, `-postgres`, and `-redis` container names.
 
 Library and database volumes are explicit external volumes. Existing installations retain their original `immich-lounge-search-v31/v32_library/database` names via `IMMICH_VOLUME_PREFIX`; new setups use the new project name as their prefix. Container/project renames therefore do not move, recreate, or delete stored data.
 

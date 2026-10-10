@@ -15,8 +15,8 @@ $output = Join-Path $primaryRoot '_out/live-immich'
 $compose = Join-Path $output 'compose.yml'
 $project = Join-Path $PSScriptRoot 'LiveImmich.csproj'
 $stacks = @(
-    @{ Name = 'v31'; Project = 'immich-lounge-compat-v31'; Version = 'v3.1.0'; Port = 12283; Restart = 'no' },
-    @{ Name = 'v32'; Project = 'immich-lounge-dev'; Version = 'v3.2.0'; Port = 13283; Restart = 'unless-stopped' }
+    @{ Name = 'v31'; Project = 'immich-lounge-compat-v31'; ContainerPrefix = 'immich-lounge-compat-v31'; Version = 'v3.1.0'; Port = 12283; Restart = 'no' },
+    @{ Name = 'v32'; Project = 'immich-lounge-dev-immich'; ContainerPrefix = 'immich-lounge-dev'; Version = 'v3.2.0'; Port = 13283; Restart = 'unless-stopped' }
 ) | Where-Object { $Target -eq 'Both' -or ($Target -eq 'Development' -and $_.Name -eq 'v32') -or ($Target -eq 'Legacy' -and $_.Name -eq 'v31') }
 
 docker info --format '{{.ServerVersion}}' | Out-Null
@@ -35,7 +35,7 @@ Generated local guide. Account passwords and API keys stay in the JSON files bel
 
 | Instance | URL | Docker project | Account file |
 |---|---|---|---|
-| Development (3.2) | http://127.0.0.1:13283 | immich-lounge-dev | [v32-account.json](v32-account.json) |
+| Development (3.2) | http://127.0.0.1:13283 | immich-lounge-dev-immich | [v32-account.json](v32-account.json) |
 | Legacy compatibility (3.1) | http://127.0.0.1:12283 | immich-lounge-compat-v31 | [v31-account.json](v31-account.json) |
 
 ## Which account to use
@@ -46,9 +46,9 @@ Generated local guide. Account passwords and API keys stay in the JSON files bel
 
 ## Container names
 
-Development: immich-lounge-dev-server, immich-lounge-dev-database, immich-lounge-dev-redis.
+Development: immich-lounge-dev-immich, immich-lounge-dev-postgres, immich-lounge-dev-redis.
 
-Legacy: immich-lounge-compat-v31-server, immich-lounge-compat-v31-database, immich-lounge-compat-v31-redis.
+Legacy: immich-lounge-compat-v31-immich, immich-lounge-compat-v31-postgres, immich-lounge-compat-v31-redis.
 
 ## Persistence
 
@@ -63,7 +63,7 @@ foreach ($stack in $stacks) {
         if ($Action -in 'Stop', 'Status') { Write-Host "$($stack.Name): not configured"; continue }
         $password = [Guid]::NewGuid().ToString('N')
         $configPath = (Join-Path $output 'immich.json').Replace('\', '/')
-        [IO.File]::WriteAllText($envFile, "IMMICH_VERSION=$($stack.Version)`nIMMICH_PORT=$($stack.Port)`nIMMICH_RESTART=$($stack.Restart)`nDB_PASSWORD=$password`nIMMICH_CONFIG_PATH=$configPath`nIMMICH_STACK_NAME=$($stack.Project)`nIMMICH_VOLUME_PREFIX=$($stack.Project)`n")
+        [IO.File]::WriteAllText($envFile, "IMMICH_VERSION=$($stack.Version)`nIMMICH_PORT=$($stack.Port)`nIMMICH_RESTART=$($stack.Restart)`nDB_PASSWORD=$password`nIMMICH_CONFIG_PATH=$configPath`nIMMICH_STACK_NAME=$($stack.ContainerPrefix)`nIMMICH_VOLUME_PREFIX=$($stack.Project)`n")
     }
     $composeArgs = @('compose', '-p', $stack.Project, '--env-file', $envFile, '-f', $compose)
     if ($Action -eq 'Stop') {
