@@ -52,7 +52,7 @@ sub OnProfileConfigResultForScene(ctx as Object, isScreensaver as Boolean)
         ctx.pendingScheduledProfile = invalid
         ctx.pendingScheduledPlaylist = invalid
         ctx.profile = result.profile
-        RegistryWrite(CachedProfileRegistryKey(isScreensaver), FormatJSON(ctx.profile))
+        PersistProfileCacheForMode(ctx.profile, ctx.top.companionUrl, ctx.top.profileId, isScreensaver)
         ctx.skipFullRefreshTimerRestart = true
         ApplyProfile()
         ctx.skipFullRefreshTimerRestart = false
@@ -128,7 +128,7 @@ sub OnRefreshPlaylistResultForScene(ctx as Object, isScreensaver as Boolean)
         end if
         if refreshedProfile <> invalid then
             ctx.profile = refreshedProfile
-            RegistryWrite(CachedProfileRegistryKey(isScreensaver), FormatJSON(ctx.profile))
+            PersistProfileCacheForMode(ctx.profile, ctx.top.companionUrl, ctx.top.profileId, isScreensaver)
             ApplyProfile()
         end if
         resultPlaylistVersion = NormalizePlaylistVersion(result.playlistVersion)
@@ -216,7 +216,7 @@ function ApplyScheduledProfileForScene(ctx as Object) as Boolean
     ctx.currentPairAssetId = ""
     ctx.slideAssetCount = 1
     ctx.top.useLocalDateFormatting = false
-    RegistryWrite(CachedProfileRegistryKey(ctx.top.isScreensaver), FormatJSON(ctx.profile))
+    PersistProfileCacheForMode(ctx.profile, ctx.top.companionUrl, ctx.top.profileId, ctx.top.isScreensaver)
     PersistActivePlaylistCacheForScene(ctx, ctx.top.isScreensaver)
     PersistResumeStateForScene(ctx, ctx.playlist[0], ctx.top.isScreensaver)
     ApplyProfile()

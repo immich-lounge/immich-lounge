@@ -99,8 +99,7 @@ sub ShowProfilePickerForScene(ctx as Object)
 end sub
 
 sub CommitProfileSelectionForScene(ctx as Object, profile as Object)
-    RegistryWrite("companionUrl", ctx.selectedBase)
-    RegistryWrite(ProfileIdRegistryKey(ctx.top.isScreensaver), profile.id)
+    RegistrySaveProfileSelection(ctx.selectedBase, profile.id, ctx.top.isScreensaver)
     ctx.top.profileSelected = profile
 
     if ctx.top.isScreensaver then
