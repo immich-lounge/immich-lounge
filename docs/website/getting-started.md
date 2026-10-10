@@ -39,13 +39,12 @@ http://<your-docker-host-ip>:4383
 
 On the Connection page, enter:
 
-- a friendly name
 - your immich server URL, for example `http://192.168.1.10:2283`
 - an API key from immich
 
 Do not use `localhost`, `127.0.0.1`, or other loopback-only addresses here. The Roku also needs to reach that immich URL directly.
 
-Then click **Test Connection** and save.
+Click **Save & Test Connection**. This saves the settings before checking access to Immich, even if the connection test fails.
 
 If you have not created the key yet, see [Immich API Key](./api-key.md).
 
@@ -55,6 +54,8 @@ If you have not created the key yet, see [Immich API Key](./api-key.md).
 ## 3. Create a profile
 
 A profile decides what the Roku shows and how it should look.
+
+On **Profiles**, click **Create a Profile** or **New Profile** and enter a name, such as “Living Room.” The profile ID is generated from the name; expand **Customize profile ID** if you need a different one.
 
 Pick one or more content sources, then save the profile. The companion starts building the playlist in the background.
 

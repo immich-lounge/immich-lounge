@@ -16,15 +16,14 @@ For channel controls, profile switching on the Roku, cache clearing, and screens
 
 These settings are shared by every profile:
 
-- friendly name
 - immich server URL
 - immich API key
 
 Use an immich URL that the Roku can reach on your LAN. `localhost`, `127.0.0.1`, `::1`, and wildcard bind addresses are not valid here.
 
-After saving, use **Test Connection** to make sure the companion can reach Immich. The result also shows the server version and selected search API. Immich Lounge selects Search API v2 for stable Immich 3.2+ servers and legacy search for older servers. If version detection is unavailable, it uses legacy search with the same filters.
+Use **Save & Test Connection** to save the settings and check that the companion can reach Immich. Settings stay saved even if the test fails. The result also shows the server version and selected search API. Immich Lounge selects Search API v2 for stable Immich 3.2+ servers and legacy search for older servers. If version detection is unavailable, it uses legacy search with the same filters.
 
-Detection refreshes automatically after five minutes; **Test Connection** refreshes it immediately. No settings or profile migration is needed.
+Detection refreshes automatically after five minutes; **Save & Test Connection** refreshes it immediately. No settings or profile migration is needed.
 
 ![Immich Lounge companion connection page](./assets/screenshots/companion-connection.png){ .doc-screenshot }
 <p class="doc-caption">The connection page stores the single immich connection used by all profiles.</p>
