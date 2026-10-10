@@ -121,6 +121,7 @@ sub OnRefreshPlaylistResultForScene(ctx as Object, isScreensaver as Boolean)
             if result.assets.Count() > 0 then
                 ctx.pendingScheduledProfile = refreshedProfile
                 ctx.pendingScheduledPlaylist = result
+                ctx.pendingScheduledAt = UpTime(0)
                 ApplyScheduledProfileForScene(ctx)
             end if
             return
@@ -182,6 +183,11 @@ end sub
 
 function ApplyScheduledProfileForScene(ctx as Object) as Boolean
     if ctx.pendingScheduledProfile = invalid or ctx.pendingScheduledPlaylist = invalid then return false
+    if UpTime(0) - ctx.pendingScheduledAt >= 60 then
+        ctx.pendingScheduledProfile = invalid
+        ctx.pendingScheduledPlaylist = invalid
+        return false
+    end if
     if ctx.isTransitioning or ctx.paused then return false
     if ctx.profileConfigTask <> invalid or ctx.refreshProfileTask <> invalid or ctx.refreshPlaylistTask <> invalid then return false
     result = ctx.pendingScheduledPlaylist
