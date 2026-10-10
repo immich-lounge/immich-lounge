@@ -1,4 +1,5 @@
 ---
+description: "Connect your Roku, select a profile or schedule, and configure channel and screensaver playback."
 icon: material/television-play
 ---
 
@@ -28,10 +29,10 @@ The Roku screensaver uses the same companion connection, but it behaves a little
 5. If you also want the screensaver, go to `Settings` -> `Theme` -> `Screensavers` and switch the active screensaver to **Immich Lounge Screensaver**.
 6. After it is selected, open **Configure Screensaver** to choose the companion and profile for screensaver mode.
 
-![Roku companion connection screen](./assets/screenshots/change-companion.png){ .doc-screenshot }
+![Roku companion connection screen](./assets/screenshots/change-companion.png){ .doc-screenshot .on-glb }
 <p class="doc-caption">Connect the Roku to the companion with the host address and default port <code>4383</code>.</p>
 
-![Roku profile selection screen](./assets/screenshots/change-profile.png){ .doc-screenshot }
+![Roku profile selection screen](./assets/screenshots/change-profile.png){ .doc-screenshot .on-glb }
 <p class="doc-caption">Choose the Roku profile after the companion returns the available list.</p>
 
 ## Change the Roku Screensaver
@@ -77,7 +78,7 @@ Press `*` during playback in the channel to open the settings dialog.
 | `Change Companion` | Switches the Roku to a different companion host. |
 | `Clear Cache` | Removes cached profile and playlist data for the current mode. |
 
-![Roku settings dialog](./assets/screenshots/config-dialog.png){ .doc-screenshot }
+![Roku settings dialog](./assets/screenshots/config-dialog.png){ .doc-screenshot .on-glb }
 <p class="doc-caption">The Roku settings dialog is available from the <code>*</code> button during channel playback.</p>
 
 The Roku also checks the active profile configuration about every 5 minutes and applies display, clock, and weather changes without replacing the current playlist. Use **Refresh Now** when you intentionally want to re-fetch both the profile and playlist immediately.
@@ -85,6 +86,8 @@ The Roku also checks the active profile configuration about every 5 minutes and 
 If an empty playlist gains photos, playback starts when the next playlist refresh finds them. A paused channel waits until you resume. This also works when a previously playing playlist becomes empty and later gains photos again.
 
 Offline fallback uses only cached data from the selected companion and profile. Changing a profile clears that mode's cache and resume position; changing the shared companion clears both modes. If the screensaver inherits the channel profile, changing that profile also clears the screensaver cache. The new selection must load successfully before it is available offline.
+
+When matching cached settings and photos are available, both apps wait up to two seconds for settings and three seconds for a playlist before using the cache. Photos normally appear in about five seconds plus image-loading time when the companion is unavailable. Without a usable cache, startup keeps the longer connection and playlist-building wait. Playback checks the companion again through its normal refresh cycle.
 
 After updating from a version that did not record the cache's companion and profile, open each Roku app while the companion is reachable to refresh its offline cache.
 

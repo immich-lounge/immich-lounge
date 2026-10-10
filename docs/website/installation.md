@@ -1,4 +1,5 @@
 ---
+description: "Install the companion with Docker Compose and add the Immich Lounge channel and screensaver to Roku."
 icon: material/docker
 ---
 
@@ -12,31 +13,55 @@ Use a normal Docker port mapping on `4383`. Do not expose the companion to the p
 
 ## Preferred setup
 
-- Add the service to your existing Immich `docker-compose.yml`.
-- Keep the companion in the same trusted LAN as your Roku and immich server.
-- Keep `/data` persisted with a Docker volume.
+Choose the Compose layout that fits your installation. Keep the companion on the same trusted LAN as your Roku and Immich server, and persist its data in a Docker volume.
 
-Reference file:
-[docker-compose.yml](https://github.com/immich-lounge/immich-lounge/blob/master/docker-compose.yml)
+!!! warning "Keep the companion on your LAN"
 
-Copy/paste snippet:
+    Use a normal Docker port mapping on `4383`. The companion does not provide public-internet authentication.
 
-```yaml title="docker-compose.yml"
---8<-- "https://raw.githubusercontent.com/immich-lounge/immich-lounge/master/docker-compose.yml"
-```
+=== "Existing Immich stack"
+
+    Add the service and named volume below to your existing Immich Compose file. Keep its existing services and volumes.
+
+    ```yaml title="Companion service and volume"
+    --8<-- "docker-compose.yml"
+    ```
+
+    From that stack's folder, start only the companion:
+
+    ```bash
+    docker compose up -d immich-lounge-companion
+    ```
+
+=== "Separate companion stack"
+
+    Create a folder for the companion and save this as `docker-compose.yml`:
+
+    ```yaml title="docker-compose.yml"
+    --8<-- "docker-compose.yml"
+    ```
+
+    From that folder, start the companion:
+
+    ```bash
+    docker compose up -d
+    ```
+
+The companion stores settings, profiles, schedules, and cache data under `/data`.
+
+??? info "Why localhost does not work for the Immich URL"
+
+    The companion and Roku both need to reach the Immich server. `localhost` refers to the device making the request, so it does not identify your Immich server from the Roku. Use its LAN host name or IP address.
+
+To update the companion later, run these from its Compose folder:
 
 ```bash
-docker compose up -d
+docker compose pull immich-lounge-companion
+docker compose up -d immich-lounge-companion
 ```
 
-The companion stores settings, profiles, and cache data under `/data`.
+Reference: [docker-compose.yml](https://github.com/immich-lounge/immich-lounge/blob/master/docker-compose.yml).
 
-To update later:
-
-```bash
-docker compose pull
-docker compose up -d
-```
 
 ## Roku apps
 
@@ -83,7 +108,7 @@ http://192.168.1.10:4383
 
 Then choose a profile.
 
-![Roku companion connection screen](./assets/screenshots/change-companion.png){ .doc-screenshot }
+![Roku companion connection screen](./assets/screenshots/change-companion.png){ .doc-screenshot .on-glb }
 <p class="doc-caption">Manual companion setup on Roku uses the companion host and port <code>4383</code>.</p>
 
 ## Screensaver setup

@@ -1,0 +1,72 @@
+namespace tests
+  @suite("Cached Startup Deadlines")
+  class StartupFlowTests extends rooibos.BaseTestSuite
+    private snapshot = {}
+    private requestTask = invalid
+    private keys = ["cachedChannelProfile", "cachedScreensaverProfile", "cachedChannelPlaylist", "cachedScreensaverPlaylist", "cachedChannelIdentity", "cachedScreensaverIdentity", "channelResumeState", "screensaverResumeState"]
+
+    protected override function beforeEach()
+      m.snapshot = {}
+      for each key in m.keys
+        m.snapshot[key] = RegistryRead(key)
+      end for
+      m.requestTask = {
+        observeField: sub(field as string, port as object)
+        end sub
+        unobserveField: sub(field as string)
+        end sub
+        control: ""
+      }
+      m.stubCall(CreateStartupRequestTask, m.requestTask)
+    end function
+
+    protected override function afterEach()
+      for each key in m.keys
+        if m.snapshot[key] = invalid then
+          RegistryDelete(key)
+        else
+          RegistryWrite(key, m.snapshot[key])
+        end if
+      end for
+    end function
+
+    @describe("Unavailable companion")
+
+    @it("Matching cached profiles return promptly in both modes")
+    function test_profileDeadline()
+      for each mode in [false, true]
+        ' The stub task never responds, exercising the real elapsed-time deadline.
+        url = "http://127.0.0.1:9"
+        profile = { id: "schedule:startup-qa", playbackProfileId: "photo-profile" }
+        PersistProfileCacheForMode(profile, url, profile.id, mode)
+        m.requestTask.control = ""
+        clock = CreateObject("roTimespan")
+        result = FetchStartupProfile(url, profile.id, mode, CreateObject("roMessagePort"), "StartupTest")
+        m.assertEqual(result.status, "cached")
+        m.assertEqual(result.profile.playbackProfileId, "photo-profile")
+        m.assertEqual(m.requestTask.control, "STOP")
+        m.assertTrue(clock.TotalMilliseconds() < 2750)
+      end for
+    end function
+
+    @it("Matching cached playlists retain resume metadata and return promptly in both modes")
+    function test_playlistDeadline()
+      for each mode in [false, true]
+        url = "http://127.0.0.1:9"
+        profile = { id: "schedule:startup-qa", playbackProfileId: "photo-profile" }
+        PersistProfileCacheForMode(profile, url, profile.id, mode)
+        PersistActivePlaylistCacheForMode([{ id: "cached-photo", type: "photo" }], mode, url, profile.id)
+        PersistResumeStateForMode({ id: "cached-photo" }, { companionUrl: url, profileId: profile.id, profile: profile }, 0, 50, 51, 100, "cached-version", mode)
+        m.requestTask.control = ""
+        clock = CreateObject("roTimespan")
+        result = FetchStartupPlaylist(url, profile.id, mode, CreateObject("roMessagePort"), "StartupTest", invalid, profile)
+        m.assertEqual(result.status, "cached")
+        m.assertEqual(result.playlist[0].id, "cached-photo")
+        m.assertEqual(result.launchPlaylistResult.offset, 50)
+        m.assertEqual(result.launchPlaylistResult.playlistVersion, "cached-version")
+        m.assertEqual(m.requestTask.control, "STOP")
+        m.assertTrue(clock.TotalMilliseconds() < 3750)
+      end for
+    end function
+  end class
+end namespace

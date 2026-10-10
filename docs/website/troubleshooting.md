@@ -1,4 +1,5 @@
 ---
+description: "Resolve connection failures, missing photos, playlist problems, and Roku playback issues."
 icon: material/wrench-outline
 ---
 

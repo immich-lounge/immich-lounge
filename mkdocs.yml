@@ -3,9 +3,15 @@ site_description: Roku channel and screensaver for your immich library
 site_url: https://immich-lounge.github.io/
 repo_url: https://github.com/immich-lounge/immich-lounge
 repo_name: immich-lounge/immich-lounge
+edit_uri: edit/master/docs/website/
 docs_dir: docs/website
 site_dir: _out/website
 use_directory_urls: true
+strict: true
+
+validation:
+  invalid_links: true
+  invalid_link_anchors: true
 
 theme:
   variant: modern
@@ -21,6 +27,9 @@ theme:
     - navigation.tabs.sticky
     - navigation.top
     - navigation.tracking
+    - content.action.edit
+    - content.tabs.link
+    - content.action.copy
     - content.code.copy
     - toc.follow
     - search.suggest
@@ -45,18 +54,48 @@ extra_javascript:
 
 markdown_extensions:
   - admonition
+  - pymdownx.details
+  - pymdownx.tabbed:
+      alternate_style: true
   - attr_list
   - tables
   - pymdownx.highlight
   - pymdownx.snippets:
       check_paths: true
-      url_download: true
+      base_path:
+        - .
   - pymdownx.superfences
   - toc:
       permalink: true
 
 plugins:
+  - glightbox:
+      manual: true
+      auto_caption: true
   - search
+  - social:
+      cards_layout_options:
+        background_color: "#0D1120"
+        color: "#FFFFFF"
+  - llmstxt:
+      sections:
+        Overview:
+          - index.md
+          - architecture.md
+        Setup:
+          - getting-started.md
+          - installation.md
+          - api-key.md
+        Guides:
+          - configuration.md
+          - companion-app.md
+          - roku-apps.md
+        Help:
+          - faq.md
+          - troubleshooting.md
+          - support.md
+        Releases:
+          - changelog.md
 
 nav:
   - Home: index.md

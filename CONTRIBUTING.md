@@ -108,17 +108,24 @@ Official Roku developer docs:
 
 The documentation site is built with Zensical using the existing [`mkdocs.yml`](./mkdocs.yml) compatibility path. Public website content lives under [`docs/website/`](./docs/website/). The generated site output goes to `_out/website/`. If you add or rename public docs pages, update [`mkdocs.yml`](./mkdocs.yml) too.
 
-To build or preview the docs locally, install the Python packages first:
+Give public pages a concise `description` in front matter for search previews and generated social cards. The `llmstxt` sections in `mkdocs.yml` choose which pages get Markdown exports and a **Copy as Markdown** action. Include new setup or help pages in the appropriate section. Social cards and Markdown exports are generated under `_out/website/`; do not commit them.
+
+Mark screenshots with `.on-glb` to enable click-to-enlarge; keep logos outside the lightbox. Use content tabs for genuine setup alternatives, admonitions for important notes, and collapsible details for optional explanations. The page edit action points to `master` and `docs/website/` in the source repository.
+
+Use a repository-local Python environment so the preview uses the same pinned Zensical version as CI. From the repository root on Windows:
 
 ```bash
-py -m pip install -r docs/website/requirements.txt
+py -m venv _out/docs-venv
+_out/docs-venv/Scripts/python -m pip install -r docs/website/requirements.txt
 ```
 
 Then use one of these:
 
 ```bash
-py -m zensical serve
-py -m zensical build
+_out/docs-venv/Scripts/python -m zensical serve
+_out/docs-venv/Scripts/python -m zensical build --clean --strict
 ```
+
+On Linux or macOS, create the environment with `python3` and use `_out/docs-venv/bin/python` for the remaining commands. Build and preview from the repository root so snippets resolve against the checked-out source files. Update the pinned requirement when upgrading Zensical, then run the strict build before opening a PR. Strict validation makes broken internal links and anchors fail the build.
 
 If you need temporary local build output that is not part of the normal project layout, prefer a dedicated folder under `_out/` instead of creating new top-level build directories.

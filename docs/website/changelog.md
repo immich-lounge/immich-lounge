@@ -1,4 +1,5 @@
 ---
+description: "Read user-facing release notes and changes to Immich Lounge."
 icon: material/history
 ---
 
@@ -6,13 +7,15 @@ icon: material/history
 
 User-facing release notes for Immich Lounge live here.
 
-For technical release details, see [CHANGELOG.md](https://github.com/immich-lounge/immich-lounge/blob/main/CHANGELOG.md).
+For technical release details, see [CHANGELOG.md](https://github.com/immich-lounge/immich-lounge/blob/master/CHANGELOG.md).
 
 ## Unreleased
 
 - Set the speed of fade, slide, and zoom transitions. Existing profiles keep the same half-second transitions.
 
 - Choose whether photos must match any or all selected sources, and exclude photos containing selected people, including memories.
+
+- Start cached channel and screensaver photos in about five seconds plus image-loading time when the companion is unavailable.
 
 - Added reusable schedules that switch between profiles at set times and days, with a fallback profile. Choose a fixed profile or a schedule on each Roku.
 

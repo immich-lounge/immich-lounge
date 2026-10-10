@@ -36,7 +36,7 @@ jobs:
         run: pip install -r docs/website/requirements.txt
 
       - name: Build site
-        run: zensical build --clean
+        run: zensical build --clean --strict
 
       - name: Publish to root Pages repo
         uses: JamesIves/github-pages-deploy-action@v4
