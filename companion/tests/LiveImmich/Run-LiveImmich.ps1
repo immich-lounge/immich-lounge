@@ -11,7 +11,7 @@ $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
 $commonGitDir = (& git -C $root rev-parse --path-format=absolute --git-common-dir).Trim()
 if ($LASTEXITCODE -ne 0) { throw 'Cannot locate the primary checkout for persistent test state.' }
 $primaryRoot = Split-Path -Parent $commonGitDir
-$output = Join-Path $primaryRoot '_out/live-immich'
+$output = Join-Path $primaryRoot '.local/immich'
 $compose = Join-Path $output 'compose.yml'
 $project = Join-Path $PSScriptRoot 'LiveImmich.csproj'
 $stacks = @(
@@ -21,12 +21,25 @@ $stacks = @(
 
 docker info --format '{{.ServerVersion}}' | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'Start Docker Desktop, then rerun this script.' }
+# Migrate the former output location without changing volume names or account IDs.
+$legacyOutput = [IO.Path]::GetFullPath((Join-Path $primaryRoot '_out/live-immich'))
+if (!(Test-Path -LiteralPath $output) -and (Test-Path -LiteralPath $legacyOutput)) {
+    $expectedSource = [IO.Path]::GetFullPath((Join-Path $primaryRoot '_out/live-immich'))
+    $expectedTarget = [IO.Path]::GetFullPath((Join-Path $primaryRoot '.local/immich'))
+    if ($legacyOutput -ne $expectedSource -or [IO.Path]::GetFullPath($output) -ne $expectedTarget) {
+        throw 'Unexpected local state migration paths.'
+    }
+    New-Item -ItemType Directory -Force -Path (Split-Path -Parent $output) | Out-Null
+    Move-Item -LiteralPath $legacyOutput -Destination $output
+}
 New-Item -ItemType Directory -Force -Path $output | Out-Null
+# Also ignore state while this setup branch has not yet merged into the primary checkout.
+[IO.File]::WriteAllText((Join-Path $output '.gitignore'), "*`n")
 if ($Action -in 'Start', 'Test') {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'compose.yml') -Destination $compose -Force
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'immich.json') -Destination (Join-Path $output 'immich.json') -Force
     dotnet build $project --configuration Release --nologo
-    if ($LASTEXITCODE -ne 0) { throw 'Live test runner build failed.' }
+    if ($LASTEXITCODE -ne 0) { throw 'Development fixture seeder build failed.' }
 }
 $accountGuide = @"
 # Local Immich development accounts
@@ -64,6 +77,13 @@ foreach ($stack in $stacks) {
         $password = [Guid]::NewGuid().ToString('N')
         $configPath = (Join-Path $output 'immich.json').Replace('\', '/')
         [IO.File]::WriteAllText($envFile, "IMMICH_VERSION=$($stack.Version)`nIMMICH_PORT=$($stack.Port)`nIMMICH_RESTART=$($stack.Restart)`nDB_PASSWORD=$password`nIMMICH_CONFIG_PATH=$configPath`nIMMICH_STACK_NAME=$($stack.ContainerPrefix)`nIMMICH_VOLUME_PREFIX=$($stack.Project)`n")
+    }
+    # Repoint the bind mount after a state-directory migration; preserve all credentials.
+    if ($Action -in 'Start', 'Test') {
+        $configPath = (Join-Path $output 'immich.json').Replace('\', '/')
+        $environment = [IO.File]::ReadAllText($envFile)
+        $environment = [regex]::Replace($environment, '(?m)^IMMICH_CONFIG_PATH=.*$', "IMMICH_CONFIG_PATH=$configPath")
+        [IO.File]::WriteAllText($envFile, $environment)
     }
     $composeArgs = @('compose', '-p', $stack.Project, '--env-file', $envFile, '-f', $compose)
     if ($Action -eq 'Stop') {
