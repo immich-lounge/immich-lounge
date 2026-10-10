@@ -22,7 +22,7 @@ Use it when you need to:
 
 If you need to generate or rotate the key, see [Immich API Key](./api-key.md).
 
-![Immich Lounge companion connection page](./assets/screenshots/companion-connection.png){ .doc-screenshot }
+![Immich Lounge companion connection page](./assets/screenshots/companion-connection.png){ .doc-screenshot .on-glb }
 <p class="doc-caption">The connection page is the one shared integration point between the companion and immich.</p>
 
 ## Profiles page
@@ -42,7 +42,7 @@ When there are no profiles yet, choose **Create a Profile**. Enter a name; the c
 
 Deleting a profile requires confirmation. It removes the companion profile, not your Immich photos. Update any schedule or Roku selection that refers to the deleted profile.
 
-![Immich Lounge companion profiles page](./assets/screenshots/companion-profiles.png){ .doc-screenshot }
+![Immich Lounge companion profiles page](./assets/screenshots/companion-profiles.png){ .doc-screenshot .on-glb }
 <p class="doc-caption">Profiles are where most day-to-day tuning happens after setup is complete.</p>
 
 ## Profile editor
@@ -55,7 +55,7 @@ Each profile controls both what the Roku shows and how playback should feel.
 | Playback | Interval, shuffle, transitions, photo motion, and refresh timing |
 | Display | Overlay style, fields, background effects, date formatting, weather, and image quality |
 
-![Immich Lounge companion profile editor](./assets/screenshots/companion-profile-editor.png){ .doc-screenshot }
+![Immich Lounge companion profile editor](./assets/screenshots/companion-profile-editor.png){ .doc-screenshot .on-glb }
 <p class="doc-caption">The profile editor combines content selection, playback settings, and visual tuning in one place.</p>
 
 ## Schedules page
