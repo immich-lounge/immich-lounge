@@ -1,4 +1,5 @@
 ---
+description: "How Immich Lounge handles your photos, configuration, and connection information."
 icon: material/shield-lock-outline
 ---
 

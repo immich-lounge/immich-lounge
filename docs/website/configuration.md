@@ -1,4 +1,5 @@
 ---
+description: "Choose photo sources, playback settings, overlays, weather, and schedules for your Roku slideshow."
 icon: material/tune-variant
 ---
 
@@ -16,17 +17,16 @@ For channel controls, profile switching on the Roku, cache clearing, and screens
 
 These settings are shared by every profile:
 
-- friendly name
 - immich server URL
 - immich API key
 
 Use an immich URL that the Roku can reach on your LAN. `localhost`, `127.0.0.1`, `::1`, and wildcard bind addresses are not valid here.
 
-After saving, use **Test Connection** to make sure the companion can reach Immich. The result also shows the server version and selected search API. Immich Lounge selects Search API v2 for stable Immich 3.2+ servers and legacy search for older servers. If version detection is unavailable, it uses legacy search with the same filters.
+Use **Save & Test Connection** to save the settings and check that the companion can reach Immich. Settings stay saved even if the test fails. The result also shows the server version and selected search API. Immich Lounge selects Search API v2 for stable Immich 3.2+ servers and legacy search for older servers. If version detection is unavailable, it uses legacy search with the same filters.
 
-Detection refreshes automatically after five minutes; **Test Connection** refreshes it immediately. No settings or profile migration is needed.
+Detection refreshes automatically after five minutes; **Save & Test Connection** refreshes it immediately. No settings or profile migration is needed.
 
-![Immich Lounge companion connection page](./assets/screenshots/companion-connection.png){ .doc-screenshot }
+![Immich Lounge companion connection page](./assets/screenshots/companion-connection.png){ .doc-screenshot .on-glb }
 <p class="doc-caption">The connection page stores the single immich connection used by all profiles.</p>
 
 > **Security note:** The companion is for trusted home networks. It does not provide public-internet authentication.
@@ -41,7 +41,7 @@ Saving a profile or connection settings clears the affected companion playlists.
 
 Profiles with advanced content rules created through the API keep those rules when edited in the companion. Their album, people, and tag selectors are unavailable; edit the rules through the API. Memories and display settings can still be changed in the companion.
 
-![Immich Lounge companion profiles page](./assets/screenshots/companion-profiles.png){ .doc-screenshot }
+![Immich Lounge companion profiles page](./assets/screenshots/companion-profiles.png){ .doc-screenshot .on-glb }
 <p class="doc-caption">Each profile can target a different room, use case, or screensaver setup.</p>
 
 <div class="feature-grid">
@@ -73,7 +73,7 @@ Profiles with advanced content rules created through the API keep those rules wh
 
 > **Shared albums:** Immich Lounge currently lists only albums owned by the configured Immich user. Shared albums are hidden because Immich search does not yet reliably return assets from shared albums. Track upstream support in the Immich discussion [Shared Albums in Search Results](https://github.com/immich-app/immich/discussions/2995).
 
-![Immich Lounge slideshow with overlay, clock, and weather](./assets/screenshots/slideshow.png){ .doc-screenshot }
+![Immich Lounge slideshow with overlay, clock, and weather](./assets/screenshots/slideshow.png){ .doc-screenshot .on-glb }
 <p class="doc-caption">Example slideshow with a left-side overlay, persistent clock, and weather.</p>
 
 When weather is enabled for a profile, you can choose whether the Roku shows temperatures in Celsius or Fahrenheit.
@@ -110,7 +110,7 @@ That means you can:
 - give the screensaver its own profile
 - keep the normal channel tuned for interactive use and the screensaver tuned for quieter background playback
 
-![Roku settings dialog](./assets/screenshots/config-dialog.png){ .doc-screenshot }
+![Roku settings dialog](./assets/screenshots/config-dialog.png){ .doc-screenshot .on-glb }
 <p class="doc-caption">Use the Roku settings menu to refresh, switch profile, change companion, or clear cache.</p>
 
 For the actual Roku-side behavior and menu actions, see [Using the Roku Apps](./roku-apps.md).

@@ -1,12 +1,14 @@
 @page "/schedules"
 @inject IHttpClientFactory HttpFactory
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 @using ImmichLoungeCompanion.Models
 
 <h2>Schedules</h2>
 <p class="page-intro">Choose which profile plays at different times. Profiles hold the photos and display settings; schedules only choose between them.</p>
 <div class="btn-row"><button class="btn btn-primary" @onclick='() => Nav.NavigateTo("/schedules/new")'>+ New Schedule</button></div>
 @if (_error != null) { <p class="error">@_error</p> }
+@if (_message != null) { <div class="alert alert-success" role="status">@_message</div> }
 @foreach (var schedule in _schedules)
 {
     <div class="profile-card">
@@ -16,7 +18,7 @@
         </div>
         <div class="profile-actions">
             <button class="btn btn-secondary" @onclick='() => Nav.NavigateTo($"/schedules/{schedule.Id}/edit")'>Edit</button>
-            <button class="btn btn-danger" @onclick="() => DeleteAsync(schedule.Id)">Delete</button>
+            <button class="btn btn-danger" disabled="@_busy" @onclick="() => DeleteAsync(schedule)">Delete</button>
         </div>
     </div>
 }
@@ -26,12 +28,22 @@
     private HttpClient Http => HttpFactory.CreateClient("local");
     private List<ProfileSchedule> _schedules = [];
     private string? _error;
+    private string? _message;
+    private bool _busy;
     protected override async Task OnInitializedAsync() => await LoadAsync();
     private async Task LoadAsync() => _schedules = await Http.GetFromJsonAsync<List<ProfileSchedule>>("/api/schedules") ?? [];
-    private async Task DeleteAsync(string id)
+    private async Task DeleteAsync(ProfileSchedule schedule)
     {
-        var response = await Http.DeleteAsync($"/api/schedules/{id}");
-        _error = response.IsSuccessStatusCode ? null : "Could not delete the schedule.";
-        await LoadAsync();
+        if (_busy || !await JS.InvokeAsync<bool>("confirm", $"Delete schedule '{schedule.Name}'? This cannot be undone. Its profiles will be kept. Choose another schedule or profile on any Roku using it.")) return;
+        _busy = true; _error = null; _message = null;
+        try
+        {
+            using var response = await Http.DeleteAsync($"/api/schedules/{schedule.Id}");
+            if (!response.IsSuccessStatusCode) { _error = "Could not delete the schedule. Try again."; return; }
+            await LoadAsync();
+            _message = $"Deleted schedule '{schedule.Name}'. Its profiles were kept.";
+        }
+        catch (HttpRequestException) { _error = "Could not reach the companion. Try again."; }
+        finally { _busy = false; }
     }
 }

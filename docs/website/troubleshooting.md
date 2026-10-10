@@ -1,4 +1,5 @@
 ---
+description: "Resolve connection failures, missing photos, playlist problems, and Roku playback issues."
 icon: material/wrench-outline
 ---
 
@@ -71,7 +72,7 @@ If you see **Could not load the first photo. Retrying...** on an older Roku app,
 
 ## Playlists fail to build with Memories enabled
 
-Immich v3.0.0–v3.0.2 can reject the date used for **Include Memories (On This Day)**. Check the companion logs for an HTTP `400` on `GET /api/memories`. A successful **Test Connection** does not check this endpoint.
+Immich v3.0.0–v3.0.2 can reject the date used for **Include Memories (On This Day)**. Check the companion logs for an HTTP `400` on `GET /api/memories`. A successful **Save & Test Connection** does not check this endpoint.
 
 Immich fixed the date validation in [v3.0.3](https://github.com/immich-app/immich/releases/tag/v3.0.3). Upgrade to v3.0.3 or a newer release, then retry with Memories enabled. Until you can upgrade, disable **Include Memories (On This Day)** in the profile and save it to use the other content sources.
 

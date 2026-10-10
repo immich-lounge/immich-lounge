@@ -1,13 +1,33 @@
 @page "/profiles"
 @inject IHttpClientFactory HttpFactory
 @inject NavigationManager Nav
+@inject IJSRuntime JS
+@using ImmichLoungeCompanion.Services
 
 <h2>Profiles</h2>
 
 <div class="btn-row">
-    <button @onclick="NewProfile" class="btn btn-primary">+ New Profile</button>
-    <button @onclick="RefreshAllAsync" class="btn btn-secondary">↺ Refresh All Caches</button>
+    <button @onclick="NewProfile" class="btn btn-primary" disabled="@_busy">+ New Profile</button>
+    @if (_profiles.Count > 0)
+    {
+        <button @onclick="RefreshAllAsync" class="btn btn-secondary" disabled="@_busy">Refresh All Playlists</button>
+    }
 </div>
+
+@if (_loading)
+{
+    <p role="status">Loading profiles…</p>
+}
+else if (_profiles.Count == 0 && _actionError == null)
+{
+    <section class="settings-card">
+        <h3>Create your first profile</h3>
+        <p>A profile chooses which photos play and how the slideshow looks. Start with a name, then choose your albums, people, or memories.</p>
+        <button @onclick="NewProfile" class="btn btn-primary" disabled="@_busy">Create a Profile</button>
+    </section>
+}
+@if (_actionMessage != null) { <div class="alert alert-success" role="status">@_actionMessage</div> }
+@if (_actionError != null) { <div class="alert alert-error" role="alert">@_actionError</div> }
 
 @foreach (var p in _profiles)
 {
@@ -17,9 +37,9 @@
             <p>@p.Description</p>
         </div>
         <div class="profile-actions">
-            <button @onclick='() => Nav.NavigateTo($"/profiles/{p.Id}/edit")' class="btn btn-secondary">Edit</button>
-            <button @onclick="() => RefreshAsync(p.Id)" class="btn btn-secondary">↺</button>
-            <button @onclick="() => DeleteAsync(p.Id)" class="btn btn-danger">Delete</button>
+            <button @onclick='() => Nav.NavigateTo($"/profiles/{p.Id}/edit")' class="btn btn-secondary" disabled="@_busy">Edit</button>
+            <button @onclick="() => RefreshAsync(p)" class="btn btn-secondary" disabled="@_busy">Refresh Playlist</button>
+            <button @onclick="() => DeleteAsync(p)" class="btn btn-danger" disabled="@_busy">Delete</button>
         </div>
     </div>
 }
@@ -27,37 +47,39 @@
 @if (_showNewDialog)
 {
     <div class="modal-shell" @onclick="CloseNewDialog">
-        <div class="dialog dialog-profile" @onclick:stopPropagation="true">
+        <div class="dialog dialog-profile" role="dialog" aria-modal="true" aria-labelledby="new-profile-title" @onclick:stopPropagation="true">
             <div class="dialog-header">
                 <div>
                     <p class="dialog-eyebrow">Create profile</p>
-                    <h3>New Profile</h3>
-                    <p class="dialog-copy">Start with a name and slug. You can fine-tune the slideshow, overlays, and content sources on the next screen.</p>
+                    <h3 id="new-profile-title">New Profile</h3>
+                    <p class="dialog-copy">Give your profile a name. Choose its photos and display settings on the next screen.</p>
                 </div>
-                <button type="button" class="dialog-close" @onclick="CloseNewDialog" aria-label="Close new profile dialog">×</button>
+                <button type="button" class="dialog-close" @onclick="CloseNewDialog" disabled="@_busy" aria-label="Close new profile dialog">×</button>
             </div>
 
             <div class="dialog-fields">
                 <div class="form-group">
-                    <label>ID (slug)</label>
-                    <input @bind="_newId" class="form-control dialog-input-mono" placeholder="living-room" />
-                    <p class="field-hint">Used in the profile URL and local storage.</p>
+                    <label for="profile-name">Name</label>
+                    <input id="profile-name" @bind:get="_newName" @bind:set="SetProfileName" @bind:event="oninput" class="form-control" placeholder="Living Room" disabled="@_busy" />
                 </div>
-
-                <div class="form-group">
-                    <label>Name</label>
-                    <input @bind="_newName" class="form-control" placeholder="Living Room" />
-                </div>
+                <details>
+                    <summary>Customize profile ID</summary>
+                    <div class="form-group">
+                        <label for="profile-id">Profile ID</label>
+                        <input id="profile-id" value="@_newId" @oninput="SetProfileId" class="form-control dialog-input-mono" disabled="@_busy" />
+                        <p class="field-hint">Generated from the name. Use 3–64 lowercase letters, numbers, or hyphens. Choose a different ID if this name is already in use.</p>
+                    </div>
+                </details>
             </div>
 
             <div class="btn-row dialog-actions">
-                <button @onclick="CreateAsync" class="btn btn-primary">Create Profile</button>
-                <button @onclick="CloseNewDialog" class="btn btn-secondary">Cancel</button>
+                <button @onclick="CreateAsync" class="btn btn-primary" disabled="@(_busy || string.IsNullOrWhiteSpace(_newName))">@(_busy ? "Creating…" : "Create Profile")</button>
+                <button @onclick="CloseNewDialog" class="btn btn-secondary" disabled="@_busy">Cancel</button>
             </div>
 
             @if (!string.IsNullOrWhiteSpace(_createError))
             {
-                <p class="error dialog-error">@_createError</p>
+                <p class="error dialog-error" role="alert">@_createError</p>
             }
         </div>
     </div>
@@ -67,59 +89,104 @@
     private HttpClient Http => HttpFactory.CreateClient("local");
     private List<ProfileSummary> _profiles = [];
     private bool _showNewDialog;
+    private bool _loading = true, _busy, _customId;
+    private string? _actionMessage, _actionError;
     private string _newId = "", _newName = "", _createError = "";
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        try { await LoadAsync(); }
+        catch (HttpRequestException) { _actionError = "Could not load profiles. Reload the page to try again."; }
+        finally { _loading = false; }
+    }
 
     private async Task LoadAsync()
     {
         _profiles = await Http.GetFromJsonAsync<List<ProfileSummary>>("/api/profiles") ?? [];
     }
 
-    private void NewProfile() { _showNewDialog = true; _createError = ""; }
+    private void NewProfile()
+    {
+        _showNewDialog = true;
+        _newId = ""; _newName = ""; _createError = ""; _customId = false;
+    }
 
-    private void CloseNewDialog() => _showNewDialog = false;
+    private void SetProfileName(string? name)
+    {
+        _newName = name ?? "";
+        if (!_customId) _newId = ProfileIdGenerator.FromName(_newName);
+    }
+
+    private void SetProfileId(ChangeEventArgs args)
+    {
+        _customId = true;
+        _newId = args.Value?.ToString() ?? "";
+    }
+
+    private void CloseNewDialog() { if (!_busy) _showNewDialog = false; }
 
     private async Task CreateAsync()
     {
-        var response = await Http.PostAsJsonAsync("/api/profiles", new
+        if (_busy) return;
+        _busy = true; _createError = "";
+        try
         {
-            id = _newId,
-            name = _newName,
-            contentSources = Array.Empty<object>(),
-            mediaTypes = new { photos = true, videos = false, videoAudio = false, livePhotos = false },
-            slideshow = new { intervalSeconds = 10, shuffle = true, transitionEffect = "fade", photoMotion = "none", refreshIntervalMinutes = 60 },
-            display = new { formatSource = "roku", overlayStyle = "bottom", backgroundEffect = "blur", overlayFields = new[] { "date", "location", "album", "people" }, overlayBehavior = "fade", overlayFadeSeconds = 5, clockAlwaysVisible = true, clockFormat = "HH:mm", weatherUnit = "celsius", showTimer = true, showDate = true, dateFormat = "d MMMM yyyy", locale = "en-US" },
-            quality = new { minFileSizeKb = (int?)null },
-            imageQuality = "preview"
-        });
+            using var response = await Http.PostAsJsonAsync("/api/profiles", new
+            {
+                id = _newId,
+                name = _newName,
+                contentSources = Array.Empty<object>(),
+                mediaTypes = new { photos = true, videos = false, videoAudio = false, livePhotos = false },
+                slideshow = new { intervalSeconds = 10, shuffle = true, transitionEffect = "fade", photoMotion = "none", refreshIntervalMinutes = 60 },
+                display = new { formatSource = "roku", overlayStyle = "bottom", backgroundEffect = "blur", overlayFields = new[] { "date", "location", "album", "people" }, overlayBehavior = "fade", overlayFadeSeconds = 5, clockAlwaysVisible = true, clockFormat = "HH:mm", weatherUnit = "celsius", showTimer = true, showDate = true, dateFormat = "d MMMM yyyy", locale = "en-US" },
+                quality = new { minFileSizeKb = (int?)null },
+                imageQuality = "preview"
+            });
 
-        if (response.IsSuccessStatusCode)
-        {
-            _showNewDialog = false;
-            Nav.NavigateTo($"/profiles/{_newId}/edit");
+            if (response.IsSuccessStatusCode)
+            {
+                _showNewDialog = false;
+                Nav.NavigateTo($"/profiles/{_newId}/edit");
+            }
+            else
+            {
+                var err = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+                _createError = err?.Error ?? "Failed to create profile.";
+            }
         }
-        else
+        catch (HttpRequestException) { _createError = "Could not reach the companion. Try again."; }
+        finally { _busy = false; }
+    }
+
+    private async Task DeleteAsync(ProfileSummary profile)
+    {
+        if (_busy || !await JS.InvokeAsync<bool>("confirm", $"Delete profile '{profile.Name}'? This cannot be undone. Your Immich photos will not be deleted.")) return;
+        await RunActionAsync($"/api/profiles/{profile.Id}", $"Deleted profile '{profile.Name}'.", reload: true);
+    }
+
+    private Task RefreshAsync(ProfileSummary profile)
+        => RunActionAsync($"/api/profiles/{profile.Id}/playlist", $"Playlist refresh requested for '{profile.Name}'. Rebuilding happens in the background.");
+
+    private Task RefreshAllAsync()
+        => RunActionAsync("/api/playlists", "Refresh requested for all playlists. Rebuilding happens in the background.");
+
+    private async Task RunActionAsync(string path, string message, bool reload = false)
+    {
+        if (_busy) return;
+        _busy = true; _actionMessage = null; _actionError = null;
+        try
         {
-            var err = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-            _createError = err?.Error ?? "Failed to create profile.";
+            using var response = await Http.DeleteAsync(path);
+            if (!response.IsSuccessStatusCode)
+            {
+                _actionError = "The action failed. Try again.";
+                return;
+            }
+            if (reload) await LoadAsync();
+            _actionMessage = message;
         }
-    }
-
-    private async Task DeleteAsync(string id)
-    {
-        await Http.DeleteAsync($"/api/profiles/{id}");
-        await LoadAsync();
-    }
-
-    private async Task RefreshAsync(string id)
-    {
-        await Http.DeleteAsync($"/api/profiles/{id}/playlist");
-    }
-
-    private async Task RefreshAllAsync()
-    {
-        await Http.DeleteAsync("/api/playlists");
+        catch (HttpRequestException) { _actionError = "Could not reach the companion. Try again."; }
+        finally { _busy = false; }
     }
 
     private record ProfileSummary(string Id, string Name, string? Description);
