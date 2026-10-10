@@ -4,39 +4,31 @@ function StartupPlaylistWindowSize() as Integer
     return PlaybackRegistryPlaylistWindowSize()
 end function
 
+function CreateStartupRequestTask() as Object
+    return CreateObject("roSGNode", "CompanionApiTask")
+end function
+
 function FetchStartupProfile(companionUrl as String, profileId as String, isScreensaver as Boolean, port as Object, logScope as String, loadingScene = invalid as Dynamic) as Object
     LogDebug(logScope, "fetching profile id=" + profileId + " from " + companionUrl)
 
-    profileTask = CreateObject("roSGNode", "CompanionApiTask")
+    cachedProfile = LoadCachedProfileForMode(isScreensaver, companionUrl, profileId)
+    waitLimitMs = 10000
+    if cachedProfile <> invalid then waitLimitMs = 2000
+
+    profileTask = CreateStartupRequestTask()
     profileTask.baseUrl = companionUrl
     profileTask.profileId = profileId
     profileTask.observeField("profileResult", port)
     profileTask.command = "fetchProfile"
 
-    cachedProfile = LoadCachedProfileForMode(isScreensaver, companionUrl, profileId)
     loadingShown = false
-    elapsedMs = 0
+    clock = CreateObject("roTimespan")
 
     while true
         msg = Wait(250, port)
-        if msg = invalid then
-            elapsedMs = elapsedMs + 250
-            if not loadingShown and loadingScene <> invalid and elapsedMs >= 500 then
-                ShowPlaybackStartupStatusInScene(loadingScene, "Loading photos...")
-                loadingShown = true
-            end if
-            if elapsedMs >= 10000 then
-                profileTask.unobserveField("profileResult")
-                if cachedProfile <> invalid then
-                    return {
-                        status: "cached"
-                        profile: cachedProfile
-                    }
-                end if
-                return { status: "unavailable" }
-            end if
-        else if type(msg) = "roSGScreenEvent" and msg.isScreenClosed() then
+        if type(msg) = "roSGScreenEvent" and msg.isScreenClosed() then
             profileTask.unobserveField("profileResult")
+            profileTask.control = "STOP"
             LogDebug(logScope, "screen closed during profile fetch")
             return { status: "exit" }
         else if type(msg) = "roSGNodeEvent" and msg.getField() = "profileResult" then
@@ -71,6 +63,22 @@ function FetchStartupProfile(companionUrl as String, profileId as String, isScre
 
             return { status: "unavailable" }
         end if
+        elapsedMs = clock.TotalMilliseconds()
+        if not loadingShown and loadingScene <> invalid and elapsedMs >= 500 then
+            ShowPlaybackStartupStatusInScene(loadingScene, "Loading photos...")
+            loadingShown = true
+        end if
+        if elapsedMs >= waitLimitMs then
+            profileTask.unobserveField("profileResult")
+            profileTask.control = "STOP"
+            if cachedProfile <> invalid then
+                return {
+                    status: "cached"
+                    profile: cachedProfile
+                }
+            end if
+            return { status: "unavailable" }
+        end if
     end while
 end function
 
@@ -89,44 +97,28 @@ function FetchStartupPlaylist(companionUrl as String, profileId as String, isScr
 
     LogDebug(logScope, "fetching playlist offset=" + resumeOffset.ToStr() + " cachedCount=" + cachedPlaylist.Count().ToStr())
 
-    playlistTask = CreateObject("roSGNode", "CompanionApiTask")
+    playlistTask = CreateStartupRequestTask()
     playlistTask.baseUrl = companionUrl
     playlistTask.profileId = playbackId
     playlistTask.isScreensaver = isScreensaver
     playlistTask.playlistOffset = resumeOffset
     playlistTask.playlistVersion = resumePlaylistVersion
     playlistTask.playlistCount = StartupPlaylistWindowSize()
+    waitLimitMs = 90000
     if cachedPlaylist.Count() > 0 then
         playlistTask.maxWaitSec = 3
+        waitLimitMs = 3000
     end if
     playlistTask.observeField("playlistResult", port)
     playlistTask.command = "fetchPlaylist"
     loadingShown = false
-    elapsedMs = 0
+    clock = CreateObject("roTimespan")
 
     while true
         msg = Wait(250, port)
-        if msg = invalid then
-            elapsedMs = elapsedMs + 250
-            if not loadingShown and loadingScene <> invalid and elapsedMs >= 500 then
-                ShowPlaybackStartupStatusInScene(loadingScene, "Loading photos...")
-                loadingShown = true
-            end if
-            if elapsedMs >= 90000 then
-                playlistTask.unobserveField("playlistResult")
-                if cachedPlaylist.Count() > 0 then
-                    LogDebug(logScope, "falling back to cached playlist after playlist fetch timeout")
-                    return {
-                        status: "cached"
-                        playlist: cachedPlaylist
-                        launchPlaylistResult: BuildLaunchPlaylistResultFromResume(cachedPlaylist, resumeState)
-                        startPlaylistIndex: ResolveResumePlaylistIndex(cachedPlaylist, resumeState)
-                    }
-                end if
-                return { status: "unavailable" }
-            end if
-        else if type(msg) = "roSGScreenEvent" and msg.isScreenClosed() then
+        if type(msg) = "roSGScreenEvent" and msg.isScreenClosed() then
             playlistTask.unobserveField("playlistResult")
+            playlistTask.control = "STOP"
             LogDebug(logScope, "screen closed during playlist fetch")
             return { status: "exit" }
         else if type(msg) = "roSGNodeEvent" and msg.getField() = "playlistResult" then
@@ -161,6 +153,25 @@ function FetchStartupPlaylist(companionUrl as String, profileId as String, isScr
                 }
             end if
 
+            return { status: "unavailable" }
+        end if
+        elapsedMs = clock.TotalMilliseconds()
+        if not loadingShown and loadingScene <> invalid and elapsedMs >= 500 then
+            ShowPlaybackStartupStatusInScene(loadingScene, "Loading photos...")
+            loadingShown = true
+        end if
+        if elapsedMs >= waitLimitMs then
+            playlistTask.unobserveField("playlistResult")
+            playlistTask.control = "STOP"
+            if cachedPlaylist.Count() > 0 then
+                LogDebug(logScope, "falling back to cached playlist after playlist fetch timeout")
+                return {
+                    status: "cached"
+                    playlist: cachedPlaylist
+                    launchPlaylistResult: BuildLaunchPlaylistResultFromResume(cachedPlaylist, resumeState)
+                    startPlaylistIndex: ResolveResumePlaylistIndex(cachedPlaylist, resumeState)
+                }
+            end if
             return { status: "unavailable" }
         end if
     end while
