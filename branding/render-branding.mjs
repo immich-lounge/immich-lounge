@@ -37,6 +37,9 @@ const INKSCAPE = "C:\\Program Files\\Inkscape\\bin\\inkscape.exe";
 
 // [svgName, pngName, width, height, [...deployTo]]
 const ASSETS = [
+  // Tight transparent mark for the centered Roku setup header
+  ["immich-lounge-mark.svg", "immich-lounge-mark.png", 240, 192, ["roku/images/immich-lounge-mark.png"]],
+
   // Roku channel icons
   ["roku-fhd-540x405.svg",  "roku-fhd-540x405.png",  540,  405, ["roku/images/roku-fhd-540x405.png"]],
   ["roku-hd-290x218.svg",   "roku-hd-290x218.png",   290,  218, ["roku/images/roku-hd-290x218.png"]],
