@@ -546,12 +546,12 @@ input[type="checkbox"] {
     border-color: var(--danger-border);
 }
 
-button:not([class]), button.btn {
+button:not([class]), button.btn:not(.btn-primary):not(.btn-secondary):not(.btn-danger) {
     background: transparent;
     color: var(--text-secondary);
     border-color: var(--border);
 }
-button:not([class]):hover, button.btn:hover {
+button:not([class]):hover, button.btn:not(.btn-primary):not(.btn-secondary):not(.btn-danger):hover {
     background: var(--bg-elevated);
     color: var(--text-primary);
 }
