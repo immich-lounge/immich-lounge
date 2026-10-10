@@ -41,7 +41,7 @@
   "rooibos": {
     "codeCoverage": false,
     "isGlobalMethodMockingEnabled": true,
-    "isGlobalMethodMockingEfficientMode": true,
+    "isGlobalMethodMockingEfficientMode": false,
     "printTestTimes": true,
     "showOnlyFailures": false,
     "catchCrashes": true,

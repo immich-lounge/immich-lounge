@@ -79,10 +79,10 @@ namespace tests
 
     @beforeEach
     private function setupPlaybackMocks()
-      m.stubCall(ShowCurrentSlideForScene(invalid), sub(context as object)
+      m.stubCall(ShowCurrentSlideForScene, sub(context as object)
         context.slideLoads++
       end sub)
-      m.stubCall(PersistActivePlaylistCacheForScene(invalid, false), sub(context as object, mode as boolean)
+      m.stubCall(PersistActivePlaylistCacheForScene, sub(context as object, mode as boolean)
       end sub)
     end function
 
