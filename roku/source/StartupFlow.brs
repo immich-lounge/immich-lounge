@@ -4,21 +4,6 @@ function StartupPlaylistWindowSize() as Integer
     return PlaybackRegistryPlaylistWindowSize()
 end function
 
-function LoadCachedProfileForMode(isScreensaver as Boolean) as Dynamic
-    cachedProfileJson = RegistryRead(CachedProfileRegistryKey(isScreensaver))
-    if cachedProfileJson = invalid then return invalid
-    return ParseJson_Safe(cachedProfileJson)
-end function
-
-function LoadCachedPlaylistForMode(isScreensaver as Boolean) as Object
-    cachedPlaylistJson = RegistryRead(CachedPlaylistRegistryKey(isScreensaver))
-    if cachedPlaylistJson = invalid then return []
-
-    parsed = ParseJson_Safe(cachedPlaylistJson)
-    if parsed = invalid then return []
-    return parsed
-end function
-
 function FetchStartupProfile(companionUrl as String, profileId as String, isScreensaver as Boolean, port as Object, logScope as String, loadingScene = invalid as Dynamic) as Object
     LogDebug(logScope, "fetching profile id=" + profileId + " from " + companionUrl)
 
@@ -28,7 +13,7 @@ function FetchStartupProfile(companionUrl as String, profileId as String, isScre
     profileTask.observeField("profileResult", port)
     profileTask.command = "fetchProfile"
 
-    cachedProfile = LoadCachedProfileForMode(isScreensaver)
+    cachedProfile = LoadCachedProfileForMode(isScreensaver, companionUrl, profileId)
     loadingShown = false
     elapsedMs = 0
 
@@ -61,7 +46,7 @@ function FetchStartupProfile(companionUrl as String, profileId as String, isScre
 
             if result.ok = true then
                 profile = result.profile
-                RegistryWrite(CachedProfileRegistryKey(isScreensaver), FormatJSON(profile))
+                PersistProfileCacheForMode(profile, companionUrl, profileId, isScreensaver)
                 return {
                     status: "live"
                     profile: profile
@@ -90,10 +75,10 @@ function FetchStartupProfile(companionUrl as String, profileId as String, isScre
 end function
 
 function FetchStartupPlaylist(companionUrl as String, profileId as String, isScreensaver as Boolean, port as Object, logScope as String, loadingScene = invalid as Dynamic) as Object
-    resumeState = LoadResumeState(isScreensaver, profileId)
+    resumeState = LoadResumeState(isScreensaver, profileId, companionUrl)
     resumeOffset = ResolveResumePlaylistOffset(resumeState)
     resumePlaylistVersion = ResolveResumePlaylistVersion(resumeState)
-    cachedPlaylist = LoadCachedPlaylistForMode(isScreensaver)
+    cachedPlaylist = LoadCachedPlaylistForMode(isScreensaver, companionUrl, profileId)
 
     LogDebug(logScope, "fetching playlist offset=" + resumeOffset.ToStr() + " cachedCount=" + cachedPlaylist.Count().ToStr())
 
@@ -146,7 +131,7 @@ function FetchStartupPlaylist(companionUrl as String, profileId as String, isScr
                 playlist = result.assets
                 result.playlistVersion = NormalizePlaylistVersion(result.playlistVersion)
                 LogDebug(logScope, "playlist count=" + playlist.Count().ToStr())
-                RegistryWrite(CachedPlaylistRegistryKey(isScreensaver), FormatJSON(TruncatePlaylistForRegistry(playlist)))
+                PersistActivePlaylistCacheForMode(playlist, isScreensaver, companionUrl, profileId)
                 startPlaylistIndex = ResolveResumePlaylistIndex(playlist, resumeState)
                 if result.playlistVersion <> "" and resumePlaylistVersion <> "" and result.playlistVersion <> resumePlaylistVersion then
                     startPlaylistIndex = ResolvePlaylistIndexAfterRefresh(playlist, ValueOrDefault(resumeState.assetId, ""), 0)

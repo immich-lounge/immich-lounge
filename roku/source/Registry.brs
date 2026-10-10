@@ -67,6 +67,66 @@ function ResumeStateRegistryKey(isScreensaver as Boolean) as String
     return ChannelResumeStateKey()
 end function
 
+function CacheIdentityRegistryKey(isScreensaver as Boolean) as String
+    if isScreensaver then return "cachedScreensaverIdentity"
+    return "cachedChannelIdentity"
+end function
+
+function RegistryCacheMatchesSelection(isScreensaver as Boolean, companionUrl as String, profileId as String) as Boolean
+    raw = RegistryRead(CacheIdentityRegistryKey(isScreensaver))
+    if raw = invalid then return false
+    identity = ParseJson_Safe(raw)
+    if type(identity) <> "roAssociativeArray" then return false
+    return identity.companionUrl = companionUrl and identity.profileId = profileId
+end function
+
+sub RegistryPrepareCacheForMode(isScreensaver as Boolean, companionUrl as String, profileId as String)
+    if RegistryCacheMatchesSelection(isScreensaver, companionUrl, profileId) then return
+    RegistryClearCachedDataForMode(isScreensaver)
+    RegistryWriteJson(CacheIdentityRegistryKey(isScreensaver), { companionUrl: companionUrl, profileId: profileId })
+end sub
+
+sub RegistrySaveProfileSelection(companionUrl as String, profileId as String, isScreensaver as Boolean)
+    if RegistryRead("companionUrl") <> companionUrl then
+        RegistryClearCachedData()
+    else
+        if GetSavedProfileId(isScreensaver) <> profileId then RegistryClearCachedDataForMode(isScreensaver)
+        ' An unconfigured screensaver inherits the channel's profile selection.
+        if not isScreensaver then
+            screensaverProfileId = RegistryRead(ScreensaverProfileIdKey())
+            if screensaverProfileId = invalid or screensaverProfileId = "" then
+                if GetSavedProfileId(true) <> profileId then RegistryClearCachedDataForMode(true)
+            end if
+        end if
+    end if
+    RegistryWrite("companionUrl", companionUrl)
+    RegistryWrite(ProfileIdRegistryKey(isScreensaver), profileId)
+end sub
+
+function LoadCachedProfileForMode(isScreensaver as Boolean, companionUrl as String, profileId as String) as Dynamic
+    if not RegistryCacheMatchesSelection(isScreensaver, companionUrl, profileId) then return invalid
+    raw = RegistryRead(CachedProfileRegistryKey(isScreensaver))
+    if raw = invalid then return invalid
+    profile = ParseJson_Safe(raw)
+    if type(profile) <> "roAssociativeArray" then return invalid
+    if profile.id <> profileId then return invalid
+    return profile
+end function
+
+function LoadCachedPlaylistForMode(isScreensaver as Boolean, companionUrl as String, profileId as String) as Object
+    if not RegistryCacheMatchesSelection(isScreensaver, companionUrl, profileId) then return []
+    raw = RegistryRead(CachedPlaylistRegistryKey(isScreensaver))
+    if raw = invalid then return []
+    playlist = ParseJson_Safe(raw)
+    if type(playlist) <> "roArray" then return []
+    return playlist
+end function
+
+sub PersistProfileCacheForMode(profile as Object, companionUrl as String, profileId as String, isScreensaver as Boolean)
+    RegistryPrepareCacheForMode(isScreensaver, companionUrl, profileId)
+    RegistryWrite(CachedProfileRegistryKey(isScreensaver), FormatJSON(profile))
+end sub
+
 function GetSavedProfileId(isScreensaver as Boolean) as Dynamic
     if isScreensaver then
         profileId = RegistryRead(ScreensaverProfileIdKey())
@@ -100,12 +160,15 @@ sub RegistryClearAll()
 end sub
 
 sub RegistryClearCachedData()
-    RegistryDelete(ChannelCachedProfileKey())
-    RegistryDelete(ScreensaverCachedProfileKey())
-    RegistryDelete(ChannelCachedPlaylistKey())
-    RegistryDelete(ScreensaverCachedPlaylistKey())
-    RegistryDelete(ChannelResumeStateKey())
-    RegistryDelete(ScreensaverResumeStateKey())
+    RegistryClearCachedDataForMode(false)
+    RegistryClearCachedDataForMode(true)
+end sub
+
+sub RegistryClearCachedDataForMode(isScreensaver as Boolean)
+    RegistryDelete(CachedProfileRegistryKey(isScreensaver))
+    RegistryDelete(CachedPlaylistRegistryKey(isScreensaver))
+    RegistryDelete(ResumeStateRegistryKey(isScreensaver))
+    RegistryDelete(CacheIdentityRegistryKey(isScreensaver))
 end sub
 
 sub RegistryClearSavedSetup()
@@ -129,12 +192,13 @@ sub RegistryWriteJson(key as String, value as Object)
     sec.Flush()
 end sub
 
-function LoadResumeState(isScreensaver as Boolean, profileId as String) as Dynamic
+function LoadResumeState(isScreensaver as Boolean, profileId as String, companionUrl as String) as Dynamic
+    if not RegistryCacheMatchesSelection(isScreensaver, companionUrl, profileId) then return invalid
     raw = RegistryRead(ResumeStateRegistryKey(isScreensaver))
     if raw = invalid then return invalid
 
     parsed = ParseJson_Safe(raw)
-    if parsed = invalid then return invalid
+    if type(parsed) <> "roAssociativeArray" then return invalid
     if parsed.profileId = invalid or parsed.profileId <> profileId then return invalid
 
     return parsed
@@ -230,12 +294,13 @@ function ApplyPendingBatchSwapState(ctx as Object, isScreensaver as Boolean) as 
     ctx.pendingNextPlaylistOffset = 0
     ctx.waitingForNextBatchSwap = false
     ctx.playlistIndex = 0
-    PersistActivePlaylistCacheForMode(ctx.playlist, isScreensaver)
+    PersistActivePlaylistCacheForMode(ctx.playlist, isScreensaver, ctx.top.companionUrl, ctx.top.profileId)
     return true
 end function
 
 sub PersistResumeStateForMode(entry as Object, top as Object, playlistIndex as Integer, playlistOffset as Integer, nextPlaylistOffset as Integer, totalPlaylistCount as Integer, playlistVersion as String, isScreensaver as Boolean)
     if entry = invalid then return
+    RegistryPrepareCacheForMode(isScreensaver, top.companionUrl, top.profileId)
     state = {
         profileId: top.profileId
         assetId: ValueOrDefault(entry.id, "")
@@ -248,7 +313,8 @@ sub PersistResumeStateForMode(entry as Object, top as Object, playlistIndex as I
     RegistryWriteJson(ResumeStateRegistryKey(isScreensaver), state)
 end sub
 
-sub PersistActivePlaylistCacheForMode(playlist as Object, isScreensaver as Boolean)
+sub PersistActivePlaylistCacheForMode(playlist as Object, isScreensaver as Boolean, companionUrl as String, profileId as String)
+    RegistryPrepareCacheForMode(isScreensaver, companionUrl, profileId)
     truncated = TruncatePlaylistForRegistry(playlist)
     RegistryWrite(CachedPlaylistRegistryKey(isScreensaver), FormatJSON(truncated))
 end sub
