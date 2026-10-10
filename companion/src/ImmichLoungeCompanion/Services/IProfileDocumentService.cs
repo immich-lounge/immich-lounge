@@ -6,5 +6,5 @@ namespace ImmichLoungeCompanion.Services;
 public interface IProfileDocumentService
 {
     Profile Normalize(Profile profile);
-    Task<object> BuildResponseAsync(Profile profile, string? selectionId = null, bool scheduleEnabled = false, string? selectionName = null);
+    Task<object> BuildResponseAsync(Profile profile, string? selectionId = null, bool followingSchedule = false, string? selectionName = null);
 }

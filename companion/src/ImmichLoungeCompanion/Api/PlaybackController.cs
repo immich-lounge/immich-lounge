@@ -37,7 +37,7 @@ public class PlaybackController(IProfileRepository profiles, IScheduleRepository
             if (schedule == null) { return NotFound(new { error = "Schedule not found." }); }
             var active = await resolver.ResolveAsync(schedule);
             if (active == null) { return StatusCode(503, new { error = "The schedule's active and fallback profiles are unavailable." }); }
-            return Ok(await documents.BuildResponseAsync(active, selectionId, scheduleEnabled: true, selectionName: schedule.Name));
+            return Ok(await documents.BuildResponseAsync(active, selectionId, followingSchedule: true, selectionName: schedule.Name));
         }
         if (!ProfileScheduleService.ValidId(selectionId)) { return NotFound(); }
         var profile = await profiles.GetAsync(selectionId);

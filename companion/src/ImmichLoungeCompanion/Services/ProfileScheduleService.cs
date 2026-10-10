@@ -54,7 +54,9 @@ public class ProfileScheduleService(IProfileRepository profiles, TimeProvider cl
 
     public async Task<string?> ValidateTargetsAsync(ProfileSchedule schedule)
     {
-        var ids = schedule.Entries.Select(entry => entry.ProfileId).Append(schedule.FallbackProfileId).Distinct();
+        var ids = schedule.Enabled
+            ? schedule.Entries.Select(entry => entry.ProfileId).Append(schedule.FallbackProfileId).Distinct()
+            : new[] { schedule.FallbackProfileId };
         foreach (var id in ids)
         {
             if (await profiles.GetAsync(id) == null)

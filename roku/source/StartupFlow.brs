@@ -95,7 +95,7 @@ function FetchStartupPlaylist(companionUrl as String, profileId as String, isScr
     resumePlaylistVersion = ResolveResumePlaylistVersion(resumeState)
     cachedPlaylist = LoadCachedPlaylistForMode(isScreensaver)
     playbackId = PlaybackProfileId(profile, profileId)
-    if not CachedPlaylistMatchesPlayback(resumeState, profileId, playbackId) then
+    if not CachedPlaylistMatchesPlayback(LoadResumeStateForMode(isScreensaver), profileId, playbackId) then
         resumeState = invalid
         cachedPlaylist = []
         resumeOffset = 0

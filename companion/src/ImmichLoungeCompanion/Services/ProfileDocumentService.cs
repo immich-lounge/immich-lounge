@@ -24,7 +24,7 @@ public class ProfileDocumentService(ISettingsRepository settings) : IProfileDocu
 
     private static string? CleanLocation(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    public async Task<object> BuildResponseAsync(Profile profile, string? selectionId = null, bool scheduleEnabled = false, string? selectionName = null)
+    public async Task<object> BuildResponseAsync(Profile profile, string? selectionId = null, bool followingSchedule = false, string? selectionName = null)
     {
         var globalSettings = await settings.LoadAsync();
 
@@ -33,7 +33,7 @@ public class ProfileDocumentService(ISettingsRepository settings) : IProfileDocu
             profile.SchemaVersion,
             Id = selectionId ?? profile.Id,
             PlaybackProfileId = profile.Id,
-            ScheduleEnabled = scheduleEnabled,
+            FollowingSchedule = followingSchedule,
             SelectionName = selectionName,
             profile.Name,
             profile.Description,

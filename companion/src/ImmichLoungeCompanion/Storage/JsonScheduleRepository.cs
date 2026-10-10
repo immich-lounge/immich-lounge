@@ -52,13 +52,13 @@ public class JsonScheduleRepository(string dataDirectory, ILogger<JsonScheduleRe
             // Delete sharing lets saves replace the file while readers finish their old snapshot.
             await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read,
                 FileShare.Read | FileShare.Delete, 4096, FileOptions.Asynchronous);
-            var profile = await JsonSerializer.DeserializeAsync<ProfileSchedule>(stream, JsonOptions);
-            if (profile == null || string.IsNullOrWhiteSpace(profile.Id) || string.IsNullOrWhiteSpace(profile.Name))
+            var schedule = await JsonSerializer.DeserializeAsync<ProfileSchedule>(stream, JsonOptions);
+            if (schedule == null || string.IsNullOrWhiteSpace(schedule.Id) || string.IsNullOrWhiteSpace(schedule.Name))
             {
-                _logger.LogWarning("Could not read schedule file {ProfilePath}; required schedule data is missing, leaving it unchanged and skipping it", path);
+                _logger.LogWarning("Could not read schedule file {SchedulePath}; required schedule data is missing, leaving it unchanged and skipping it", path);
                 return null;
             }
-            return profile;
+            return schedule;
         }
         catch (Exception ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
         {
@@ -66,19 +66,19 @@ public class JsonScheduleRepository(string dataDirectory, ILogger<JsonScheduleRe
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         {
-            _logger.LogWarning(ex, "Could not read schedule file {ProfilePath}; leaving it unchanged and skipping it", path);
+            _logger.LogWarning(ex, "Could not read schedule file {SchedulePath}; leaving it unchanged and skipping it", path);
             return null;
         }
     }
 
     public Task<bool> ExistsAsync(string id) => Task.FromResult(File.Exists(FilePath(id)));
 
-    public async Task SaveAsync(ProfileSchedule profile)
+    public async Task SaveAsync(ProfileSchedule schedule)
     {
         Directory.CreateDirectory(_schedulesDir);
-        var json = JsonSerializer.Serialize(profile, JsonOptions);
-        var path = FilePath(profile.Id);
-        var temporaryPath = Path.Combine(_schedulesDir, $".{profile.Id}.{Guid.NewGuid():N}.tmp");
+        var json = JsonSerializer.Serialize(schedule, JsonOptions);
+        var path = FilePath(schedule.Id);
+        var temporaryPath = Path.Combine(_schedulesDir, $".{schedule.Id}.{Guid.NewGuid():N}.tmp");
         try
         {
             await File.WriteAllTextAsync(temporaryPath, json);
@@ -99,7 +99,7 @@ public class JsonScheduleRepository(string dataDirectory, ILogger<JsonScheduleRe
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                _logger.LogWarning(ex, "Could not remove temporary schedule file {ProfilePath}", temporaryPath);
+                _logger.LogWarning(ex, "Could not remove temporary schedule file {SchedulePath}", temporaryPath);
             }
         }
     }

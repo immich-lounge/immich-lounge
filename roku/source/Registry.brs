@@ -129,11 +129,14 @@ sub RegistryWriteJson(key as String, value as Object)
     sec.Flush()
 end sub
 
-function LoadResumeState(isScreensaver as Boolean, profileId as String) as Dynamic
+function LoadResumeStateForMode(isScreensaver as Boolean) as Dynamic
     raw = RegistryRead(ResumeStateRegistryKey(isScreensaver))
     if raw = invalid then return invalid
+    return ParseJson_Safe(raw)
+end function
 
-    parsed = ParseJson_Safe(raw)
+function LoadResumeState(isScreensaver as Boolean, profileId as String) as Dynamic
+    parsed = LoadResumeStateForMode(isScreensaver)
     if parsed = invalid then return invalid
     if parsed.profileId = invalid or parsed.profileId <> profileId then return invalid
 

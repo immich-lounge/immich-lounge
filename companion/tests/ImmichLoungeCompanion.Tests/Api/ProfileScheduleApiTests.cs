@@ -52,12 +52,12 @@ public class ProfileScheduleApiTests
         Assert.AreEqual("schedule:living-room", active.GetProperty("id").GetString());
         Assert.AreEqual("Living room schedule", active.GetProperty("selectionName").GetString());
         Assert.AreEqual("day-profile", active.GetProperty("playbackProfileId").GetString());
-        Assert.IsTrue(active.GetProperty("scheduleEnabled").GetBoolean());
+        Assert.IsTrue(active.GetProperty("followingSchedule").GetBoolean());
         Assert.IsTrue(active.GetProperty("display").GetProperty("zoomToFit").GetBoolean());
         Assert.IsFalse(active.TryGetProperty("entries", out _));
         var fixedProfile = await client.GetFromJsonAsync<JsonElement>("/api/playback/selections/living-room");
         Assert.AreEqual("living-room", fixedProfile.GetProperty("playbackProfileId").GetString());
-        Assert.IsFalse(fixedProfile.GetProperty("scheduleEnabled").GetBoolean());
+        Assert.IsFalse(fixedProfile.GetProperty("followingSchedule").GetBoolean());
         clock.Now = DateTimeOffset.Parse("2026-10-05T18:00:00Z");
         active = await client.GetFromJsonAsync<JsonElement>("/api/playback/selections/schedule:living-room");
         Assert.AreEqual("living-room", active.GetProperty("playbackProfileId").GetString());
@@ -66,7 +66,7 @@ public class ProfileScheduleApiTests
         clock.Now = DateTimeOffset.Parse("2026-10-05T09:00:00Z");
         active = await client.GetFromJsonAsync<JsonElement>("/api/playback/selections/schedule:living-room");
         Assert.AreEqual("living-room", active.GetProperty("playbackProfileId").GetString());
-        Assert.IsTrue(active.GetProperty("scheduleEnabled").GetBoolean());
+        Assert.IsTrue(active.GetProperty("followingSchedule").GetBoolean());
         Assert.AreEqual(HttpStatusCode.Conflict, (await client.PostAsJsonAsync("/api/schedules", Schedule())).StatusCode);
         Assert.AreEqual(HttpStatusCode.NoContent, (await client.DeleteAsync("/api/schedules/living-room")).StatusCode);
         Assert.AreEqual(HttpStatusCode.NotFound, (await client.GetAsync("/api/playback/selections/schedule:living-room")).StatusCode);
@@ -90,6 +90,9 @@ public class ProfileScheduleApiTests
         await client.DeleteAsync("/api/profiles/day-profile");
         var active = await client.GetFromJsonAsync<JsonElement>("/api/playback/selections/schedule:living-room");
         Assert.AreEqual("living-room", active.GetProperty("playbackProfileId").GetString());
+        var disabled = await client.GetFromJsonAsync<ProfileSchedule>("/api/schedules/living-room");
+        disabled!.Enabled = false;
+        Assert.AreEqual(HttpStatusCode.OK, (await client.PutAsJsonAsync("/api/schedules/living-room", disabled)).StatusCode);
         await client.DeleteAsync("/api/profiles/living-room");
         Assert.AreEqual(HttpStatusCode.ServiceUnavailable, (await client.GetAsync("/api/playback/selections/schedule:living-room")).StatusCode);
         Assert.AreEqual(HttpStatusCode.OK, (await client.GetAsync("/api/schedules/living-room")).StatusCode);

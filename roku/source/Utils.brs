@@ -131,5 +131,8 @@ function IsScheduleSelectionId(selectionId as String) as Boolean
 end function
 
 function CachedPlaylistMatchesPlayback(resumeState as Dynamic, selectedId as String, playbackId as String) as Boolean
+    if resumeState <> invalid then
+        if resumeState.profileId <> invalid and resumeState.profileId <> selectedId then return false
+    end if
     return PlaybackProfileId(resumeState, selectedId) = playbackId
 end function

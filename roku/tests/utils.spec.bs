@@ -14,6 +14,9 @@ namespace tests
       m.assertFalse(CachedPlaylistMatchesPlayback(invalid, "living-room", "day-profile"))
       m.assertTrue(CachedPlaylistMatchesPlayback({ playbackProfileId: "day-profile" }, "living-room", "day-profile"))
       m.assertFalse(CachedPlaylistMatchesPlayback({ playbackProfileId: "day-profile" }, "living-room", "living-room"))
+      m.assertFalse(CachedPlaylistMatchesPlayback({ profileId: "schedule:living-room", playbackProfileId: "day-profile" }, "day-profile", "day-profile"))
+      m.assertFalse(CachedPlaylistMatchesPlayback({ profileId: "day-profile" }, "schedule:living-room", "day-profile"))
+      m.assertTrue(CachedPlaylistMatchesPlayback({ profileId: "schedule:living-room", playbackProfileId: "day-profile" }, "schedule:living-room", "day-profile"))
     end function
 
     @describe("TruncateStr")

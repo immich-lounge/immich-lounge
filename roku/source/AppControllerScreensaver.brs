@@ -72,7 +72,7 @@ sub StartScreensaverSlideshow(companionUrl as String, profileId as String, scene
             end if
 
             if playlist = invalid or playlist.Count() = 0 then
-                if profile.scheduleEnabled = true then
+                if profile.followingSchedule = true then
                     ConfigureSlideshowSceneForLaunch(scene, profile, [], companionUrl, profileId, true, launchPlaylistResult, 0, useLocalDateFormatting)
                     ShowFullScreenError(scene, "No photos found for the current profile." + Chr(10) + "Waiting for the next scheduled profile.")
                     WaitForSlideshowSceneAction(scene, port, false)
