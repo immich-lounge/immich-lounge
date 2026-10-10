@@ -13,10 +13,8 @@ sub OnNextPosterLoadedForScene(ctx as Object)
         toNode.unobserveField("loadStatus")
         if ApplyMainPosterLayoutForScene(ctx, toNode) then
             ctx.nextMainReady = true
-            if ctx.nextBgReady then
-                ctx.transitionSafetyTimer.control = "stop"
-                CommitSlideForScene(ctx, ctx.loadingFromSlot, ctx.loadingToSlot, ctx.pendingEntry)
-            end if
+            TryStartPortraitPairForScene(ctx)
+            TryCommitLoadedSlideForScene(ctx)
         else
             QueueLayoutRetryForScene(ctx)
         end if
@@ -40,18 +38,12 @@ sub OnNextBgPosterLoadedForScene(ctx as Object)
     if status = "ready" then
         bgNode.unobserveField("loadStatus")
         ctx.nextBgReady = true
-        if ctx.nextMainReady then
-            ctx.transitionSafetyTimer.control = "stop"
-            CommitSlideForScene(ctx, ctx.loadingFromSlot, ctx.loadingToSlot, ctx.pendingEntry)
-        end if
+        TryCommitLoadedSlideForScene(ctx)
     else if status = "failed" then
         bgNode.unobserveField("loadStatus")
         LogDebug(PlaybackLogScope(ctx), "Background blur load failed for slot=" + ctx.loadingToSlot.ToStr())
         ctx.nextBgFailed = true
-        if ctx.nextMainReady then
-            ctx.transitionSafetyTimer.control = "stop"
-            CommitSlideForScene(ctx, ctx.loadingFromSlot, ctx.loadingToSlot, ctx.pendingEntry)
-        end if
+        TryCommitLoadedSlideForScene(ctx)
     end if
 end sub
 
@@ -87,9 +79,18 @@ function TryFallbackMainPosterLoadForScene(ctx as Object) as Boolean
     return true
 end function
 
+sub TryCommitLoadedSlideForScene(ctx as Object)
+    if ctx.loadingCommitted or not ctx.nextMainReady or not ctx.nextPairReady then return
+    if not ctx.nextBgReady and not ctx.nextBgFailed then return
+    ctx.transitionSafetyTimer.control = "stop"
+    CommitSlideForScene(ctx, ctx.loadingFromSlot, ctx.loadingToSlot, ctx.pendingEntry)
+end sub
+
 sub CommitSlideForScene(ctx as Object, fromSlot as Integer, toSlot as Integer, entry as Object)
     if ctx.loadingCommitted then return
     ctx.loadingCommitted = true
+    ctx.layoutRetryTimer.control = "stop"
+    RecordPortraitPairForScene(ctx, entry)
     if toSlot >= 0 and toSlot < ctx.mainPosters.Count() then
         ctx.mainPosters[toSlot].unobserveField("loadStatus")
     end if

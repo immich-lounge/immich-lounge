@@ -44,7 +44,7 @@ sub PrefetchNextMetaForScene(ctx as Object)
     if ctx.profile = invalid then return
     if ctx.profile.immich = invalid then return
     if ctx.playlist.Count() = 0 then return
-    nextIdx = ctx.playlistIndex + 1
+    nextIdx = ctx.playlistIndex + ctx.slideAssetCount
     if nextIdx >= ctx.playlist.Count() then nextIdx = 0
     nextEntry = ctx.playlist[nextIdx]
 

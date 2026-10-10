@@ -82,11 +82,13 @@ sub PreloadRingForScene(ctx as Object, fromSlot as Integer)
     if n = 0 then return
     p = ctx.playlistIndex
 
-    nextUrl = BuildMediaUrl(ctx.playlist[(p + 1) mod n], ctx.profile)
-    nextBgUrl = BuildBackgroundMediaUrl(ctx.playlist[(p + 1) mod n], ctx.profile)
+    slideStep = ValueOrDefault(ctx.slideAssetCount, 1)
+    nextUrl = BuildMediaUrl(ctx.playlist[(p + slideStep) mod n], ctx.profile)
+    nextBgUrl = BuildBackgroundMediaUrl(ctx.playlist[(p + slideStep) mod n], ctx.profile)
     nextMainNode = ctx.mainPosters[ctx.ringNext]
     if ctx.ringNext <> ctx.activeBgSlot and nextMainNode.uri <> nextUrl then
         nextMainNode.unobserveField("loadStatus")
+        ReleasePortraitPosterForSlot(ctx, ctx.ringNext)
         nextMainNode.uri = nextUrl
         if ctx.bgPosters[ctx.ringNext].uri <> nextBgUrl then ctx.bgPosters[ctx.ringNext].uri = ""
         ctx.bgPosters[ctx.ringNext].uri = nextBgUrl
@@ -94,7 +96,7 @@ sub PreloadRingForScene(ctx as Object, fromSlot as Integer)
     end if
 
     slot = (ctx.ringNext + 1) mod ctx.ringSize
-    lookahead = 2
+    lookahead = slideStep + 1
     while slot <> ctx.ringCurrent
         if slot <> fromSlot and slot <> ctx.activeBgSlot then
             url = BuildMediaUrl(ctx.playlist[(p + lookahead) mod n], ctx.profile)
@@ -102,6 +104,7 @@ sub PreloadRingForScene(ctx as Object, fromSlot as Integer)
             mainNode = ctx.mainPosters[slot]
             if mainNode.uri <> url then
                 mainNode.unobserveField("loadStatus")
+                ReleasePortraitPosterForSlot(ctx, slot)
                 mainNode.uri = url
                 if ctx.bgPosters[slot].uri <> bgUrl then ctx.bgPosters[slot].uri = ""
                 ctx.bgPosters[slot].uri = bgUrl
@@ -128,6 +131,7 @@ sub FinalizeRingForScene(ctx as Object)
     mainNode = ctx.mainPosters[ctx.ringReleasedSlot]
     if mainNode.uri <> url then
         mainNode.unobserveField("loadStatus")
+        ReleasePortraitPosterForSlot(ctx, ctx.ringReleasedSlot)
         mainNode.uri = url
         if ctx.bgPosters[ctx.ringReleasedSlot].uri <> bgUrl then ctx.bgPosters[ctx.ringReleasedSlot].uri = ""
         ctx.bgPosters[ctx.ringReleasedSlot].uri = bgUrl

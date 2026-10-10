@@ -13,6 +13,10 @@ sub StartTransitionForScene(ctx as Object, fromSlot as Integer, toSlot as Intege
         effect = effects[Rnd(3) - 1]
     end if
     if entry.type = "video" or entry.type = "livePhoto" then effect = "fade"
+    isPortraitPair = ctx.pairedPosters[toSlot].visible
+    if isPortraitPair or ctx.pairedPosters[fromSlot].visible then
+        if effect <> "none" then effect = "fade"
+    end if
     if effect = "none" then
         ctx.activeTransitionDuration = 0.0
     else
@@ -26,6 +30,7 @@ sub StartTransitionForScene(ctx as Object, fromSlot as Integer, toSlot as Intege
     fromBaseTranslation = fromNode.translation
     toBaseTranslation = toNode.translation
     ctx.activeMotionPlan = BuildPhotoMotionPlanForMode(ctx.photoMotion, entry, toNode, toBaseTranslation)
+    if isPortraitPair then ctx.activeMotionPlan = invalid
     ConstrainPhotoMotionPlanForScene(ctx, toNode, ctx.activeMotionPlan)
 
     ctx.pendingBgFromSlot = fromSlot

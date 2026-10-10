@@ -2,6 +2,74 @@ namespace tests
   @suite("SlideshowScene Helpers")
   class SlideshowSceneTests extends rooibos.BaseTestSuite
 
+    @describe("Portrait pairs")
+
+    @it("Pairs only a portrait with an adjacent photo without wrapping")
+    function test_portraitPairCandidate()
+      playlist = [{ id: "a", type: "photo" }, { id: "b", type: "photo" }, { id: "v", type: "video" }]
+      m.assertEqual(PortraitPairCandidateIndex(playlist, 0, 810, 1080, true), 1)
+      m.assertEqual(PortraitPairCandidateIndex(playlist, 0, 810, 1080, false), -1)
+      m.assertEqual(PortraitPairCandidateIndex(playlist, 0, 1920, 1080, true), -1)
+      m.assertEqual(PortraitPairCandidateIndex(playlist, 0, 1080, 1080, true), -1)
+      m.assertEqual(PortraitPairCandidateIndex(playlist, 1, 810, 1080, true), -1)
+      m.assertEqual(PortraitPairCandidateIndex(playlist, 2, 810, 1080, true), -1)
+      m.assertEqual(PortraitPairCandidateIndex([], 0, 810, 1080, true), -1)
+    end function
+
+    @it("A pair shows both photos in full in separate screen halves")
+    function test_portraitPairLayout()
+      layout = PortraitPairLayout(3000, 4000, 2000, 3000)
+      m.assertEqual(layout.left.width, 810)
+      m.assertEqual(layout.left.height, 1080)
+      m.assertEqual(layout.left.x, 75)
+      m.assertEqual(layout.right.width, 720)
+      m.assertEqual(layout.right.x, 1080)
+      m.assertInvalid(PortraitPairLayout(3000, 4000, 4000, 3000))
+      m.assertInvalid(PortraitPairLayout(3000, 4000, 3000, 3000))
+      m.assertInvalid(PortraitPairLayout(3000, 4000, 0, 0))
+    end function
+
+    @it("Portrait pair layouts stay inside their cells on the 3-pixel grid")
+    function test_portraitPairGrid()
+      for each dimensions in [[3019, 4031], [1001, 6017], [2999, 3000]]
+        layout = PortraitPairLayout(dimensions[0], dimensions[1], dimensions[0], dimensions[1])
+        for each cell in [layout.left, layout.right]
+          m.assertEqual(cell.width mod 3, 0)
+          m.assertEqual(cell.height mod 3, 0)
+          m.assertEqual(cell.x mod 3, 0)
+          m.assertEqual(cell.y mod 3, 0)
+          m.assertTrue(cell.width <= 960)
+          m.assertTrue(cell.height <= 1080)
+        end for
+        m.assertTrue(layout.left.x + layout.left.width <= 960)
+        m.assertTrue(layout.right.x >= 960)
+        m.assertTrue(layout.right.x + layout.right.width <= 1920)
+      end for
+    end function
+
+    @it("Navigation skips a displayed partner and returns to known pairs")
+    function test_portraitPairNavigation()
+      playlist = [{ id: "a" }, { id: "b" }, { id: "c" }, { id: "d" }]
+      pairs = { a: "b", c: "d" }
+      m.assertEqual(NextPortraitSlideIndex(0, 4, 2), 2)
+      m.assertEqual(NextPortraitSlideIndex(2, 4, 2), 0)
+      m.assertEqual(NextPortraitSlideIndex(0, 4, 1), 1)
+      m.assertEqual(PreviousPortraitSlideIndex(playlist, 2, pairs, true), 0)
+      m.assertEqual(PreviousPortraitSlideIndex(playlist, 0, pairs, true), 2)
+      m.assertEqual(PreviousPortraitSlideIndex(playlist, 2, pairs, false), 1)
+      m.assertEqual(PreviousPortraitSlideIndex(playlist, 2, {}, true), 1)
+    end function
+
+    @it("A refreshed playlist skips only the partner that is still adjacent")
+    function test_portraitPairRefresh()
+      playlist = [{ id: "a" }, { id: "b" }, { id: "c" }]
+      m.assertEqual(PortraitSlideAdvanceCount(playlist, 0, "b"), 2)
+      m.assertEqual(PortraitSlideAdvanceCount(playlist, 0, "c"), 1)
+      m.assertEqual(PortraitSlideAdvanceCount(playlist, 0, ""), 1)
+      m.assertEqual(PortraitSlideAdvanceCount(playlist, 2, "a"), 1)
+      m.assertEqual(PreviousPortraitSlideIndex(playlist, 2, { a: "c" }, true), 1)
+    end function
+
     @describe("Photo layout")
 
     @it("Existing profiles show the whole landscape photo")
