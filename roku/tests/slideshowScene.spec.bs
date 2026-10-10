@@ -2,6 +2,59 @@ namespace tests
   @suite("SlideshowScene Helpers")
   class SlideshowSceneTests extends rooibos.BaseTestSuite
 
+    @describe("Transition duration")
+
+    @it("Old and invalid cached profiles retain the half-second default")
+    function test_transitionDurationFallback()
+      for each value in [invalid, "2", true, {}, [], 0, -1, 6]
+        m.assertEqual(ResolvePlaybackTransitionDuration(value, 10), 0.5)
+      end for
+      m.assertEqual(ResolvePlaybackTransitionDuration(3.0, 3), 0.5)
+      m.assertEqual(ResolvePlaybackTransitionDuration(4.0, 3), 0.5)
+    end function
+
+    @it("Configured durations include the bounds and accept JSON numbers")
+    function test_transitionDurationValid()
+      m.assertEqual(ResolvePlaybackTransitionDuration(0.1, 3), 0.1)
+      m.assertEqual(ResolvePlaybackTransitionDuration(1.7, 10), 1.7)
+      m.assertEqual(ResolvePlaybackTransitionDuration(5, 10), 5.0)
+      parsed = ParseJson("{" + Chr(34) + "duration" + Chr(34) + ":2.5}")
+      m.assertEqual(ResolvePlaybackTransitionDuration(parsed.duration, 10), 2.5)
+    end function
+
+    @it("Animations and their completion timer use the configured duration")
+    function test_transitionAnimationDuration()
+      m.stubCall(StopMotionAnimationForScene, sub(_ctx as object)
+      end sub)
+      m.stubCall(ConstrainPhotoMotionPlanForScene, sub(_ctx as object, _node as object, _plan as dynamic)
+      end sub)
+      m.stubCall(StartBgCrossfadeForScene, function(context as object, duration as float) as boolean
+        context.observedBgDuration = duration
+        return true
+      end function)
+      for each effect in ["fade", "slide", "zoom"]
+        top = CreateObject("roSGNode", "Group")
+        fromNode = top.createChild("Poster")
+        fromNode.id = "main0"
+        toNode = top.createChild("Poster")
+        toNode.id = "main1"
+        ctx = {
+          top: top, transitionEffect: effect, transitionDurationSeconds: 1.7, photoMotion: "none"
+          mainPosters: [fromNode, toNode], pairedPosters: [{ visible: false }, { visible: false }]
+          transitionTimer: CreateObject("roSGNode", "Timer"), nextBgReady: true
+        }
+        StartTransitionForScene(ctx, 0, 1, { type: "photo" })
+        m.assertTrue(Abs(ctx.transitionTimer.duration - 1.7) < 0.00001)
+        m.assertTrue(Abs(ctx.activeAnimIn.duration - 1.7) < 0.00001)
+        m.assertTrue(Abs(ctx.activeAnimOut.duration - 1.7) < 0.00001)
+        m.assertTrue(Abs(ctx.activeTransitionDuration - 1.7) < 0.00001)
+        m.assertTrue(Abs(ctx.observedBgDuration - 1.7) < 0.00001)
+        ctx.activeAnimIn.control = "stop"
+        ctx.activeAnimOut.control = "stop"
+        ctx.transitionTimer.control = "stop"
+      end for
+    end function
+
     @describe("Portrait pairs")
 
     @it("Pairs only a portrait with an adjacent photo without wrapping")

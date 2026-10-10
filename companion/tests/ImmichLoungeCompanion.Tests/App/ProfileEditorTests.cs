@@ -254,6 +254,19 @@ public sealed class ProfileEditorTests : IDisposable
         Assert.AreEqual(0, (await client.GetFromJsonAsync<Profile>("/api/profiles/remove-exclusion"))!.ExcludedPeople.Count);
     }
 
+    [TestMethod]
+    public async Task TransitionDuration_EditorSavesDecimalInput()
+    {
+        using var client = _factory.CreateClient();
+        var (editor, _) = await LoadEditorAsync(client, new Profile { Id = "editor-duration", Name = "Duration" });
+        typeof(ProfileEditor).GetMethod("OnTransitionDurationChanged", PrivateInstance)!.Invoke(editor,
+            [new Microsoft.AspNetCore.Components.ChangeEventArgs { Value = "1.7" }]);
+        var payload = BuildPayload(editor);
+        Assert.AreEqual(1.7, payload.Slideshow.TransitionDurationSeconds);
+        Assert.AreEqual(HttpStatusCode.OK, (await client.PutAsJsonAsync("/api/profiles/editor-duration", payload)).StatusCode);
+        Assert.AreEqual(1.7, (await client.GetFromJsonAsync<Profile>("/api/profiles/editor-duration"))!.Slideshow.TransitionDurationSeconds);
+    }
+
     private static async Task<(ProfileEditor Editor, Profile Profile)> LoadEditorAsync(HttpClient client, Profile profile)
     {
         var created = await client.PostAsJsonAsync("/api/profiles", profile);

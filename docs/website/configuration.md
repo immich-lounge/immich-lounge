@@ -89,6 +89,10 @@ In the profile's **Slideshow** settings, enable **Zoom to fit (landscape photos)
 
 The setting is off by default and works in both the channel and screensaver. After the Roku refreshes the profile, it applies to the next photo displayed.
 
+### Transition duration
+
+Set **Transition duration (seconds)** to 0.1–5 seconds, shorter than the photo interval. It controls fade, slide, and zoom transitions in both the channel and screensaver, including portrait-pair fades and background crossfades. **None** changes photos immediately. Existing profiles keep the 0.5-second default; changes apply on the next transition after the Roku refreshes its profile.
+
 ### Side-by-side portraits
 
 Enable **Show portrait photos side by side** in the profile's **Slideshow** settings to pair consecutive portrait photos. Both photos are shown in full for one slideshow interval. Landscape, square, and unmatched portrait photos show alone. Pairs stay within the current playlist window and do not cross its boundary.

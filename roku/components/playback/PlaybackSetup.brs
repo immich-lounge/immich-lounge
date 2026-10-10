@@ -67,6 +67,7 @@ sub InitPlaybackSceneForScene(ctx as Object)
     ctx.slideStartTime = 0
     ctx.slideDuration = PlaybackSlideIntervalDefaultSeconds()
     ctx.activeTransitionDuration = 0.0
+    ctx.transitionDurationSeconds = PlaybackTransitionDurationSeconds()
     ctx.activeAnimOut = invalid
     ctx.activeAnimIn = invalid
     ctx.activeBgAnimOut = invalid

@@ -99,6 +99,7 @@ public class SlideshowSettings
     public int IntervalSeconds { get; set; } = 10;
     public bool Shuffle { get; set; } = true;
     public string TransitionEffect { get; set; } = "fade";
+    public double TransitionDurationSeconds { get; set; } = 0.5;
     public string PhotoMotion { get; set; } = "none";
     public int RefreshIntervalMinutes { get; set; } = 60;
     public bool PreventScreensaver { get; set; } = false;

@@ -34,11 +34,13 @@ sub ApplyProfileForScene(ctx as Object)
     if slideshow <> invalid then
         ctx.intervalSeconds = ValueOrDefault(slideshow.intervalSeconds, PlaybackSlideIntervalDefaultSeconds())
         ctx.transitionEffect = ValueOrDefault(slideshow.transitionEffect, "none")
+        ctx.transitionDurationSeconds = ResolvePlaybackTransitionDuration(slideshow.transitionDurationSeconds, ctx.intervalSeconds)
         ctx.photoMotion = ValueOrDefault(slideshow.photoMotion, "none")
         ctx.refreshIntervalMinutes = ValueOrDefault(slideshow.refreshIntervalMinutes, PlaybackRefreshIntervalDefaultMinutes())
     else
         ctx.intervalSeconds = PlaybackSlideIntervalDefaultSeconds()
         ctx.transitionEffect = "none"
+        ctx.transitionDurationSeconds = PlaybackTransitionDurationSeconds()
         ctx.photoMotion = "none"
         ctx.refreshIntervalMinutes = PlaybackRefreshIntervalDefaultMinutes()
     end if

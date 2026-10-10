@@ -36,6 +36,14 @@ function PlaybackTransitionDurationSeconds() as Float
     return 0.5
 end function
 
+' Old or invalid cached profiles keep the original transition speed.
+function ResolvePlaybackTransitionDuration(value as Dynamic, intervalSeconds as Integer) as Float
+    kind = LCase(Type(value))
+    if kind <> "integer" and kind <> "roint" and kind <> "longinteger" and kind <> "rolonginteger" and kind <> "float" and kind <> "rofloat" and kind <> "double" and kind <> "rodouble" then return PlaybackTransitionDurationSeconds()
+    if value >= 0.1 and value <= 5.0 and value < intervalSeconds then return value
+    return PlaybackTransitionDurationSeconds()
+end function
+
 function PlaybackClockDatePollSeconds() as Integer
     return 60
 end function
