@@ -9,6 +9,8 @@ public class ProfileDocumentService(ISettingsRepository settings) : IProfileDocu
     public Profile Normalize(Profile profile)
     {
         profile.NormalizeAssetFilter();
+        profile.Memories ??= new();
+        profile.Memories.TimeZoneId = CleanLocation(profile.Memories.TimeZoneId);
         if (profile.LocationFilter is { } location)
         {
             location.Country = CleanLocation(location.Country);
@@ -44,6 +46,7 @@ public class ProfileDocumentService(ISettingsRepository settings) : IProfileDocu
             profile.MediaTypes,
             profile.DateFilter,
             profile.LocationFilter,
+            profile.Memories,
             profile.Slideshow,
             profile.Display,
             profile.Quality,

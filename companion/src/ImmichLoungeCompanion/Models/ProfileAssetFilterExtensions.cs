@@ -29,6 +29,9 @@ public static class ProfileAssetFilterExtensions
     }
 
     public static bool HasMemoriesSource(this Profile profile) =>
+        profile.HasOnThisDaySource() || profile.Memories.IncludeBirthdays;
+
+    public static bool HasOnThisDaySource(this Profile profile) =>
         profile.ContentSources.Any(source => string.Equals(source.Type, "memories", StringComparison.OrdinalIgnoreCase));
 
     public static AssetFilterRule? BuildAssetFilterFromContentSources(IEnumerable<ContentSource> contentSources,

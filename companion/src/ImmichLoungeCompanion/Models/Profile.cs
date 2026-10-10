@@ -15,6 +15,7 @@ public class Profile
     public MediaTypes MediaTypes { get; set; } = new();
     public DateFilter? DateFilter { get; set; }
     public LocationFilter? LocationFilter { get; set; }
+    public MemorySettings Memories { get; set; } = new();
     public SlideshowSettings Slideshow { get; set; } = new();
     public DisplaySettings Display { get; set; } = new();
     public QualitySettings Quality { get; set; } = new();
@@ -27,6 +28,14 @@ public class ContentSource
     public string Type { get; set; } = "";   // "album" | "person" | "tag" | "memories"
     public string Id { get; set; } = "";
     public string Label { get; set; } = "";
+}
+
+public class MemorySettings
+{
+    public bool IncludeBirthdays { get; set; }
+    public bool ShowBirthdayCaptions { get; set; } = true;
+    // Empty uses the companion's local time zone, preserving existing profiles.
+    public string? TimeZoneId { get; set; }
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<AssetFilterRuleKind>))]

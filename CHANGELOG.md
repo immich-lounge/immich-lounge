@@ -11,6 +11,9 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 - Expose flat AND/OR source matching in the companion editor and add people exclusions applied to sources and memories. Preserve nested API rules and use separate person queries for legacy and structured search compatibility.
 
 - Bound Roku cached startup to a two-second profile wait and three-second playlist wait, using elapsed time even while other events arrive. Stop abandoned startup tasks while retaining selection/effective-profile cache checks and cold-start wait limits.
+- Add opt-in birthday memories for Immich 3.3+, independent of On This Day memories, with optional birthday captions in both Roku overlay styles. Preserve album labels and omit date-sensitive captions from offline registry playlists.
+- Add a per-profile memories time zone and rebuild memory playlists when its date changes. Memory-only profiles now select only the enabled memories instead of the entire library.
+- Hydrate missing memory EXIF only when location or minimum-file-size filters need it; reuse metadata already fetched for regular sources and skip photos deleted since memory generation.
 
 - Added independent named schedules under `/data/schedules`, with explicit fallback profiles, time zones and weekly slots. Roku can choose a fixed profile or a schedule independently in each mode; playback switches settings and playlist together and tracks effective profile identity for resume/cache requests.
 

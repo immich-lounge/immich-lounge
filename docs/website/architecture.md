@@ -144,7 +144,7 @@ The companion uses these endpoints for playlist building:
 | Call | Purpose |
 |------|---------|
 | `POST /api/search/assets` | Search by album, person, or tag |
-| `GET /api/memories?date=<date>` | Fetch "On This Day" memories |
+| `GET /api/memories?for=<yyyy-MM-dd>` | Fetch memories visible on the profile's date, including birthdays on Immich 3.3+ |
 
 ---
 

@@ -67,6 +67,8 @@ Pick one or more content sources, then save the profile. The companion starts bu
 
 Launch **Immich Lounge** on Roku, enter the companion URL, and choose a profile.
 
+For setup help on your phone, scan the QR code under **Setup & support** on the Roku screen.
+
 ![Roku companion connection screen](./assets/screenshots/change-companion.png){ .doc-screenshot .on-glb }
 <p class="doc-caption">Enter the companion host and keep the default port <code>4383</code>.</p>
 

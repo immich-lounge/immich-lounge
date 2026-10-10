@@ -2,6 +2,29 @@ namespace tests
   @suite("OverlayComponent Helpers")
   class OverlayComponentTests extends rooibos.BaseTestSuite
 
+    @describe("Birthday captions")
+
+    @it("Shows a caption in both overlay styles even without an asset date")
+    function test_birthdayCaption()
+      for each style in ["bottom", "corner"]
+        overlay = CreateObject("roSGNode", "OverlayComponent")
+        overlay.overlayStyle = style
+        overlay.overlayFields = []
+        overlay.overlayBehavior = "always"
+        overlay.birthdayCaption = "Emma's birthday"
+        if style = "bottom" then
+          label = overlay.findNode("dateLine")
+        else
+          label = overlay.findNode("cornerDate")
+        end if
+        m.assertEqual(label.text, "Emma's birthday")
+        m.assertTrue(label.visible)
+        overlay.birthdayCaption = ""
+        m.assertEqual(label.text, "")
+        m.assertFalse(label.visible)
+      end for
+    end function
+
     @describe("FormatAssetDate")
 
     @it("Uses dateTimeOriginal when present")

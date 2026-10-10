@@ -19,6 +19,40 @@ public sealed class ProfileEditorTests : IDisposable
     public void Dispose() => _factory.Dispose();
 
     [TestMethod]
+    public async Task BirthdaySettings_SurviveEditorSaveAndReloadWithoutEnablingOnThisDay()
+    {
+        _factory.ImmichClient.GetSearchApiCapabilitiesAsync(Arg.Any<ImmichSettings>(), Arg.Any<bool>())
+            .Returns(new SearchApiCapabilities("3.3.1", true));
+        using var client = _factory.CreateClient();
+        var (editor, profile) = await LoadEditorAsync(client, new Profile
+        {
+            Id = "birthday-profile", Name = "Birthdays",
+            Memories = new() { IncludeBirthdays = true, ShowBirthdayCaptions = false, TimeZoneId = "Europe/Zurich" }
+        });
+        Assert.IsFalse((bool)GetField(editor, "_memoriesEnabled")!);
+        Assert.IsTrue((bool)GetField(editor, "_birthdayMemoriesAvailable")!);
+        profile.Memories.ShowBirthdayCaptions = true;
+        var saved = await client.PutAsJsonAsync("/api/profiles/birthday-profile", BuildPayload(editor));
+        Assert.AreEqual(HttpStatusCode.OK, saved.StatusCode);
+        var reloaded = await client.GetFromJsonAsync<Profile>("/api/profiles/birthday-profile");
+        Assert.IsTrue(reloaded!.Memories.IncludeBirthdays);
+        Assert.IsTrue(reloaded.Memories.ShowBirthdayCaptions);
+        Assert.AreEqual("Europe/Zurich", reloaded.Memories.TimeZoneId);
+        Assert.IsFalse(reloaded.HasOnThisDaySource());
+    }
+
+    [TestMethod]
+    public async Task InvalidMemoryTimeZone_IsRejectedBySaveAndPreview()
+    {
+        using var client = _factory.CreateClient();
+        var (editor, profile) = await LoadEditorAsync(client, new Profile { Id = "invalid-zone", Name = "Invalid zone" });
+        profile.Memories.TimeZoneId = "Not/A_Time_Zone";
+        var payload = BuildPayload(editor);
+        Assert.AreEqual(HttpStatusCode.BadRequest, (await client.PutAsJsonAsync("/api/profiles/invalid-zone", payload)).StatusCode);
+        Assert.AreEqual(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/profiles/preview-count", payload)).StatusCode);
+    }
+
+    [TestMethod]
     [DataRow("album")]
     [DataRow("person")]
     [DataRow("tag")]

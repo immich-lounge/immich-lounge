@@ -9,11 +9,11 @@ namespace ImmichLoungeCompanion.Playlist;
 public static class PlaylistEntryProjector
 {
     public static List<PlaylistEntry> CreateEntries(
-        Dictionary<string, (ImmichAsset Asset, string? SourceLabel)> allAssets,
+        Dictionary<string, CollectedAsset> allAssets,
         Profile profile)
     {
         var entries = allAssets
-            .Select(kvp => MapToEntry(kvp.Key, kvp.Value.Asset, kvp.Value.SourceLabel, profile.MediaTypes))
+            .Select(kvp => MapToEntry(kvp.Key, kvp.Value, profile.MediaTypes))
             .Where(entry => entry != null)
             .Cast<PlaylistEntry>()
             .ToList();
@@ -27,7 +27,7 @@ public static class PlaylistEntryProjector
         return allAssets
             .OrderByDescending(kvp => kvp.Value.Asset.ExifInfo?.DateTimeOriginal ?? "")
             .ThenBy(kvp => kvp.Key, StringComparer.Ordinal)
-            .Select(kvp => MapToEntry(kvp.Key, kvp.Value.Asset, kvp.Value.SourceLabel, profile.MediaTypes))
+            .Select(kvp => MapToEntry(kvp.Key, kvp.Value, profile.MediaTypes))
             .Where(entry => entry != null)
             .Cast<PlaylistEntry>()
             .ToList();
@@ -42,29 +42,31 @@ public static class PlaylistEntryProjector
         }
     }
 
-    private static PlaylistEntry? MapToEntry(string id, ImmichAsset asset, string? sourceLabel, MediaTypes filter)
+    private static PlaylistEntry? MapToEntry(string id, CollectedAsset collected, MediaTypes filter)
     {
+        var asset = collected.Asset;
+        var sourceLabel = collected.SourceLabel;
         bool isLivePhoto = asset.LivePhotoVideoId != null;
         bool isVideo = asset.Type == "VIDEO";
 
         if (isLivePhoto && filter.LivePhotos)
         {
-            return new PlaylistEntry(id, "livePhoto", sourceLabel, asset.LivePhotoVideoId);
+            return new PlaylistEntry(id, "livePhoto", sourceLabel, asset.LivePhotoVideoId, collected.BirthdayCaption);
         }
 
         if (isLivePhoto && !filter.LivePhotos && filter.Photos)
         {
-            return new PlaylistEntry(id, "photo", sourceLabel, null);
+            return new PlaylistEntry(id, "photo", sourceLabel, null, collected.BirthdayCaption);
         }
 
         if (isVideo && filter.Videos)
         {
-            return new PlaylistEntry(id, "video", sourceLabel, null);
+            return new PlaylistEntry(id, "video", sourceLabel, null, collected.BirthdayCaption);
         }
 
         if (!isVideo && !isLivePhoto && filter.Photos)
         {
-            return new PlaylistEntry(id, "photo", sourceLabel, null);
+            return new PlaylistEntry(id, "photo", sourceLabel, null, collected.BirthdayCaption);
         }
 
         return null;

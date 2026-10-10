@@ -68,6 +68,16 @@ sub OnMetaChanged()
     ' Date
     showDate = IsFieldEnabled("date", fields)
     dateStr = FormatAssetDate(meta)
+    caption = ValueOrDefault(m.top.birthdayCaption, "")
+    if not showDate then dateStr = ""
+    if caption <> "" then
+        if dateStr <> "" then
+            dateStr = caption + " · " + dateStr
+        else
+            dateStr = caption
+        end if
+        showDate = true
+    end if
     if style = "bottom" then
         m.dateShadowLine.text = iif(showDate, dateStr, "")
         m.dateLine.text = iif(showDate, dateStr, "")

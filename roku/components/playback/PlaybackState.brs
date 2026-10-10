@@ -3,8 +3,9 @@
 sub FetchCurrentMetaForScene(ctx as Object, entry as Object)
     ctx.currentEntry = entry
     if ctx.overlay <> invalid then
-        ctx.overlay.assetMeta = {}
         ctx.overlay.sourceLabel = ValueOrDefault(entry.sourceLabel, "")
+        ctx.overlay.birthdayCaption = ValueOrDefault(entry.birthdayCaption, "")
+        ctx.overlay.assetMeta = {}
     end if
 
     if ctx.profile = invalid then return
@@ -30,13 +31,15 @@ end sub
 sub OnMetaResultForScene(ctx as Object)
     result = ctx.currentMetaTask.metaResult
     if result.ok = true then
-        ctx.overlay.assetMeta = result.data
         ctx.overlay.sourceLabel = ValueOrDefault(ctx.currentEntry.sourceLabel, "")
+        ctx.overlay.birthdayCaption = ValueOrDefault(ctx.currentEntry.birthdayCaption, "")
+        ctx.overlay.assetMeta = result.data
     else if ctx.overlay <> invalid then
         ' Keep the current slide's source label, but clear stale per-asset metadata
         ' when we cannot refresh details for a cached/offline slide.
-        ctx.overlay.assetMeta = {}
         ctx.overlay.sourceLabel = ValueOrDefault(ctx.currentEntry.sourceLabel, "")
+        ctx.overlay.birthdayCaption = ValueOrDefault(ctx.currentEntry.birthdayCaption, "")
+        ctx.overlay.assetMeta = {}
     end if
 end sub
 

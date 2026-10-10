@@ -8,7 +8,9 @@ end function
 ' matches the startup playlist window requested from the companion.
 function TruncatePlaylistForRegistry(entries as Object) as Object
     maxEntries = PlaybackRegistryPlaylistWindowSize()
-    if entries.Count() <= maxEntries then return entries
+    ' Always prepare entries, even a short playlist. Date-sensitive birthday
+    ' captions are intentionally omitted from offline fallback storage.
+    if entries.Count() < maxEntries then maxEntries = entries.Count()
     result = []
     for i = 0 to maxEntries - 1
         result.Push(PrepareEntryForRegistry(entries[i]))

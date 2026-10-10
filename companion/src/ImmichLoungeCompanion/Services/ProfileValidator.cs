@@ -1,3 +1,4 @@
+using System;
 using ImmichLoungeCompanion.Models;
 
 namespace ImmichLoungeCompanion.Services;
@@ -6,6 +7,12 @@ public class ProfileValidator : IProfileValidator
 {
     public string? Validate(Profile profile)
     {
+        if (!string.IsNullOrWhiteSpace(profile.Memories.TimeZoneId) &&
+            !TimeZoneInfo.TryFindSystemTimeZoneById(profile.Memories.TimeZoneId, out _))
+        {
+            return "Invalid memories time zone. Choose a time zone supported by the companion.";
+        }
+
         if (!IsMediaTypesValid(profile.MediaTypes))
         {
             return "At least one of photos, videos, or livePhotos must be true.";
