@@ -6,6 +6,8 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+- Add a persistent local Immich 3.2 development stack and a separate 3.1 compatibility stack, with isolated fixture accounts and 60 live search/playlist checks.
+
 - Detect the Immich server version and select legacy metadata search or the structured Search API v2 introduced in 3.2; cache detection briefly and refresh it on Test Connection.
 - Preserve legacy ID-list matching, inclusive date boundaries, and profile storage; support both numbered and cursor pagination without mutating caller requests.
 - Add optional country/state/city profile filters, exact-name suggestions, and location filtering of added memories.

@@ -1,0 +1,79 @@
+# Live Immich development and compatibility tests
+
+This setup runs two dedicated local Immich stacks:
+
+| Target | Immich version | URL | Purpose |
+|---|---|---|---|
+| Development | 3.2.0 | http://127.0.0.1:13283 | Persistent development server and structured search tests |
+| Legacy | 3.1.0 | http://127.0.0.1:12283 | Legacy search compatibility tests |
+
+The development stack uses Docker's `unless-stopped` restart policy. Both stacks retain their library and database in separate named Docker volumes. The script never deletes volumes or connects to a configured production library. Services bind only to loopback; these addresses are for development on this computer, not Roku setup.
+
+The pinned service layout is based on Immich's [3.1 compose file](https://github.com/immich-app/immich/blob/v3.1.0/docker/docker-compose.yml) and [3.2 compose file](https://github.com/immich-app/immich/blob/v3.2.0/docker/docker-compose.yml). Machine learning and reverse geocoding are disabled for these search-focused fixtures.
+
+## Start and run
+
+Requires Docker Desktop in Linux-container mode, Git, PowerShell 7, and the .NET SDK needed by the companion.
+
+Run from the repository or this feature worktree:
+
+```powershell
+# Start the persistent development server and prepare its fixture account.
+pwsh -NoProfile -File companion/tests/LiveImmich/Run-LiveImmich.ps1 -Action Start -Target Development
+
+# Start both stacks and run all live checks.
+pwsh -NoProfile -File companion/tests/LiveImmich/Run-LiveImmich.ps1 -Action Test
+
+# Run only the development server's native and legacy-fallback checks.
+pwsh -NoProfile -File companion/tests/LiveImmich/Run-LiveImmich.ps1 -Action Test -Target Development
+
+# Show container status.
+pwsh -NoProfile -File companion/tests/LiveImmich/Run-LiveImmich.ps1 -Action Status
+
+# Stop without deleting any data.
+pwsh -NoProfile -File companion/tests/LiveImmich/Run-LiveImmich.ps1 -Action Stop -Target Legacy
+```
+
+Start Docker Desktop first if the script reports that the engine is unavailable. The first run downloads Immich and database images.
+
+## Persistent accounts and configuration
+
+The script finds the primary checkout using Git's common directory. Generated state is stored in **the primary checkout's** `_out/live-immich/`, even when the script runs from a worktree. The mounted configuration therefore survives removal of that worktree.
+
+- `v32-account.json`: development admin email/password, fixture-user email/password, and the fixture user's read-only API key.
+- `v31-account.json`: equivalent credentials for the legacy stack.
+- `v31.env` / `v32.env`: generated database credentials and pinned stack configuration.
+- `compose.yml` / `immich.json`: persistent runtime configuration copied from the source setup.
+- `v31-results.json` / `v32-results.json`: latest live-check summaries.
+
+These generated files are gitignored. Keep them locally; do not publish or commit the account or environment files.
+
+Log in to the development web app using `adminEmail` and `adminPassword` from `v32-account.json`. Use that admin account for manual development photos. The separate `fixtures@immich-lounge.test` account is reserved for deterministic tests, so manual uploads do not change test expectations. The fixture API key has the same minimum read permissions documented for Immich Lounge.
+
+No companion connection settings are changed by this setup. A dedicated companion instance can use the fixture API key when testing its UI. The runner calls the actual companion client and playlist collector directly.
+
+## What the live checks cover
+
+Each native server run performs 20 checks, including:
+
+- Version detection and selection of numbered or cursor pagination.
+- Four actual paginated responses using a page size of one.
+- Country, state/province, city, combined fields, and empty results.
+- Inclusive date boundaries and combined location/date queries.
+- Album filtering and membership in all selected albums.
+- Scoped location suggestions.
+- Connection testing and reading albums, people, tags, and memories with the documented restricted key.
+- The actual playlist collector with combined source/location filters.
+- An invalid API key returning an error.
+
+The 3.2 run repeats the checks with its version endpoint deliberately hidden by a client handler, exercising legacy fallback against the real 3.2 search API. Only that version probe is simulated; searches and other API calls reach Immich.
+
+Four synthetic PNGs are uploaded through Immich's API, and metadata extraction completes before the fixture setup continues. The script then sets deterministic city/state/country and capture dates in the **dedicated test database**, avoiding dependence on changing reverse-geocoding datasets. These checks validate search and playlist behavior, not location extraction accuracy. People, tags, and memories currently receive permission/read smoke checks rather than populated content fixtures.
+
+Repeated runs reuse the fixture account, photo IDs, and albums. Start/Test reapplies metadata only to those known fixture IDs. Additional manual development assets remain untouched.
+
+## Persistence and cleanup
+
+Stopping or recreating the containers keeps their named volumes. Keep the primary checkout's generated state alongside those volumes so passwords and fixture IDs remain available.
+
+There is no automatic reset or data-deletion command. If you deliberately remove a stack's Docker volumes, its generated account/environment state must be reset together before reseeding. Do not reuse a database volume across major-version downgrades.

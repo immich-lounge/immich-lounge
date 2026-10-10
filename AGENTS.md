@@ -61,6 +61,8 @@ docker-compose up -d
 - **`Immich/`** — `ImmichClient` calls Immich REST API for search and memories
 - **`Services/CompanionState.cs`** — Scoped Blazor circuit state
 
+**Live Immich development testing:** Use the dedicated Docker stacks and opt-in runner documented in [docs/maintainer/live-immich-testing.md](docs/maintainer/live-immich-testing.md). From the repository root, run `pwsh -NoProfile -File companion/tests/LiveImmich/Run-LiveImmich.ps1 -Action Test`. The persistent 3.2 development server is at `http://127.0.0.1:13283`; the 3.1 compatibility server uses port `12283`. Credentials and mounted configuration live in the primary checkout's gitignored `_out/live-immich/`, surviving feature-worktree removal. Use the development admin account for manual data and keep the separate fixture account unchanged. Never repoint this runner at a production library, delete its persistent volumes as routine cleanup, or commit generated credentials.
+
 **DI lifetime rules (important):** `ImmichClient` and `PlaylistCacheWorker` are registered as **Singletons** — never change to Scoped, as `PlaylistCacheWorker` depends on `IImmichClient` and a Singleton cannot capture a Scoped service. `CompanionState` is **Scoped**.
 
 **Profile security model:** Profile JSON files on disk do **not** contain the Immich API key. The API key is injected at serve time from `settings.json`, so the Roku receives a single enriched JSON object.
