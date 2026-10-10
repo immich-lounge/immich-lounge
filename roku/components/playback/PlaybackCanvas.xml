@@ -23,15 +23,27 @@
 
     <Poster id="main0" width="1920" height="1080" loadDisplayMode="scaleToFit"
             loadWidth="1920" loadHeight="1080"
-            translation="[0,0]" opacity="0.0" />
+            translation="[0,0]" opacity="0.0">
+      <Poster id="paired0" width="960" height="1080" loadDisplayMode="scaleToFit"
+              loadWidth="960" loadHeight="1080" visible="false" />
+    </Poster>
     <Poster id="main1" width="1920" height="1080" loadDisplayMode="scaleToFit"
             loadWidth="1920" loadHeight="1080"
-            translation="[0,0]" opacity="0.0" />
+            translation="[0,0]" opacity="0.0">
+      <Poster id="paired1" width="960" height="1080" loadDisplayMode="scaleToFit"
+              loadWidth="960" loadHeight="1080" visible="false" />
+    </Poster>
     <Poster id="main2" width="1920" height="1080" loadDisplayMode="scaleToFit"
             loadWidth="1920" loadHeight="1080"
-            translation="[0,0]" opacity="0.0" />
+            translation="[0,0]" opacity="0.0">
+      <Poster id="paired2" width="960" height="1080" loadDisplayMode="scaleToFit"
+              loadWidth="960" loadHeight="1080" visible="false" />
+    </Poster>
     <Poster id="main3" width="1920" height="1080" loadDisplayMode="scaleToFit"
             loadWidth="1920" loadHeight="1080"
-            translation="[0,0]" opacity="0.0" />
+            translation="[0,0]" opacity="0.0">
+      <Poster id="paired3" width="960" height="1080" loadDisplayMode="scaleToFit"
+              loadWidth="960" loadHeight="1080" visible="false" />
+    </Poster>
   </children>
 </component>

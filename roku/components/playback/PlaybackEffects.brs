@@ -93,6 +93,7 @@ end sub
 sub StartActiveSlideMotionForScene(ctx as Object)
     StopMotionAnimationForScene(ctx)
     if ctx.photoMotion <> "kenBurns" then return
+    if ctx.pairedPosters[ctx.ringCurrent].visible then return
     if ctx.playlist.Count() = 0 then return
 
     entry = ctx.playlist[ctx.playlistIndex]

@@ -7,6 +7,10 @@ sub InitPlaybackSceneForScene(ctx as Object)
     ctx.backgroundEffect = "blur"
     ctx.photoMotion = "none"
     ctx.zoomToFit = false
+    ctx.sideBySidePortraits = false
+    ctx.slideAssetCount = 1
+    ctx.portraitPairs = {}
+    ctx.currentPairAssetId = ""
 
     ctx.overlay = ctx.top.findNode("overlay")
     ctx.toast = ctx.top.findNode("toast")
@@ -27,10 +31,12 @@ sub InitPlaybackSceneForScene(ctx as Object)
 
     ctx.ringSize = 4
     ctx.mainPosters = []
+    ctx.pairedPosters = []
     ctx.bgPosters = []
     ctx.ringUrls = []
     for i = 0 to ctx.ringSize - 1
         ctx.mainPosters.Push(ctx.top.findNode("main" + i.ToStr()))
+        ctx.pairedPosters.Push(ctx.top.findNode("paired" + i.ToStr()))
         ctx.bgPosters.Push(ctx.top.findNode("bg" + i.ToStr()))
         ctx.ringUrls.Push("")
     end for
@@ -162,6 +168,7 @@ end function
 
 sub ApplyPlaylistFromTopForScene(ctx as Object)
     ctx.playlist = ctx.top.playlist
+    ctx.portraitPairs = {}
     ctx.playlistIndex = ctx.top.startPlaylistIndex
     if ctx.playlistIndex < 0 or ctx.playlistIndex >= ctx.playlist.Count() then
         ctx.playlistIndex = 0

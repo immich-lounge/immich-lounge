@@ -220,6 +220,7 @@ function ApplyPendingBatchSwapState(ctx as Object, isScreensaver as Boolean) as 
     if ctx.pendingBatchAssets = invalid then return false
 
     ctx.playlist = ctx.pendingBatchAssets
+    ctx.portraitPairs = {}
     ctx.playlistOffset = ctx.pendingBatchOffset
     ctx.nextPlaylistOffset = ctx.pendingNextPlaylistOffset
     ctx.playlistVersion = NormalizePlaylistVersion(ctx.pendingBatchPlaylistVersion)

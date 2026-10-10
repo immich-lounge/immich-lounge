@@ -44,6 +44,10 @@ sub OnNextBgPosterLoaded()
     OnNextBgPosterLoadedForScene(m)
 end sub
 
+sub OnNextPortraitLoaded()
+    OnNextPortraitLoadedForScene(m)
+end sub
+
 ' Shared transition commit: advance ring indices, preload lookahead, start animation.
 ' Called after the animation completes — swap bg posters then recycle the released slot.
 sub OnTransitionComplete()

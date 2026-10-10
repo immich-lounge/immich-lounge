@@ -11,6 +11,7 @@ sub ShowCurrentSlideForScene(ctx as Object)
     ctx.pendingEntry = entry
     ctx.loadingFromSlot = ctx.ringCurrent
     ctx.loadingToSlot = ctx.ringNext
+    ResetPendingPortraitForScene(ctx)
     ctx.loadingMediaUrl = mediaUrl
     ctx.loadingCommitted = false
     ctx.loadingMainFallbackTried = false
@@ -27,6 +28,7 @@ sub ShowCurrentSlideForScene(ctx as Object)
 
     ctx.nextMainReady = false
     ctx.nextBgReady = false
+    ctx.nextBgFailed = false
 
     if toNode.uri = mediaUrl and toNode.loadStatus = "ready" then
         if ApplyMainPosterLayoutForScene(ctx, toNode) then
@@ -54,10 +56,9 @@ sub ShowCurrentSlideForScene(ctx as Object)
         bgNode.observeField("loadStatus", "OnNextBgPosterLoaded")
     end if
 
-    if ctx.nextMainReady and ctx.nextBgReady then
-        ctx.transitionSafetyTimer.control = "stop"
-        CommitSlideForScene(ctx, ctx.loadingFromSlot, ctx.loadingToSlot, entry)
-    else
+    TryStartPortraitPairForScene(ctx)
+    TryCommitLoadedSlideForScene(ctx)
+    if not ctx.loadingCommitted then
         ctx.loadingTimer.control = "start"
     end if
 end sub

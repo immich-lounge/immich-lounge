@@ -129,6 +129,7 @@ sub OnRefreshPlaylistResultForScene(ctx as Object, isScreensaver as Boolean)
         end if
 
         ctx.playlist = result.assets
+        if resultPlaylistVersion <> ctx.playlistVersion or result.offset <> ctx.playlistOffset then ctx.portraitPairs = {}
         ctx.playlistOffset = result.offset
         ctx.nextPlaylistOffset = result.nextOffset
         ctx.totalPlaylistCount = result.totalCount
@@ -141,6 +142,8 @@ sub OnRefreshPlaylistResultForScene(ctx as Object, isScreensaver as Boolean)
         ctx.pendingNextPlaylistOffset = 0
         ctx.waitingForNextBatchSwap = false
         ctx.playlistIndex = ResolvePlaylistIndexAfterRefresh(ctx.playlist, currentAssetId, ctx.playlistIndex)
+        ' A refreshed window may have moved the right photo away from the left.
+        ctx.slideAssetCount = PortraitSlideAdvanceCount(ctx.playlist, ctx.playlistIndex, ctx.currentPairAssetId)
         PersistActivePlaylistCacheForScene(ctx, isScreensaver)
     else
         LogDebug(PlaybackLogScope(ctx), "refresh playlist failed, continuing with existing playlist")
