@@ -1,4 +1,5 @@
 ---
+description: "Read user-facing release notes and changes to Immich Lounge."
 icon: material/history
 ---
 

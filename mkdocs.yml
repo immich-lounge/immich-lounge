@@ -29,6 +29,7 @@ theme:
     - navigation.tracking
     - content.action.edit
     - content.tabs.link
+    - content.action.copy
     - content.code.copy
     - toc.follow
     - search.suggest
@@ -72,6 +73,29 @@ plugins:
       manual: true
       auto_caption: true
   - search
+  - social:
+      cards_layout_options:
+        background_color: "#0D1120"
+        color: "#FFFFFF"
+  - llmstxt:
+      sections:
+        Overview:
+          - index.md
+          - architecture.md
+        Setup:
+          - getting-started.md
+          - installation.md
+          - api-key.md
+        Guides:
+          - configuration.md
+          - companion-app.md
+          - roku-apps.md
+        Help:
+          - faq.md
+          - troubleshooting.md
+          - support.md
+        Releases:
+          - changelog.md
 
 nav:
   - Home: index.md

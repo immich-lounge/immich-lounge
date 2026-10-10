@@ -1,4 +1,5 @@
 ---
+description: "Answers to common questions about Immich Lounge, Roku playback, and companion setup."
 icon: material/frequently-asked-questions
 ---
 

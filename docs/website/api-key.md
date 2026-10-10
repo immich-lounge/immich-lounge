@@ -1,4 +1,5 @@
 ---
+description: "Create an Immich API key with the permissions Immich Lounge needs to read your photos and metadata."
 icon: material/key-outline
 ---
 

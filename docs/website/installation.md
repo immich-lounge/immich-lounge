@@ -1,4 +1,5 @@
 ---
+description: "Install the companion with Docker Compose and add the Immich Lounge channel and screensaver to Roku."
 icon: material/docker
 ---
 

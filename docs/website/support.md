@@ -1,4 +1,5 @@
 ---
+description: "Find help for Immich Lounge and report problems with the details needed to investigate."
 icon: material/lifebuoy
 ---
 
@@ -50,3 +51,5 @@ Use GitHub Issues for:
 - documentation improvements
 
 When reporting a problem, include your Roku model, Roku OS version, immich version, and whether the issue is in the companion app, channel, or screensaver.
+
+Use **Copy as Markdown** above a guide's heading to copy its text into a support conversation or an assistant. The [Markdown documentation index](./llms.txt) links to the exported setup and help pages.

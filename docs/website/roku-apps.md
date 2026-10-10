@@ -1,4 +1,5 @@
 ---
+description: "Connect your Roku, select a profile or schedule, and configure channel and screensaver playback."
 icon: material/television-play
 ---
 
