@@ -21,7 +21,7 @@ Display your <a href="https://immich.app">Immich</a> photos as a slideshow or sc
 </div>
 
 <figure class="screenshot-card home-playback">
-  <img src="./assets/screenshots/slideshow.png" alt="Immich Lounge slideshow on Roku with photo information, clock, and weather" />
+  <img class="on-glb" src="./assets/screenshots/slideshow.png" alt="Immich Lounge slideshow on Roku with photo information, clock, and weather" />
   <figcaption>Your photos on the TV, with optional information, clock, and weather.</figcaption>
 </figure>
 
@@ -77,15 +77,15 @@ Add the Roku apps to your account:
 
 <div class="screenshot-grid">
   <figure class="screenshot-card">
-    <img src="./assets/screenshots/companion-connection.png" alt="Immich Lounge companion connection page" />
+    <img class="on-glb" src="./assets/screenshots/companion-connection.png" alt="Immich Lounge companion connection page" />
     <figcaption>Configure the companion with your immich server URL and API key.</figcaption>
   </figure>
   <figure class="screenshot-card">
-    <img src="./assets/screenshots/change-profile.png" alt="Immich Lounge profile selection screen" />
+    <img class="on-glb" src="./assets/screenshots/change-profile.png" alt="Immich Lounge profile selection screen" />
     <figcaption>Select a profile on the Roku after connecting to the companion.</figcaption>
   </figure>
   <figure class="screenshot-card">
-    <img src="./assets/screenshots/config-dialog.png" alt="Immich Lounge Roku settings dialog" />
+    <img class="on-glb" src="./assets/screenshots/config-dialog.png" alt="Immich Lounge Roku settings dialog" />
     <figcaption>Refresh, switch profile, change companion, or clear cache from the Roku menu.</figcaption>
   </figure>
 </div>
