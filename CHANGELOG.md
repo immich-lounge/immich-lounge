@@ -4,6 +4,10 @@ Technical release notes for Immich Lounge live here.
 
 For a shorter user-facing summary, see [docs/website/changelog.md](./docs/website/changelog.md).
 
+## Unreleased
+
+- Normalize Immich base URLs in Roku media, background, and metadata requests, including cached profiles with trailing slashes (issue #7, based on PR #14).
+
 ## 2026-04-12
 
 - Bumped Roku channel and screensaver manifests to version 1.0.0008.

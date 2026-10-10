@@ -13,7 +13,7 @@ end sub
 
 sub FetchMeta()
     assetId = m.top.assetId
-    base    = m.top.immichBaseUrl
+    base    = NormalizeImmichServerUrl(m.top.immichBaseUrl)
     key     = m.top.apiKey
     url     = base + "/api/assets/" + assetId
     headers = BuildImmichHeaders(key)

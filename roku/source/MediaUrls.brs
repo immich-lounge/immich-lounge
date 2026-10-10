@@ -5,7 +5,8 @@
 ' in ApplyProfile() - the API key is never embedded in URLs.
 function BuildMediaUrl(entry as Object, profile as Object) as String
     if profile.immich = invalid then return ""
-    base = profile.immich.serverUrl
+    base = NormalizeImmichServerUrl(profile.immich.serverUrl)
+    if base = "" then return ""
     quality = "preview"
     if profile.imageQuality <> invalid then quality = profile.imageQuality
 
@@ -25,7 +26,8 @@ end function
 
 function BuildBackgroundMediaUrl(entry as Object, profile as Object) as String
     if profile.immich = invalid then return ""
-    base = profile.immich.serverUrl
+    base = NormalizeImmichServerUrl(profile.immich.serverUrl)
+    if base = "" then return ""
 
     if entry.type = "video" or entry.type = "livePhoto" then
         return BuildMediaUrl(entry, profile)

@@ -111,3 +111,13 @@ function ValueOrDefault(val as Dynamic, default as Dynamic) as Dynamic
     if val = invalid then return default
     return val
 end function
+' Normalize the base URL before appending an Immich API path.
+function NormalizeImmichServerUrl(serverUrl as Dynamic) as String
+    if serverUrl = invalid then return ""
+
+    base = serverUrl.ToStr().Trim()
+    while Len(base) > 0 and Right(base, 1) = "/"
+        base = Left(base, Len(base) - 1)
+    end while
+    return base
+end function
