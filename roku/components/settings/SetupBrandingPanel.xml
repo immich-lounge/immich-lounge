@@ -9,9 +9,9 @@
 
     <Group id="brandingGroup" translation="[72, 0]">
       <Poster id="brandingLogo"
-              width="480" height="156" loadDisplayMode="scaleToFit"
-              uri="pkg:/images/immich-lounge-horizontal-dark.png"
-              translation="[0, 360]" opacity="1.0" />
+              width="414" height="312" loadDisplayMode="scaleToFit"
+              uri="pkg:/images/roku-fhd-540x405.png"
+              translation="[0, 270]" opacity="1.0" />
 
       <Label text="Documentation"
              color="#AAB7FFFF" font="font:SmallSystemFont"
