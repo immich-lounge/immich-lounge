@@ -9,22 +9,33 @@
 
     <Group id="brandingGroup" translation="[72, 0]">
       <Poster id="brandingLogo"
-              width="414" height="312" loadDisplayMode="scaleToFit"
-              uri="pkg:/images/roku-fhd-540x405.png"
-              translation="[0, 270]" opacity="1.0" />
+              width="120" height="96" loadDisplayMode="scaleToFit"
+              uri="pkg:/images/immich-lounge-mark.png"
+              translation="[147, 192]" />
+      <Label text="Immich Lounge"
+             color="#FFFFFFFF" font="font:MediumBoldSystemFont"
+             width="414" height="60" translation="[0, 321]"
+             horizAlign="center" vertAlign="center" />
 
-      <Label text="Documentation"
-             color="#AAB7FFFF" font="font:SmallSystemFont"
-             translation="[0, 570]" width="410" />
+      <Rectangle color="#2A355EFF" width="366" height="3"
+                 translation="[24, 426]" />
+      <Label text="Setup &amp; support"
+             color="#C7BAFFFF" font="font:MediumBoldSystemFont"
+             width="414" height="48" translation="[0, 471]"
+             horizAlign="center" vertAlign="center" />
+      <Label text="Scan with your phone"
+             color="#AAB4CCFF" font="font:SmallSystemFont"
+             width="414" height="42" translation="[0, 528]"
+             horizAlign="center" vertAlign="center" />
       <Poster id="qrCode"
-              width="160" height="160" loadDisplayMode="scaleToFit"
+              width="180" height="180" loadDisplayMode="scaleToFit"
               uri="pkg:/images/qrcode_website.png"
-              translation="[0, 606]" opacity="0.9" />
+              translation="[117, 579]" />
       <Label id="docsUrlLabel"
              text="immich-lounge.github.io"
              color="#8A9BBFFF" font="font:SmallSystemFont"
-             translation="[0, 780]" width="410"
-             wrap="true" />
+             width="414" height="42" translation="[0, 783]"
+             horizAlign="center" vertAlign="center" />
     </Group>
 
     <Rectangle color="#2A355EFF" width="1" height="972"
