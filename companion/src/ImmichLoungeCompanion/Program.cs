@@ -15,8 +15,11 @@ var builder = WebApplication.CreateBuilder(args);
 var dataDir = builder.Configuration["DataDirectory"] ?? "/data";
 
 // Storage
+builder.Services.AddSingleton<IScheduleRepository>(sp => new JsonScheduleRepository(dataDir,
+    sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<JsonScheduleRepository>>()));
 builder.Services.AddSingleton<ISettingsRepository>(_ => new JsonSettingsRepository(dataDir));
-builder.Services.AddSingleton<IProfileRepository>(_ => new JsonProfileRepository(dataDir));
+builder.Services.AddSingleton<IProfileRepository>(sp => new JsonProfileRepository(dataDir,
+    sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<JsonProfileRepository>>()));
 
 // Playlist cache + builder + background worker
 builder.Services.AddSingleton<IPlaylistCache>(
@@ -56,7 +59,7 @@ builder.Services.AddHttpClient("local", (sp, client) =>
     }
 });
 
-// ImmichClient is stateless (uses IHttpClientFactory per call) — Singleton is correct.
+// ImmichClient uses IHttpClientFactory per call and a synchronized server-capability cache.
 // Do NOT use AddScoped; PlaylistCacheWorker (Singleton) depends on IImmichClient,
 // and a Singleton cannot capture a Scoped service without causing a captive dependency error.
 builder.Services.AddSingleton<ImmichLoungeCompanion.Immich.IImmichClient,

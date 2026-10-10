@@ -11,6 +11,23 @@ public static class ProfileAssetFilterExtensions
         profile.AssetFilter ??= BuildAssetFilterFromContentSources(profile.ContentSources);
     }
 
+    public static bool CanEditContentSources(this Profile profile)
+    {
+        var filter = profile.AssetFilter;
+        if (filter == null)
+        {
+            return true;
+        }
+
+        // The pickers can represent a flat OR of source conditions, but not AND or nested rules.
+        return filter.Kind == AssetFilterRuleKind.Group && filter.Operator == AssetFilterGroupOperator.Or &&
+            filter.Type == null && string.IsNullOrWhiteSpace(filter.Id) && string.IsNullOrWhiteSpace(filter.Label) &&
+            filter.Children.Count > 0 && filter.Children.All(child =>
+                child.Kind == AssetFilterRuleKind.Condition && child.Operator == null && child.Children.Count == 0 &&
+                child.Type is AssetFilterConditionType.Album or AssetFilterConditionType.Person or AssetFilterConditionType.Tag &&
+                !string.IsNullOrWhiteSpace(child.Id));
+    }
+
     public static bool HasMemoriesSource(this Profile profile) =>
         profile.ContentSources.Any(source => string.Equals(source.Type, "memories", StringComparison.OrdinalIgnoreCase));
 

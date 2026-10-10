@@ -22,7 +22,9 @@ These settings are shared by every profile:
 
 Use an immich URL that the Roku can reach on your LAN. `localhost`, `127.0.0.1`, `::1`, and wildcard bind addresses are not valid here.
 
-After saving, use **Test Connection** to make sure the companion can reach immich.
+After saving, use **Test Connection** to make sure the companion can reach Immich. The result also shows the server version and selected search API. Immich Lounge selects Search API v2 for stable Immich 3.2+ servers and legacy search for older servers. If version detection is unavailable, it uses legacy search with the same filters.
+
+Detection refreshes automatically after five minutes; **Test Connection** refreshes it immediately. No settings or profile migration is needed.
 
 ![Immich Lounge companion connection page](./assets/screenshots/companion-connection.png){ .doc-screenshot }
 <p class="doc-caption">The connection page stores the single immich connection used by all profiles.</p>
@@ -32,6 +34,10 @@ After saving, use **Test Connection** to make sure the companion can reach immic
 ## Profiles
 
 A profile decides what to show and how to show it. You can create as many as you want.
+
+After changing a profile's content sources, **Preview Match Count** uses the new selection. Save the profile to apply it to the playlist when the Roku next refreshes it.
+
+Profiles with advanced content rules created through the API keep those rules when edited in the companion. Their album, people, and tag selectors are unavailable; edit the rules through the API. Memories and display settings can still be changed in the companion.
 
 ![Immich Lounge companion profiles page](./assets/screenshots/companion-profiles.png){ .doc-screenshot }
 <p class="doc-caption">Each profile can target a different room, use case, or screensaver setup.</p>
@@ -59,7 +65,7 @@ A profile decides what to show and how to show it. You can create as many as you
 
 | Area | What it covers |
 |---|---|
-| Content | Albums, people, tags, memories, and optional date filtering |
+| Content | Albums, people, tags, memories, and optional date and location filtering |
 | Playback | Interval, shuffle, transition effect, photo motion, and playlist refresh interval |
 | Display | Overlay style and fields, background effect, date and time formatting, weather, and image quality |
 
@@ -84,6 +90,14 @@ The setting is off by default and works in both the channel and screensaver, inc
 
 If the right photo cannot load, the left shows alone and the right is retried as the next item. Changes apply to the next photo displayed after the profile refresh.
 
+## Location filters
+
+In the profile editor, fill in **Country**, **State / province**, or **City** to limit the playlist by location. Suggestions come from locations in your Immich library. Use the exact names stored in Immich; if suggestions are unavailable, you can enter those names manually.
+
+All filled fields must match. Blank fields impose no restriction. For example, a country alone includes all matching locations in that country. A country and city together require both to match. The location filter applies to selected sources and added memories; photos without the required location metadata are excluded.
+
+Location filters work with both legacy search and Search API v2. They use Immich's location metadata, not a distance or radius around a map point. Leave all three fields blank to preserve the existing playlist behavior.
+
 ## Profile planning
 
 The channel and screensaver share the same companion URL, but they can use different profiles.
@@ -99,12 +113,16 @@ That means you can:
 
 For the actual Roku-side behavior and menu actions, see [Using the Roku Apps](./roku-apps.md).
 
-## Profile schedules
+## Schedules
 
-In a profile's editor, enable **Profile schedule**, choose a time zone, and add time slots with a target profile and starting days. Select this profile on each Roku that should follow the schedule. The channel and screensaver can follow different profiles and schedules.
+Profiles define photos, transitions and display settings. Schedules are separate, reusable objects that choose which profile plays when. Open **Schedules** in the companion, create a named schedule, choose its time zone and fallback profile, then add weekly time slots referencing existing profiles.
 
-Outside the time slots, the selected profile's own content and settings apply. Each slot uses the target profile's content and settings, without following that target's schedule. Overlapping slots use the first matching row; use **Move up** to change priority.
+On Roku, choose a **Profile** for fixed playback or a **Schedule** for automatic switching. The channel and screensaver can follow different selections. Choosing a fixed profile stops following the schedule until you select the schedule again.
+
+Outside the time slots, the fallback profile plays. Disabling time slots also uses the fallback. Each slot uses its referenced profile's content and display settings. Overlapping slots use the first matching row; use **Move up** to change priority. A schedule can reference profiles, including its fallback profile, but cannot reference another schedule.
 
 Start times are included and end times are excluded. An earlier end time runs into the next day: a Friday 22:00–06:00 slot ends on Saturday morning. Equal start and end times mean 24 hours from the starting day. Slots follow local time in the chosen zone, including daylight saving changes.
 
-Once loaded, a schedule is checked each minute while playback runs. Enabling a schedule on an already running profile can take up to five minutes to be detected. A paused slideshow waits to switch until playback resumes. If the target playlist is empty or unavailable, the current slideshow continues and the Roku retries. If a target profile is deleted, the selected profile is used instead. When the companion is offline, the Roku keeps its last configuration; schedule changes require the companion.
+Schedules are checked each minute while playback runs. A paused slideshow waits to switch until playback resumes; old queued switches expire and are checked again. If a target playlist is empty or unavailable, the current slideshow continues and the Roku retries. If a referenced profile is deleted, the fallback is used. If both are unavailable, the Roku keeps its cached playback when possible. When the companion is offline, the Roku keeps its last configuration; schedule changes require the companion.
+
+Schedules are saved separately in the companion's `schedules/` data folder. Deleting a schedule does not delete its profiles. If you delete the schedule currently selected on a Roku, choose another schedule or profile on that Roku.

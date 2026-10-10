@@ -15,7 +15,8 @@ public class ImmichController(IImmichClient immich, ISettingsRepository settings
     {
         var s = await settings.LoadAsync();
         var (ok, imageCount, videoCount, error) = await immich.TestConnectionAsync(s.Immich);
-        return Ok(new { ok, imageCount, videoCount, error });
+        var searchApi = ok ? await immich.GetSearchApiCapabilitiesAsync(s.Immich, refresh: true) : null;
+        return Ok(new { ok, imageCount, videoCount, error, searchApi });
     }
 
     [HttpGet("albums")]
@@ -39,6 +40,18 @@ public class ImmichController(IImmichClient immich, ISettingsRepository settings
                 ? $"{s.Immich.ServerUrl.TrimEnd('/')}/{p.ThumbnailPath.TrimStart('/')}"
                 : null
         }));
+    }
+
+    [HttpGet("locations")]
+    public async Task<IActionResult> Locations(string type, string? country = null, string? state = null)
+    {
+        if (type is not ("country" or "state" or "city"))
+        {
+            return BadRequest(new { error = "Location type must be country, state, or city." });
+        }
+
+        var s = await settings.LoadAsync();
+        return Ok(await immich.GetLocationSuggestionsAsync(s.Immich, type, country, state));
     }
 
     [HttpGet("tags")]

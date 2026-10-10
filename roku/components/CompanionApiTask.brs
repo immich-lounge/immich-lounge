@@ -21,10 +21,11 @@ sub OnCommand()
     end if
 end sub
 
-' GET /api/profiles → { ok, profiles: [{id, name, description}] }
+' GET /api/playback/selections → fixed profiles and named schedules
 sub FetchProfiles()
-    url = m.top.baseUrl + "/api/profiles"
+    url = m.top.baseUrl + "/api/playback/selections"
     r = HttpGetJson(url, {})
+    if r.statusCode = 404 then r = HttpGetJson(m.top.baseUrl + "/api/profiles", {})
     if r.ok then
         m.top.profilesResult = { ok: true, profiles: r.data }
     else
@@ -34,8 +35,12 @@ end sub
 
 ' GET /api/profiles/:id → { ok, profile: enrichedProfile }
 sub FetchProfile()
-    url = m.top.baseUrl + "/api/profiles/" + m.top.profileId + "?resolveSchedule=true"
+    url = m.top.baseUrl + "/api/playback/selections/" + m.top.profileId
     r = HttpGetJson(url, {})
+    ' Older companions still support fixed profiles.
+    if r.statusCode = 404 and not IsScheduleSelectionId(m.top.profileId) then
+        r = HttpGetJson(m.top.baseUrl + "/api/profiles/" + m.top.profileId, {})
+    end if
     result = { ok: false, statusCode: r.statusCode, error: r.error }
     if r.statusCode = 200 then
         result.ok = true

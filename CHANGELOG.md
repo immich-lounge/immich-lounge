@@ -6,7 +6,13 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
-- Added weekly per-profile schedules with explicit time zones, overnight slots, ordered overlap resolution, and validation. Both Roku modes poll scheduled selections each minute and switch profile and playlist together when the target has photos; resume/cache identity tracks the effective playback profile.
+- Added independent named schedules under `/data/schedules`, with explicit fallback profiles, time zones and weekly slots. Roku can choose a fixed profile or a schedule independently in each mode; playback switches settings and playlist together and tracks effective profile identity for resume/cache requests.
+
+
+- Detect the Immich server version and select legacy metadata search or the structured Search API v2 introduced in 3.2; cache detection briefly and refresh it on Test Connection.
+- Preserve legacy ID-list matching, inclusive date boundaries, and profile storage; support both numbered and cursor pagination without mutating caller requests.
+- Add optional country/state/city profile filters, exact-name suggestions, and location filtering of added memories.
+- Keep version-detection failure compatible with legacy search; surface search failures without retrying broader queries.
 
 - Bind Roku test completion to a unique ID in each test deployment, ignoring buffered results from earlier runs. Added local runner regression checks to CI.
 

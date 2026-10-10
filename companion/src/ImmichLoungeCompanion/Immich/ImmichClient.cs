@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using ImmichLoungeCompanion.Immich.Dtos;
 using ImmichLoungeCompanion.Models;
@@ -12,13 +13,67 @@ using Microsoft.Extensions.Logging;
 
 namespace ImmichLoungeCompanion.Immich;
 
-public class ImmichClient(IHttpClientFactory httpClientFactory, ILogger<ImmichClient> logger) : IImmichClient
+public class ImmichClient(IHttpClientFactory httpClientFactory, ILogger<ImmichClient> logger, TimeProvider? timeProvider = null) : IImmichClient
 {
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
+
+    private readonly SemaphoreSlim _capabilityLock = new(1, 1);
+    private readonly TimeProvider _time = timeProvider ?? TimeProvider.System;
+    private string? _capabilityServer;
+    private SearchApiCapabilities? _capabilities;
+    private DateTimeOffset _capabilitiesExpire;
+
+    public async Task<SearchApiCapabilities> GetSearchApiCapabilitiesAsync(ImmichSettings settings, bool refresh = false)
+    {
+        var (client, baseUrl) = BuildClient(settings);
+        await _capabilityLock.WaitAsync();
+        try
+        {
+            if (!refresh && _capabilityServer == baseUrl && _capabilities != null && _time.GetUtcNow() < _capabilitiesExpire)
+            {
+                return _capabilities;
+            }
+
+            SearchApiCapabilities detected;
+            try
+            {
+                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+                using var req = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/api/server/version");
+                using var response = await client.SendAsync(req, timeout.Token);
+                response.EnsureSuccessStatusCode();
+                var version = await response.Content.ReadFromJsonAsync<JsonElement>(JsonOptions, timeout.Token);
+                var major = version.GetProperty("major").GetInt32();
+                var minor = version.GetProperty("minor").GetInt32();
+                var patch = version.GetProperty("patch").GetInt32();
+                if (major < 0 || minor < 0 || patch < 0)
+                {
+                    throw new JsonException("Invalid server version.");
+                }
+
+                var prerelease = version.TryGetProperty("prerelease", out var pre) && pre.ValueKind != JsonValueKind.Null;
+                var structured = major > 3 || (major == 3 && (minor > 2 || (minor == 2 && !prerelease)));
+                detected = new($"{major}.{minor}.{patch}" + (prerelease ? "-prerelease" : ""), structured);
+            }
+            catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or JsonException
+                or InvalidOperationException or FormatException or KeyNotFoundException)
+            {
+                logger.LogWarning(ex, "Unable to detect Immich search API; using legacy search.");
+                detected = new(null, false, "Server version could not be detected. Using legacy search.");
+            }
+
+            // Only one configured server is retained; no unbounded cache or persisted version.
+            _capabilityServer = baseUrl;
+            _capabilities = detected;
+            _capabilitiesExpire = _time.GetUtcNow().Add(detected.ServerVersion == null
+                ? TimeSpan.FromSeconds(30) : TimeSpan.FromMinutes(5));
+            return detected;
+        }
+        finally { _capabilityLock.Release(); }
+    }
 
     // NOTE: Do NOT set BaseAddress or DefaultRequestHeaders on the shared named client —
     // the factory may return the same instance across calls and mutations are not thread-safe.
@@ -99,6 +154,32 @@ public class ImmichClient(IHttpClientFactory httpClientFactory, ILogger<ImmichCl
         return wrapper?.People ?? [];
     }
 
+    public async Task<List<string>> GetLocationSuggestionsAsync(ImmichSettings settings, string type,
+        string? country = null, string? state = null)
+    {
+        if (type is not ("country" or "state" or "city"))
+        {
+            throw new ArgumentException("Invalid location type.", nameof(type));
+        }
+
+        var (client, baseUrl) = BuildClient(settings);
+        var path = $"api/search/suggestions?type={type}";
+        if (!string.IsNullOrWhiteSpace(country))
+        {
+            path += $"&country={Uri.EscapeDataString(country)}";
+        }
+
+        if (!string.IsNullOrWhiteSpace(state))
+        {
+            path += $"&state={Uri.EscapeDataString(state)}";
+        }
+
+        using var req = ApiRequest(HttpMethod.Get, baseUrl, path, settings.ApiKey);
+        using var response = await client.SendAsync(req);
+        await EnsureSuccessAsync(response, "GET /api/search/suggestions");
+        return await response.Content.ReadFromJsonAsync<List<string>>(JsonOptions) ?? [];
+    }
+
     public async Task<List<ImmichTag>> GetTagsAsync(ImmichSettings settings)
     {
         var (client, baseUrl) = BuildClient(settings);
@@ -112,27 +193,67 @@ public class ImmichClient(IHttpClientFactory httpClientFactory, ILogger<ImmichCl
         ImmichSettings settings, SearchAssetsRequest request)
     {
         var (client, baseUrl) = BuildClient(settings);
+        var capabilities = await GetSearchApiCapabilitiesAsync(settings);
         var allAssets = new List<ImmichAsset>();
-        request.Page = 1;
+        var page = 1;
+        string? cursor = null;
+        var seenCursors = new HashSet<string>(StringComparer.Ordinal);
         while (true)
         {
-            var body = JsonSerializer.Serialize(request, JsonOptions);
-            var req = ApiRequest(HttpMethod.Post, baseUrl, "api/search/metadata", settings.ApiKey);
+            var body = SearchRequestSerializer.Serialize(request, capabilities.StructuredSearch, page, cursor, JsonOptions);
+            using var req = ApiRequest(HttpMethod.Post, baseUrl, "api/search/metadata", settings.ApiKey);
             req.Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json");
-            var response = await client.SendAsync(req);
-            await EnsureSuccessAsync(response, $"POST /api/search/metadata page={request.Page}");
-            var result = await response.Content.ReadFromJsonAsync<SearchAssetsResponse>(JsonOptions);
-            if (result?.Assets.Items is { Count: > 0 } items)
+            using var response = await client.SendAsync(req);
+            // Search errors must remain errors. Retrying with fewer filters could broaden a playlist.
+            await EnsureSuccessAsync(response, $"POST /api/search/metadata page={page}");
+            using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object ||
+                !root.TryGetProperty("assets", out var assets) || assets.ValueKind != JsonValueKind.Object ||
+                !assets.TryGetProperty("items", out var items) || items.ValueKind != JsonValueKind.Array ||
+                (capabilities.StructuredSearch && !assets.TryGetProperty("nextCursor", out _)))
             {
-                allAssets.AddRange(items);
+                // Older servers may ignore unknown structured fields. Reject that response rather
+                // than display a broadened playlist after a downgrade or a stale version report.
+                await GetSearchApiCapabilitiesAsync(settings, refresh: true);
+                throw new JsonException("Immich returned an incompatible search response. Server version detection has been refreshed.");
             }
-
-            if (result?.Assets.NextPage == null)
+            var result = root.Deserialize<SearchAssetsResponse>(JsonOptions)
+                ?? throw new JsonException("Immich returned an empty search response.");
+            if (capabilities.StructuredSearch && result.Assets.NextPage != null)
             {
-                break;
+                await GetSearchApiCapabilitiesAsync(settings, refresh: true);
+                throw new JsonException("Immich returned numbered pages for a structured search.");
             }
+            allAssets.AddRange(result.Assets.Items);
 
-            request.Page = int.Parse(result.Assets.NextPage);
+            if (capabilities.StructuredSearch)
+            {
+                if (result.Assets.NextCursor == null)
+                {
+                    break;
+                }
+
+                cursor = result.Assets.NextCursor;
+                if (string.IsNullOrEmpty(cursor) || !seenCursors.Add(cursor))
+                {
+                    throw new JsonException("Immich returned an invalid or repeated search cursor.");
+                }
+            }
+            else
+            {
+                if (result.Assets.NextPage == null)
+                {
+                    break;
+                }
+
+                if (!int.TryParse(result.Assets.NextPage, out var nextPage) || nextPage <= page)
+                {
+                    throw new JsonException("Immich returned an invalid or repeated search page.");
+                }
+
+                page = nextPage;
+            }
         }
         return allAssets;
     }

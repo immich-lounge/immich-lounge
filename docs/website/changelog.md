@@ -10,7 +10,13 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 ## Unreleased
 
-- Added profile schedules for different times and days of the week, independently selectable on each Roku.
+- Added reusable schedules that switch between profiles at set times and days, with a fallback profile. Choose a fixed profile or a schedule on each Roku.
+
+
+- Filter profiles by country, state / province, or city, including memories.
+- Get location suggestions from your Immich library.
+- Automatically use the search API supported by your Immich server. Existing profiles need no migration.
+- See the detected server version when testing your connection.
 
 - Fixed the developer test command accepting results from an earlier Roku test run.
 

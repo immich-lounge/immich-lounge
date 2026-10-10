@@ -14,8 +14,13 @@ sub OnProfilesChanged()
     items = []
     for each p in profiles
         desc = p.name
+        if p.kind = "schedule" then
+            desc = "Schedule: " + p.name
+        else if p.kind = "profile" then
+            desc = "Profile: " + p.name
+        end if
         if p.description <> invalid and p.description <> "" then
-            desc = p.name + " — " + p.description
+            desc = desc + " — " + p.description
         end if
         items.Push(desc)
     end for

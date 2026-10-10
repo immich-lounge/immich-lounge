@@ -42,6 +42,12 @@ Start with the easy checks:
 - `docker compose logs`
 - local firewall rules for port `4383`
 
+## A profile is missing from the companion
+
+Check the companion logs for **Could not read profile file**. An invalid or temporarily unreadable file in `/data/profiles/` is skipped so other profiles keep working. The file is left unchanged; restore it from a backup or correct its JSON, then reload the profile list. A temporary file-access problem resolves when the file becomes readable again.
+
+If the logs say **Could not read profiles for playlist refresh**, check access to the profile directory. The companion retries on the next refresh cycle.
+
 ## Test Connection fails in the companion
 
 Check:

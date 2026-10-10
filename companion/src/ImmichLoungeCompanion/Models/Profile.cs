@@ -13,12 +13,12 @@ public class Profile
     public AssetFilterRule? AssetFilter { get; set; }
     public MediaTypes MediaTypes { get; set; } = new();
     public DateFilter? DateFilter { get; set; }
+    public LocationFilter? LocationFilter { get; set; }
     public SlideshowSettings Slideshow { get; set; } = new();
     public DisplaySettings Display { get; set; } = new();
     public QualitySettings Quality { get; set; } = new();
     public string ImageQuality { get; set; } = "preview";
     public WeatherSettings? Weather { get; set; }
-    public ProfileSchedule? Schedule { get; set; }
 }
 
 public class ContentSource
@@ -73,6 +73,13 @@ public class MediaTypes
     public bool Videos { get; set; } = false;
     public bool VideoAudio { get; set; } = false;
     public bool LivePhotos { get; set; } = false;
+}
+
+public class LocationFilter
+{
+    public string? Country { get; set; }
+    public string? State { get; set; }
+    public string? City { get; set; }
 }
 
 public class DateFilter

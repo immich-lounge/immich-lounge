@@ -38,3 +38,6 @@ roku/rokudeploy.json
 roku/rokudeploy.*.json
 roku/node_modules/
 .playwright-mcp/
+
+# Persistent local development state and credentials
+.local/

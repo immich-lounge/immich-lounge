@@ -6,9 +6,12 @@ namespace ImmichLoungeCompanion.Models;
 
 public class ProfileSchedule
 {
-    public bool Enabled { get; set; }
-    public string TimeZoneId { get; set; } = "UTC";
-    public List<ProfileScheduleEntry> Entries { get; set; } = [];
+    public string Id { get; set; } = "";
+    [JsonRequired] public string Name { get; set; } = "";
+    [JsonRequired] public string FallbackProfileId { get; set; } = "";
+    [JsonRequired] public bool Enabled { get; set; } = true;
+    [JsonRequired] public string TimeZoneId { get; set; } = "UTC";
+    [JsonRequired] public List<ProfileScheduleEntry> Entries { get; set; } = [];
 }
 
 public class ProfileScheduleEntry

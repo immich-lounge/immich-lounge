@@ -126,6 +126,10 @@ function PlaybackProfileId(profile as Dynamic, selectedId as String) as String
     return selectedId
 end function
 
+function IsScheduleSelectionId(selectionId as String) as Boolean
+    return Left(selectionId, 9) = "schedule:"
+end function
+
 function CachedPlaylistMatchesPlayback(resumeState as Dynamic, selectedId as String, playbackId as String) as Boolean
     return PlaybackProfileId(resumeState, selectedId) = playbackId
 end function

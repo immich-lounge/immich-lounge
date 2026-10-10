@@ -1,0 +1,37 @@
+@page "/schedules"
+@inject IHttpClientFactory HttpFactory
+@inject NavigationManager Nav
+@using ImmichLoungeCompanion.Models
+
+<h2>Schedules</h2>
+<p class="page-intro">Choose which profile plays at different times. Profiles hold the photos and display settings; schedules only choose between them.</p>
+<div class="btn-row"><button class="btn btn-primary" @onclick='() => Nav.NavigateTo("/schedules/new")'>+ New Schedule</button></div>
+@if (_error != null) { <p class="error">@_error</p> }
+@foreach (var schedule in _schedules)
+{
+    <div class="profile-card">
+        <div class="profile-info">
+            <strong>@schedule.Name</strong>
+            <p>@schedule.TimeZoneId · @(schedule.Enabled ? $"{schedule.Entries.Count} time slots" : "Disabled — uses fallback")</p>
+        </div>
+        <div class="profile-actions">
+            <button class="btn btn-secondary" @onclick='() => Nav.NavigateTo($"/schedules/{schedule.Id}/edit")'>Edit</button>
+            <button class="btn btn-danger" @onclick="() => DeleteAsync(schedule.Id)">Delete</button>
+        </div>
+    </div>
+}
+@if (_schedules.Count == 0) { <p>No schedules yet. Create profiles first, then add a schedule that references them.</p> }
+
+@code {
+    private HttpClient Http => HttpFactory.CreateClient("local");
+    private List<ProfileSchedule> _schedules = [];
+    private string? _error;
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+    private async Task LoadAsync() => _schedules = await Http.GetFromJsonAsync<List<ProfileSchedule>>("/api/schedules") ?? [];
+    private async Task DeleteAsync(string id)
+    {
+        var response = await Http.DeleteAsync($"/api/schedules/{id}");
+        _error = response.IsSuccessStatusCode ? null : "Could not delete the schedule.";
+        await LoadAsync();
+    }
+}

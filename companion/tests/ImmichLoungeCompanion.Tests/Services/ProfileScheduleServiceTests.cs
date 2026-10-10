@@ -14,15 +14,14 @@ public class ProfileScheduleServiceTests
         public override DateTimeOffset GetUtcNow() => now;
     }
 
-    private static Profile Selected(string start = "08:00", string end = "18:00", DayOfWeek day = DayOfWeek.Monday, string zone = "UTC") => new()
+    private static ProfileSchedule Selected(string start = "08:00", string end = "18:00", DayOfWeek day = DayOfWeek.Monday, string zone = "UTC") => new()
     {
-        Id = "base-profile",
-        Schedule = new()
-        {
-            Enabled = true,
-            TimeZoneId = zone,
-            Entries = [new() { ProfileId = "day-profile", Days = [(ScheduleDay)day], Start = start, End = end }]
-        }
+        Id = "living-room",
+        Name = "Living room",
+        FallbackProfileId = "base-profile",
+        Enabled = true,
+        TimeZoneId = zone,
+        Entries = [new() { ProfileId = "day-profile", Days = [(ScheduleDay)day], Start = start, End = end }]
     };
 
     [TestMethod]
@@ -34,9 +33,10 @@ public class ProfileScheduleServiceTests
     public async Task DaySlot_UsesInclusiveStartExclusiveEndAndChosenDay(string instant, string expected)
     {
         var repository = Substitute.For<IProfileRepository>();
+        repository.GetAsync("base-profile").Returns(new Profile { Id = "base-profile" });
         repository.GetAsync("day-profile").Returns(new Profile { Id = "day-profile" });
         var service = new ProfileScheduleService(repository, new FixedClock(DateTimeOffset.Parse(instant)));
-        Assert.AreEqual(expected, (await service.ResolveAsync(Selected())).Id);
+        Assert.AreEqual(expected, (await service.ResolveAsync(Selected()))?.Id);
     }
 
     [TestMethod]
@@ -47,9 +47,10 @@ public class ProfileScheduleServiceTests
     public async Task OvernightSlot_UsesStartDayAcrossSundayBoundary(string instant, string expected)
     {
         var repository = Substitute.For<IProfileRepository>();
+        repository.GetAsync("base-profile").Returns(new Profile { Id = "base-profile" });
         repository.GetAsync("day-profile").Returns(new Profile { Id = "day-profile" });
         var service = new ProfileScheduleService(repository, new FixedClock(DateTimeOffset.Parse(instant)));
-        Assert.AreEqual(expected, (await service.ResolveAsync(Selected("22:00", "06:00", DayOfWeek.Sunday))).Id);
+        Assert.AreEqual(expected, (await service.ResolveAsync(Selected("22:00", "06:00", DayOfWeek.Sunday)))?.Id);
     }
 
     [TestMethod]
@@ -61,30 +62,33 @@ public class ProfileScheduleServiceTests
     public async Task ExplicitTimeZone_UsesLocalWallTimeAcrossDst(string instant, string start, string end, DayOfWeek day, string expected)
     {
         var repository = Substitute.For<IProfileRepository>();
+        repository.GetAsync("base-profile").Returns(new Profile { Id = "base-profile" });
         repository.GetAsync("day-profile").Returns(new Profile { Id = "day-profile" });
         var service = new ProfileScheduleService(repository, new FixedClock(DateTimeOffset.Parse(instant)));
-        Assert.AreEqual(expected, (await service.ResolveAsync(Selected(start, end, day, "Europe/Zurich"))).Id);
+        Assert.AreEqual(expected, (await service.ResolveAsync(Selected(start, end, day, "Europe/Zurich")))?.Id);
     }
 
     [TestMethod]
     public async Task EqualTimes_Means24HoursFromChosenDay()
     {
         var repository = Substitute.For<IProfileRepository>();
+        repository.GetAsync("base-profile").Returns(new Profile { Id = "base-profile" });
         repository.GetAsync("day-profile").Returns(new Profile { Id = "day-profile" });
         var selected = Selected("08:00", "08:00");
         var service = new ProfileScheduleService(repository, new FixedClock(DateTimeOffset.Parse("2026-10-06T07:59:00Z")));
-        Assert.AreEqual("day-profile", (await service.ResolveAsync(selected)).Id);
+        Assert.AreEqual("day-profile", (await service.ResolveAsync(selected))?.Id);
     }
 
     [TestMethod]
     public async Task FirstMatchingSlotWinsWithoutFollowingTargetSchedule()
     {
         var repository = Substitute.For<IProfileRepository>();
-        var target = Selected();
+        repository.GetAsync("base-profile").Returns(new Profile { Id = "base-profile" });
+        var target = new Profile { Id = "day-profile" };
         target.Id = "day-profile";
         repository.GetAsync("day-profile").Returns(target);
         var selected = Selected();
-        selected.Schedule!.Entries.Add(new() { ProfileId = "other-profile", Days = [ScheduleDay.Monday], Start = "00:00", End = "00:00" });
+        selected.Entries.Add(new() { ProfileId = "other-profile", Days = [ScheduleDay.Monday], Start = "00:00", End = "00:00" });
         var service = new ProfileScheduleService(repository, new FixedClock(DateTimeOffset.Parse("2026-10-05T09:00:00Z")));
         Assert.AreSame(target, await service.ResolveAsync(selected));
         await repository.DidNotReceive().GetAsync("other-profile");
@@ -94,29 +98,30 @@ public class ProfileScheduleServiceTests
     public async Task DisabledDeletedOrInvalidScheduleFallsBackToSelectedProfile()
     {
         var repository = Substitute.For<IProfileRepository>();
+        repository.GetAsync("base-profile").Returns(new Profile { Id = "base-profile" });
         var selected = Selected();
         var service = new ProfileScheduleService(repository, new FixedClock(DateTimeOffset.Parse("2026-10-05T09:00:00Z")));
-        Assert.AreSame(selected, await service.ResolveAsync(selected));
-        selected.Schedule!.Enabled = false;
-        Assert.AreSame(selected, await service.ResolveAsync(selected));
-        selected.Schedule.Enabled = true;
-        selected.Schedule.TimeZoneId = "not-a-zone";
-        Assert.AreSame(selected, await service.ResolveAsync(selected));
+        Assert.AreEqual("base-profile", (await service.ResolveAsync(selected))?.Id);
+        selected.Enabled = false;
+        Assert.AreEqual("base-profile", (await service.ResolveAsync(selected))?.Id);
+        selected.Enabled = true;
+        selected.TimeZoneId = "not-a-zone";
+        Assert.IsNull(await service.ResolveAsync(selected));
     }
 
     [TestMethod]
     public void MalformedTimesDaysAndTargetIdsAreRejected()
     {
         var selected = Selected();
-        selected.Schedule!.Entries[0].Start = "8:00";
-        Assert.IsNotNull(ProfileScheduleService.Validate(selected.Schedule));
-        selected.Schedule.Entries[0].Start = "08:00";
-        selected.Schedule.Entries[0].Days = [];
-        Assert.IsNotNull(ProfileScheduleService.Validate(selected.Schedule));
-        selected.Schedule.Entries[0].Days = [(ScheduleDay)8];
-        Assert.IsNotNull(ProfileScheduleService.Validate(selected.Schedule));
-        selected.Schedule.Entries[0].Days = [ScheduleDay.Monday];
-        selected.Schedule.Entries[0].ProfileId = "../settings";
-        Assert.IsNotNull(ProfileScheduleService.Validate(selected.Schedule));
+        selected.Entries[0].Start = "8:00";
+        Assert.IsNotNull(ProfileScheduleService.Validate(selected));
+        selected.Entries[0].Start = "08:00";
+        selected.Entries[0].Days = [];
+        Assert.IsNotNull(ProfileScheduleService.Validate(selected));
+        selected.Entries[0].Days = [(ScheduleDay)8];
+        Assert.IsNotNull(ProfileScheduleService.Validate(selected));
+        selected.Entries[0].Days = [ScheduleDay.Monday];
+        selected.Entries[0].ProfileId = "../settings";
+        Assert.IsNotNull(ProfileScheduleService.Validate(selected));
     }
 }

@@ -36,6 +36,11 @@
             @if (_testResult.Ok)
             {
                 <span>Connected — @_testResult.ImageCount images, @_testResult.VideoCount videos</span>
+                @if (_testResult.SearchApi is { } search)
+                {
+                    <p>Immich @(search.ServerVersion ?? "version unknown") · @(search.StructuredSearch ? "Search API v2" : "Legacy search")</p>
+                    @if (search.Warning != null) { <p>@search.Warning</p> }
+                }
             }
             else
             {
@@ -103,5 +108,6 @@
     }
 
     private record ErrorResponse(string Error);
-    private record TestResult(bool Ok, int ImageCount, int VideoCount, string? Error);
+    private record TestResult(bool Ok, int ImageCount, int VideoCount, string? Error,
+        ImmichLoungeCompanion.Immich.Dtos.SearchApiCapabilities? SearchApi);
 }

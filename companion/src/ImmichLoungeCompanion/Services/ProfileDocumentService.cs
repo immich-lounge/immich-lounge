@@ -9,20 +9,32 @@ public class ProfileDocumentService(ISettingsRepository settings) : IProfileDocu
     public Profile Normalize(Profile profile)
     {
         profile.NormalizeAssetFilter();
+        if (profile.LocationFilter is { } location)
+        {
+            location.Country = CleanLocation(location.Country);
+            location.State = CleanLocation(location.State);
+            location.City = CleanLocation(location.City);
+            if (location.Country == null && location.State == null && location.City == null)
+            {
+                profile.LocationFilter = null;
+            }
+        }
         return profile;
     }
 
-    public async Task<object> BuildResponseAsync(Profile profile, Profile? selected = null)
+    private static string? CleanLocation(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    public async Task<object> BuildResponseAsync(Profile profile, string? selectionId = null, bool scheduleEnabled = false, string? selectionName = null)
     {
         var globalSettings = await settings.LoadAsync();
 
         return new
         {
             profile.SchemaVersion,
-            Id = selected?.Id ?? profile.Id,
+            Id = selectionId ?? profile.Id,
             PlaybackProfileId = profile.Id,
-            ScheduleEnabled = (selected ?? profile).Schedule?.Enabled == true,
-            Schedule = selected == null ? profile.Schedule : null,
+            ScheduleEnabled = scheduleEnabled,
+            SelectionName = selectionName,
             profile.Name,
             profile.Description,
             Immich = new { globalSettings.Immich.ServerUrl, globalSettings.Immich.ApiKey },
@@ -30,6 +42,7 @@ public class ProfileDocumentService(ISettingsRepository settings) : IProfileDocu
             profile.AssetFilter,
             profile.MediaTypes,
             profile.DateFilter,
+            profile.LocationFilter,
             profile.Slideshow,
             profile.Display,
             profile.Quality,

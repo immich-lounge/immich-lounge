@@ -6,6 +6,8 @@ namespace tests
 
     @it("Keeps selection separate and rejects a cache from another playback profile")
     function test_scheduleIdentity()
+      m.assertTrue(IsScheduleSelectionId("schedule:living-room"))
+      m.assertFalse(IsScheduleSelectionId("living-room"))
       m.assertEqual(PlaybackProfileId({ playbackProfileId: "day-profile" }, "living-room"), "day-profile")
       m.assertEqual(PlaybackProfileId({}, "living-room"), "living-room")
       m.assertTrue(CachedPlaylistMatchesPlayback(invalid, "living-room", "living-room"))

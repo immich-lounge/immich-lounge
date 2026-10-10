@@ -19,6 +19,32 @@ public class ProfilesApiTests : IDisposable
     public ProfilesApiTests() => _client = _factory.CreateClient();
     public void Dispose() => _factory.Dispose();
 
+    [TestMethod]
+    public async Task LocationFilter_RoundTripsThroughCreateGetUpdateAndDisk()
+    {
+        var profile = new Profile
+        {
+            Id = "location-profile", Name = "Location",
+            LocationFilter = new() { Country = " Canada ", State = "British Columbia", City = "Vancouver" }
+        };
+        var created = await _client.PostAsJsonAsync("/api/profiles", profile);
+        Assert.AreEqual(HttpStatusCode.Created, created.StatusCode);
+        var saved = await _client.GetFromJsonAsync<Profile>("/api/profiles/location-profile");
+        Assert.IsNotNull(saved?.LocationFilter);
+        Assert.AreEqual("Canada", saved.LocationFilter.Country);
+        Assert.AreEqual("British Columbia", saved.LocationFilter.State);
+        Assert.AreEqual("Vancouver", saved.LocationFilter.City);
+        saved.LocationFilter.City = "Victoria";
+        var updated = await _client.PutAsJsonAsync("/api/profiles/location-profile", saved);
+        Assert.AreEqual(HttpStatusCode.OK, updated.StatusCode);
+        var loaded = await _client.GetFromJsonAsync<Profile>("/api/profiles/location-profile");
+        Assert.AreEqual("Victoria", loaded!.LocationFilter!.City);
+        loaded.LocationFilter = new() { Country = " " };
+        var cleared = await _client.PutAsJsonAsync("/api/profiles/location-profile", loaded);
+        Assert.AreEqual(HttpStatusCode.OK, cleared.StatusCode);
+        Assert.IsNull((await _client.GetFromJsonAsync<Profile>("/api/profiles/location-profile"))!.LocationFilter);
+    }
+
     private static object NewProfileBody(string id, object[]? contentSources = null) => new
     {
         id,
@@ -38,6 +64,29 @@ public class ProfilesApiTests : IDisposable
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
         var list = await response.Content.ReadFromJsonAsync<List<object>>();
         Assert.AreEqual(0, list!.Count);
+    }
+
+    [TestMethod]
+    public async Task CorruptProfile_DoesNotBreakHealthyProfilesOrPlaylistRefresh()
+    {
+        var created = await _client.PostAsJsonAsync("/api/profiles", NewProfileBody("healthy-profile"));
+        Assert.AreEqual(HttpStatusCode.Created, created.StatusCode);
+        var brokenPath = System.IO.Path.Combine(_factory.DataDirectory, "profiles", "broken.json");
+        await File.WriteAllTextAsync(brokenPath, "{");
+
+        var response = await _client.GetAsync("/api/profiles");
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        var list = await response.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.AreEqual("healthy-profile", list.EnumerateArray().Single().GetProperty("id").GetString());
+        Assert.AreEqual(HttpStatusCode.NotFound, (await _client.GetAsync("/api/profiles/broken")).StatusCode);
+
+        var worker = Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions
+            .GetRequiredService<ImmichLoungeCompanion.Playlist.PlaylistCacheWorker>(_factory.Services);
+        await (Task)typeof(ImmichLoungeCompanion.Playlist.PlaylistCacheWorker)
+            .GetMethod("RebuildExpiredCachesAsync", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .Invoke(worker, [CancellationToken.None])!;
+        Assert.AreEqual(HttpStatusCode.OK, (await _client.GetAsync("/healthz")).StatusCode);
+        Assert.AreEqual("{", await File.ReadAllTextAsync(brokenPath));
     }
 
     [TestMethod]
