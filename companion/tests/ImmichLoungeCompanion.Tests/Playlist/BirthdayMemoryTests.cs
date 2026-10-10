@@ -43,6 +43,31 @@ public class BirthdayMemoryTests
     }
 
     [TestMethod]
+    public async Task PeopleExclusions_RemoveBothMemoryTypesAndPreserveKeptCaptions()
+    {
+        var client = Client("3.3.1");
+        client.GetMemoriesAsync(Arg.Any<ImmichSettings>(), Arg.Any<DateOnly>()).Returns(
+        [
+            new() { Type = "on_this_day", Assets = [new() { Id = "excluded-day", Type = "IMAGE" }] },
+            new() { Type = "birthday", Data = new() { PersonName = "Emma" },
+                Assets = [new() { Id = "excluded-birthday", Type = "IMAGE" }, new() { Id = "kept-birthday", Type = "IMAGE" }] }
+        ]);
+        client.SearchAssetsAllPagesAsync(Arg.Any<ImmichSettings>(), Arg.Any<SearchAssetsRequest>())
+            .Returns([new() { Id = "excluded-day" }, new() { Id = "excluded-birthday" }]);
+        var profile = new Profile
+        {
+            ContentSources = [new() { Type = "memories" }],
+            Memories = new() { IncludeBirthdays = true },
+            ExcludedPeople = [new() { Type = "person", Id = "parent" }]
+        };
+        var result = await new PlaylistAssetCollector(client).CollectAsync(profile, new());
+        CollectionAssert.AreEqual(new[] { "kept-birthday" }, result.Keys.ToArray());
+        Assert.AreEqual("Emma's birthday", result["kept-birthday"].BirthdayCaption);
+        await client.Received(1).SearchAssetsAllPagesAsync(Arg.Any<ImmichSettings>(),
+            Arg.Is<SearchAssetsRequest>(request => request.PersonIds != null && request.PersonIds.Single() == "parent"));
+    }
+
+    [TestMethod]
     [DataRow("3.2.4")]
     [DataRow("3.3.0-prerelease")]
     [DataRow(null)]

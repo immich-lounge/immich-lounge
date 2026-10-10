@@ -39,6 +39,14 @@ else
             <p class="section-intro">Choose which albums, people, tags, and memories feed this profile.</p>
             @if (_canEditContentSources)
             {
+                <label>
+                    Match selected sources:
+                    <select @bind="_sourceMatchOperator">
+                        <option value="@AssetFilterGroupOperator.Or">Any (OR)</option>
+                        <option value="@AssetFilterGroupOperator.And">All (AND)</option>
+                    </select>
+                </label>
+                <p class="section-intro">Any includes photos from any selected album, person, or tag. All requires every selection to match. With no sources or memories selected, use the whole library.</p>
                 <SourcePicker SourceType="album" @bind-Selected="_profile.ContentSources" />
                 <SourcePicker SourceType="person" @bind-Selected="_profile.ContentSources" />
                 <SourcePicker SourceType="tag"    @bind-Selected="_profile.ContentSources" />
@@ -73,6 +81,10 @@ else
                 </select>
             </label>
             <p class="section-intro">Controls which day's memories are added. The companion refreshes them when the day changes; playback updates on the Roku's next playlist refresh.</p>
+            <p class="section-intro">Memories are added to the source results. Excluded people are removed from both.</p>
+            <label>Exclude people (NOT):</label>
+            <SourcePicker SourceType="person" @bind-Selected="_profile.ExcludedPeople" />
+            <p class="section-intro">Remove photos containing any of these people, even if they match another source.</p>
             <div class="btn-row">
                 <button type="button" class="btn btn-secondary" @onclick="PreviewMatchCountAsync" disabled="@_matchCountLoading">
                     @if (_matchCountLoading) { <span>Counting…</span> } else { <span>Preview Match Count</span> }
@@ -137,6 +149,8 @@ else
                     <option value="kenBurns">Ken Burns</option>
                 </select>
             </label>
+            <label>Transition duration (seconds): <input type="number" value="@_profile.Slideshow.TransitionDurationSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture)" @oninput="OnTransitionDurationChanged" min="0.1" max="5" step="0.1" /></label>
+            <p class="section-intro">Use 0.1–5 seconds, shorter than the photo interval. Applies to fade, slide, and zoom; None changes photos immediately.</p>
             <label><input type="checkbox" @bind="_profile.Display.ZoomToFit" /> Zoom to fit (landscape photos)</label>
             <p class="section-intro">Fill the screen by cropping the edges of landscape photos. Portrait and square photos still show the whole image.</p>
             <label><input type="checkbox" @bind="_profile.Display.SideBySidePortraits" /> Show portrait photos side by side</label>
@@ -294,6 +308,8 @@ else
     private bool _birthdayMemoriesAvailable;
     private List<MemoryTimeZone> _memoryTimeZones = [];
     private bool _canEditContentSources;
+    private AssetFilterGroupOperator _sourceMatchOperator = AssetFilterGroupOperator.Or;
+    private AssetFilterGroupOperator _initialSourceMatchOperator;
     private string? _initialContentSourcesSnapshot;
     private bool _weatherEnabled;
     private string _locationQuery = "";
@@ -338,6 +354,8 @@ else
         _profile = response;
         _locationFilter = _profile?.LocationFilter ?? new();
         _canEditContentSources = _profile?.CanEditContentSources() ?? true;
+        _sourceMatchOperator = _profile?.AssetFilter?.Operator ?? AssetFilterGroupOperator.Or;
+        _initialSourceMatchOperator = _sourceMatchOperator;
         if (_profile?.AssetFilter != null && _canEditContentSources)
         {
             // Show the effective selection, including profiles saved with a stale source list.
@@ -443,6 +461,13 @@ else
         }
     }
 
+    private void OnTransitionDurationChanged(ChangeEventArgs args)
+    {
+        if (_profile == null) return;
+        if (TryParseDouble(args.Value, out var value))
+            _profile.Slideshow.TransitionDurationSeconds = value;
+    }
+
     private void OnWeatherLatitudeChanged(ChangeEventArgs args)
     {
         if (_profile?.Weather == null) return;
@@ -531,6 +556,7 @@ else
         var snapshot = new
         {
             profile = _profile,
+            sourceMatchOperator = _sourceMatchOperator,
             locationFilter = _locationFilter,
             memoriesEnabled = _memoriesEnabled,
             weatherEnabled = _weatherEnabled
@@ -557,8 +583,9 @@ else
         if (_memoriesEnabled)
             clone.ContentSources.Add(new() { Type = "memories", Id = "memories", Label = "Memories" });
 
-        if (_canEditContentSources && BuildContentSourcesSnapshot(clone) != _initialContentSourcesSnapshot)
-            clone.AssetFilter = ProfileAssetFilterExtensions.BuildAssetFilterFromContentSources(clone.ContentSources);
+        if (_canEditContentSources && (BuildContentSourcesSnapshot(clone) != _initialContentSourcesSnapshot ||
+            _sourceMatchOperator != _initialSourceMatchOperator))
+            clone.AssetFilter = ProfileAssetFilterExtensions.BuildAssetFilterFromContentSources(clone.ContentSources, _sourceMatchOperator);
 
         return clone;
     }

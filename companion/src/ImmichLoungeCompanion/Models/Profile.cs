@@ -11,6 +11,7 @@ public class Profile
     public string? Description { get; set; }
     public List<ContentSource> ContentSources { get; set; } = [];
     public AssetFilterRule? AssetFilter { get; set; }
+    public List<ContentSource> ExcludedPeople { get; set; } = [];
     public MediaTypes MediaTypes { get; set; } = new();
     public DateFilter? DateFilter { get; set; }
     public LocationFilter? LocationFilter { get; set; }
@@ -107,6 +108,7 @@ public class SlideshowSettings
     public int IntervalSeconds { get; set; } = 10;
     public bool Shuffle { get; set; } = true;
     public string TransitionEffect { get; set; } = "fade";
+    public double TransitionDurationSeconds { get; set; } = 0.5;
     public string PhotoMotion { get; set; } = "none";
     public int RefreshIntervalMinutes { get; set; } = 60;
     public bool PreventScreensaver { get; set; } = false;

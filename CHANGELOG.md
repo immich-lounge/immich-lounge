@@ -6,6 +6,10 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+- Add `slideshow.transitionDurationSeconds` (0.1–5, below the photo interval), defaulting to 0.5 for existing profiles. Snapshot the duration per transition so Roku animations, background fades, and completion timers agree in both modes.
+
+- Expose flat AND/OR source matching in the companion editor and add people exclusions applied to sources and memories. Preserve nested API rules and use separate person queries for legacy and structured search compatibility.
+
 - Bound Roku cached startup to a two-second profile wait and three-second playlist wait, using elapsed time even while other events arrive. Stop abandoned startup tasks while retaining selection/effective-profile cache checks and cold-start wait limits.
 - Add opt-in birthday memories for Immich 3.3+, independent of On This Day memories, with optional birthday captions in both Roku overlay styles. Preserve album labels and omit date-sensitive captions from offline registry playlists.
 - Add a per-profile memories time zone and rebuild memory playlists when its date changes. Memory-only profiles now select only the enabled memories instead of the entire library.

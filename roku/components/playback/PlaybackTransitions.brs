@@ -20,7 +20,7 @@ sub StartTransitionForScene(ctx as Object, fromSlot as Integer, toSlot as Intege
     if effect = "none" then
         ctx.activeTransitionDuration = 0.0
     else
-        ctx.activeTransitionDuration = PlaybackTransitionDurationSeconds()
+        ctx.activeTransitionDuration = ValueOrDefault(ctx.transitionDurationSeconds, PlaybackTransitionDurationSeconds())
     end if
 
     fromNode = ctx.mainPosters[fromSlot]
@@ -71,15 +71,15 @@ sub StartTransitionForScene(ctx as Object, fromSlot as Integer, toSlot as Intege
         return
     end if
 
-    ctx.transitionTimer.duration = PlaybackTransitionDurationSeconds()
+    ctx.transitionTimer.duration = ctx.activeTransitionDuration
     ctx.transitionTimer.control = "start"
     if ctx.nextBgReady then
-        StartBgCrossfadeForScene(ctx, PlaybackTransitionDurationSeconds())
+        StartBgCrossfadeForScene(ctx, ctx.activeTransitionDuration)
     end if
 
     if effect = "fade" then
         animOut = CreateObject("roSGNode", "Animation")
-        animOut.duration = PlaybackTransitionDurationSeconds()
+        animOut.duration = ctx.activeTransitionDuration
         animOut.repeat = false
         fadeOut = animOut.createChild("FloatFieldInterpolator")
         fadeOut.fieldToInterp = fromId + ".opacity"
@@ -90,7 +90,7 @@ sub StartTransitionForScene(ctx as Object, fromSlot as Integer, toSlot as Intege
         ctx.activeAnimOut = animOut
 
         animIn = CreateObject("roSGNode", "Animation")
-        animIn.duration = PlaybackTransitionDurationSeconds()
+        animIn.duration = ctx.activeTransitionDuration
         animIn.repeat = false
         fadeIn = animIn.createChild("FloatFieldInterpolator")
         fadeIn.fieldToInterp = toId + ".opacity"
@@ -106,7 +106,7 @@ sub StartTransitionForScene(ctx as Object, fromSlot as Integer, toSlot as Intege
         toNode.opacity = 1.0
 
         animIn = CreateObject("roSGNode", "Animation")
-        animIn.duration = PlaybackTransitionDurationSeconds()
+        animIn.duration = ctx.activeTransitionDuration
         animIn.repeat = false
         slideIn = animIn.createChild("Vector2DFieldInterpolator")
         slideIn.fieldToInterp = toId + ".translation"
@@ -117,7 +117,7 @@ sub StartTransitionForScene(ctx as Object, fromSlot as Integer, toSlot as Intege
         ctx.activeAnimIn = animIn
 
         animOut = CreateObject("roSGNode", "Animation")
-        animOut.duration = PlaybackTransitionDurationSeconds()
+        animOut.duration = ctx.activeTransitionDuration
         animOut.repeat = false
         slideOut = animOut.createChild("Vector2DFieldInterpolator")
         slideOut.fieldToInterp = fromId + ".translation"
@@ -134,7 +134,7 @@ sub StartTransitionForScene(ctx as Object, fromSlot as Integer, toSlot as Intege
         toNode.scaleRotateCenter = [Int(toNode.width / 2), Int(toNode.height / 2)]
 
         animZoom = CreateObject("roSGNode", "Animation")
-        animZoom.duration = PlaybackTransitionDurationSeconds()
+        animZoom.duration = ctx.activeTransitionDuration
         animZoom.repeat = false
         zoomIn = animZoom.createChild("Vector2DFieldInterpolator")
         zoomIn.fieldToInterp = toId + ".scale"
@@ -149,7 +149,7 @@ sub StartTransitionForScene(ctx as Object, fromSlot as Integer, toSlot as Intege
         ctx.activeAnimIn = animZoom
 
         animOut = CreateObject("roSGNode", "Animation")
-        animOut.duration = PlaybackTransitionDurationSeconds()
+        animOut.duration = ctx.activeTransitionDuration
         animOut.repeat = false
         fadeOut = animOut.createChild("FloatFieldInterpolator")
         fadeOut.fieldToInterp = fromId + ".opacity"

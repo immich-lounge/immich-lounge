@@ -19,8 +19,8 @@ public static class ProfileAssetFilterExtensions
             return true;
         }
 
-        // The pickers can represent a flat OR of source conditions, but not AND or nested rules.
-        return filter.Kind == AssetFilterRuleKind.Group && filter.Operator == AssetFilterGroupOperator.Or &&
+        // The pickers and match control represent flat AND/OR groups, but not nested rules.
+        return filter.Kind == AssetFilterRuleKind.Group && filter.Operator is AssetFilterGroupOperator.Or or AssetFilterGroupOperator.And &&
             filter.Type == null && string.IsNullOrWhiteSpace(filter.Id) && string.IsNullOrWhiteSpace(filter.Label) &&
             filter.Children.Count > 0 && filter.Children.All(child =>
                 child.Kind == AssetFilterRuleKind.Condition && child.Operator == null && child.Children.Count == 0 &&
@@ -34,7 +34,8 @@ public static class ProfileAssetFilterExtensions
     public static bool HasOnThisDaySource(this Profile profile) =>
         profile.ContentSources.Any(source => string.Equals(source.Type, "memories", StringComparison.OrdinalIgnoreCase));
 
-    public static AssetFilterRule? BuildAssetFilterFromContentSources(IEnumerable<ContentSource> contentSources)
+    public static AssetFilterRule? BuildAssetFilterFromContentSources(IEnumerable<ContentSource> contentSources,
+        AssetFilterGroupOperator matchOperator = AssetFilterGroupOperator.Or)
     {
         var children = contentSources
             .Where(source => !string.Equals(source.Type, "memories", StringComparison.OrdinalIgnoreCase))
@@ -48,7 +49,7 @@ public static class ProfileAssetFilterExtensions
             : new AssetFilterRule
             {
                 Kind = AssetFilterRuleKind.Group,
-                Operator = AssetFilterGroupOperator.Or,
+                Operator = matchOperator,
                 Children = children
             };
     }

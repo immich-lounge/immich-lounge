@@ -20,6 +20,46 @@ public class ProfilesApiTests : IDisposable
     public void Dispose() => _factory.Dispose();
 
     [TestMethod]
+    [DataRow(0.1, 3, true)]
+    [DataRow(5.0, 10, true)]
+    [DataRow(0.0, 10, false)]
+    [DataRow(5.1, 10, false)]
+    [DataRow(3.0, 3, false)]
+    [DataRow(4.0, 3, false)]
+    public async Task TransitionDuration_ValidatesAndRoundTrips(double duration, int interval, bool valid)
+    {
+        var profile = new Profile { Id = "duration", Name = "Duration",
+            Slideshow = new() { TransitionDurationSeconds = duration, IntervalSeconds = interval } };
+        var response = await _client.PostAsJsonAsync("/api/profiles", profile);
+        Assert.AreEqual(valid ? HttpStatusCode.Created : HttpStatusCode.BadRequest, response.StatusCode);
+        var preview = await _client.PostAsJsonAsync("/api/profiles/preview-count", profile);
+        Assert.AreEqual(valid ? HttpStatusCode.OK : HttpStatusCode.BadRequest, preview.StatusCode);
+        if (valid)
+        {
+            Assert.AreEqual(duration, (await _client.GetFromJsonAsync<Profile>("/api/profiles/duration"))!.Slideshow.TransitionDurationSeconds);
+        }
+    }
+
+    [TestMethod]
+    public async Task OldProfileWithoutTransitionDuration_KeepsHalfSecondDefault()
+    {
+        var response = await _client.PostAsJsonAsync("/api/profiles", new { id = "old-duration", name = "Old", slideshow = new { intervalSeconds = 10 } });
+        Assert.AreEqual(HttpStatusCode.Created, response.StatusCode);
+        Assert.AreEqual(0.5, (await _client.GetFromJsonAsync<Profile>("/api/profiles/old-duration"))!.Slideshow.TransitionDurationSeconds);
+    }
+
+    [TestMethod]
+    [DataRow("album", "id")]
+    [DataRow("person", " ")]
+    public async Task InvalidExcludedPeople_AreRejectedOnCreateAndPreview(string type, string id)
+    {
+        var profile = new Profile { Id = "invalid-exclusion", Name = "Invalid",
+            ExcludedPeople = [new() { Type = type, Id = id }] };
+        Assert.AreEqual(HttpStatusCode.BadRequest, (await _client.PostAsJsonAsync("/api/profiles", profile)).StatusCode);
+        Assert.AreEqual(HttpStatusCode.BadRequest, (await _client.PostAsJsonAsync("/api/profiles/preview-count", profile)).StatusCode);
+    }
+
+    [TestMethod]
     public async Task LocationFilter_RoundTripsThroughCreateGetUpdateAndDisk()
     {
         var profile = new Profile

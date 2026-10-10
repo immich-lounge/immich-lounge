@@ -11,6 +11,10 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 ## Unreleased
 
+- Set the speed of fade, slide, and zoom transitions. Existing profiles keep the same half-second transitions.
+
+- Choose whether photos must match any or all selected sources, and exclude photos containing selected people, including memories.
+
 - Start cached channel and screensaver photos in about five seconds plus image-loading time when the companion is unavailable.
 - Add birthday memories from Immich 3.3 or later, with optional captions. Choose birthdays, On This Day memories, or both.
 - Choose a time zone for memories and refresh them when the day changes. Profiles with only memories selected now show only those memories.

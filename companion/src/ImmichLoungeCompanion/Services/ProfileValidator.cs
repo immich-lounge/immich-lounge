@@ -48,9 +48,21 @@ public class ProfileValidator : IProfileValidator
             return "Invalid imageQuality. Must be preview or original.";
         }
 
+        if (!double.IsFinite(profile.Slideshow.TransitionDurationSeconds) ||
+            profile.Slideshow.TransitionDurationSeconds is < 0.1 or > 5 ||
+            profile.Slideshow.TransitionDurationSeconds >= profile.Slideshow.IntervalSeconds)
+        {
+            return "transitionDurationSeconds must be 0.1–5 and shorter than intervalSeconds.";
+        }
+
         if (!IsQualityValid(profile.Quality))
         {
             return "Minimum file size must be 0 KB or greater.";
+        }
+
+        if (profile.ExcludedPeople.Exists(person => person.Type != "person" || string.IsNullOrWhiteSpace(person.Id)))
+        {
+            return "Excluded people must have type person and a non-empty id.";
         }
 
         return profile.ValidateAssetFilter();
