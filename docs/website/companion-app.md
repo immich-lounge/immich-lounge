@@ -51,6 +51,21 @@ Each profile controls both what the Roku shows and how playback should feel.
 ![Immich Lounge companion profile editor](./assets/screenshots/companion-profile-editor.png){ .doc-screenshot }
 <p class="doc-caption">The profile editor combines content selection, playback settings, and visual tuning in one place.</p>
 
+## Schedules page
+
+Schedules choose which profile plays at different times; profiles still hold the photos and display settings.
+
+1. Create the profiles you want to use.
+2. Open **Schedules** and choose **New Schedule**.
+3. Enter a name, choose the time zone and fallback profile, and add weekly time slots.
+4. Save the schedule, then select it on Roku instead of a fixed profile.
+
+Outside the time slots, the fallback profile plays. Overlapping slots use the first matching row; move rows up to change priority. The channel and screensaver can follow different schedules.
+
+Deleting a schedule keeps its profiles. Choose another schedule or profile on any Roku that used the deleted schedule.
+
+For time-zone, fallback, and offline behavior, see [Schedules](./configuration.md#schedules).
+
 ## Typical companion tasks
 
 - make one profile for the main channel and another for the screensaver
