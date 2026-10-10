@@ -36,6 +36,8 @@ public class PlaylistCacheWorker(
 
         try
         {
+            // Capture before reading either the profile or the builder's connection settings.
+            var generation = cache.GetGeneration(profileId);
             var profile = await profiles.GetAsync(profileId);
             if (profile == null)
             {
@@ -57,7 +59,11 @@ public class PlaylistCacheWorker(
                 playlistVersion = Guid.NewGuid().ToString("N");
             }
 
-            cache.Set(profileId, new(assets, DateTimeOffset.UtcNow, playlistVersion));
+            if (!cache.TrySet(profileId, new(assets, DateTimeOffset.UtcNow, playlistVersion), generation))
+            {
+                logger.LogInformation("Discarded invalidated playlist build for profile {ProfileId}", profileId);
+                return;
+            }
             logger.LogInformation("Playlist cache rebuilt for profile {ProfileId}: {Count} entries", profileId, assets.Count);
         }
         catch (Exception ex)
