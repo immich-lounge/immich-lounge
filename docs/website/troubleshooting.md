@@ -61,6 +61,8 @@ The most common causes are:
 - `imageQuality` is set to `original` on slower hardware or networks
 - too many consecutive asset load failures, which triggers the built-in retry pause
 
+If you see **Could not load the first photo. Retrying...** on an older Roku app, remove any trailing `/` from the Immich server URL in the companion, save it, and refresh the Roku configuration. For example, use `http://192.168.1.10:2283`. Newer builds remove trailing slashes automatically.
+
 ## The clock, date, or weather is missing
 
 - make sure those fields are enabled in the profile

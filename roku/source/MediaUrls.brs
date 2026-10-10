@@ -6,6 +6,7 @@
 function BuildMediaUrl(entry as Object, profile as Object) as String
     if profile.immich = invalid then return ""
     base = NormalizeImmichServerUrl(profile.immich.serverUrl)
+    if base = "" then return ""
     quality = "preview"
     if profile.imageQuality <> invalid then quality = profile.imageQuality
 
@@ -26,21 +27,11 @@ end function
 function BuildBackgroundMediaUrl(entry as Object, profile as Object) as String
     if profile.immich = invalid then return ""
     base = NormalizeImmichServerUrl(profile.immich.serverUrl)
+    if base = "" then return ""
 
     if entry.type = "video" or entry.type = "livePhoto" then
         return BuildMediaUrl(entry, profile)
     end if
 
     return base + "/api/assets/" + entry.id + "/thumbnail?size=thumbnail"
-end function
-
-function NormalizeImmichServerUrl(serverUrl as Dynamic) as String
-    if serverUrl = invalid then return ""
-
-    base = serverUrl.ToStr().Trim()
-    while Len(base) > 0 and Right(base, 1) = "/"
-        base = Left(base, Len(base) - 1)
-    end while
-
-    return base
 end function
