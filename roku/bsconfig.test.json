@@ -6,6 +6,7 @@
     { "src": "source/test_main.brs", "dest": "source/main.brs" },
     "source/HttpClient.brs",
     "source/MediaUrls.brs",
+    "source/PortraitPairs.brs",
     "source/PlaybackConstants.brs",
     "source/DateTimeFormatting.brs",
     "components/playback/PlaybackEffects.brs",

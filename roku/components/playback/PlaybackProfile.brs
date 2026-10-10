@@ -7,6 +7,7 @@ sub ApplyProfileForScene(ctx as Object)
     formatting = ResolveDisplayFormatting(display)
     if display <> invalid then
         ctx.zoomToFit = display.zoomToFit = true
+        ctx.sideBySidePortraits = display.sideBySidePortraits = true
         ctx.overlay.overlayStyle = ValueOrDefault(display.overlayStyle, "none")
         ctx.backgroundEffect = ValueOrDefault(display.backgroundEffect, "blur")
         ctx.overlay.overlayFields = ValueOrDefault(display.overlayFields, [])
@@ -20,6 +21,7 @@ sub ApplyProfileForScene(ctx as Object)
         ctx.progressBar.visible = ctx.showTimer
     else
         ctx.zoomToFit = false
+        ctx.sideBySidePortraits = false
         ctx.backgroundEffect = "blur"
         ctx.overlay.clockFormat = formatting.clockFormat
         ctx.overlay.dateFormat = formatting.dateFormat
@@ -57,6 +59,7 @@ sub ApplyProfileForScene(ctx as Object)
         for i = 0 to ctx.ringSize - 1
             ctx.mainPosters[i].SetHeaders(authHeaders)
             ctx.bgPosters[i].SetHeaders(authHeaders)
+            ctx.pairedPosters[i].SetHeaders(authHeaders)
         end for
     end if
 end sub
