@@ -1,4 +1,5 @@
 ---
+description: "Read user-facing release notes and changes to Immich Lounge."
 icon: material/history
 ---
 
@@ -6,7 +7,7 @@ icon: material/history
 
 User-facing release notes for Immich Lounge live here.
 
-For technical release details, see [CHANGELOG.md](https://github.com/immich-lounge/immich-lounge/blob/main/CHANGELOG.md).
+For technical release details, see [CHANGELOG.md](https://github.com/immich-lounge/immich-lounge/blob/master/CHANGELOG.md).
 
 ## Unreleased
 

@@ -24,7 +24,7 @@ jobs:
         run: pip install -r docs/website/requirements.txt
 
       - name: Build docs
-        run: zensical build --clean
+        run: zensical build --clean --strict
 
       - name: Upload preview artifact
         uses: actions/upload-artifact@v6

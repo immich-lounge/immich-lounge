@@ -1,4 +1,5 @@
 ---
+description: "Understand how the companion builds playlists and how Roku loads photos directly from Immich."
 icon: material/source-branch
 ---
 
