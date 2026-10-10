@@ -43,7 +43,7 @@ public class SettingsApiTests : IDisposable
         Assert.AreEqual("abc", loaded.Immich.ApiKey);
     }
 
-    [DataTestMethod]
+    [TestMethod]
     [DataRow("http://localhost:2283")]
     [DataRow("http://127.0.0.1:2283")]
     [DataRow("http://[::1]:2283")]

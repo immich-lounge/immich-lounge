@@ -33,7 +33,7 @@
   "sourceMap": false,
   "plugins": ["rooibos-roku"],
   "rooibos": {
-    "isRecordingCodeCoverage": false,
+    "codeCoverage": false,
     "printTestTimes": true,
     "showOnlyFailures": false,
     "catchCrashes": true,
