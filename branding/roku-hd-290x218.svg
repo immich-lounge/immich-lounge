@@ -5,42 +5,44 @@
     <stop offset="100%" stop-color="#0D1120" stop-opacity="0"/>
   </radialGradient>
   <linearGradient id="tvFrame" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#D8DCEF"/>
+    <stop offset="0%" stop-color="#FFFFFF"/>
+<stop offset="100%" stop-color="#D8DCEF"/>
   </linearGradient>
   <linearGradient id="tvBezel" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0%" stop-color="#2D2B48"/><stop offset="100%" stop-color="#17141E"/>
+    <stop offset="0%" stop-color="#2D2B48"/>
+<stop offset="100%" stop-color="#17141E"/>
   </linearGradient>
   <linearGradient id="tvSky" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#2F73D8"/><stop offset="38%" stop-color="#6748D2"/><stop offset="100%" stop-color="#B56FDB"/>
+    <stop offset="0%" stop-color="#2F73D8"/>
+<stop offset="38%" stop-color="#6748D2"/>
+<stop offset="100%" stop-color="#B56FDB"/>
   </linearGradient>
   <linearGradient id="tvMtnA" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#FFB62E"/><stop offset="100%" stop-color="#F15B24"/>
+    <stop offset="0%" stop-color="#FFB62E"/>
+<stop offset="100%" stop-color="#F15B24"/>
   </linearGradient>
   <linearGradient id="tvMtnAS" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#F59E1F"/><stop offset="100%" stop-color="#E45A20"/>
+    <stop offset="0%" stop-color="#F59E1F"/>
+<stop offset="100%" stop-color="#E45A20"/>
   </linearGradient>
   <linearGradient id="tvMtnB" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#99D247"/><stop offset="100%" stop-color="#339D56"/>
+    <stop offset="0%" stop-color="#99D247"/>
+<stop offset="100%" stop-color="#339D56"/>
   </linearGradient>
   <linearGradient id="tvMtnC" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#47A94E"/><stop offset="100%" stop-color="#0F6D64"/>
+    <stop offset="0%" stop-color="#47A94E"/>
+<stop offset="100%" stop-color="#0F6D64"/>
   </linearGradient>
   <radialGradient id="tvSun" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#FFE96F"/><stop offset="100%" stop-color="#FFCA2B"/>
+    <stop offset="0%" stop-color="#FFE96F"/>
+<stop offset="100%" stop-color="#FFCA2B"/>
   </radialGradient>
   <clipPath id="tvClip">
     <rect x="230" y="320" width="564" height="352" rx="20"/>
   </clipPath>
 </defs>
-
-<!-- Background -->
 <rect width="290" height="218" fill="#0D1120"/>
-<ellipse cx="145" cy="105" rx="180" ry="130" fill="url(#glow)"/>
-
-<!-- TV icon: scale=0.221, centered at x=145
-     Frame top ~33, legs bottom ~148
-     Full composition centered at y=109 -->
-<g transform="translate(32, -28) scale(0.221)">
+<g transform="translate(2.757763975155278, 21.919254658385093) scale(0.11180124223602485)">
   <rect x="190" y="278" width="644" height="430" rx="30" fill="url(#tvFrame)"/>
   <rect x="210" y="298" width="604" height="390" rx="24" fill="url(#tvBezel)"/>
   <rect x="230" y="320" width="564" height="352" rx="20" fill="url(#tvSky)"/>
@@ -59,13 +61,9 @@
   <path d="M730 714 L802 784 L776 794 L700 734 Z" fill="#221A31"/>
 </g>
 
-<!-- App name — baseline y=170, ~8px gap below legs -->
-<text x="145" y="170" text-anchor="middle"
-  font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
-  font-size="19" font-weight="700" letter-spacing="1" fill="#FFFFFF">Immich Lounge</text>
-
-<!-- Tagline — baseline y=186 -->
-<text x="145" y="186" text-anchor="middle"
-  font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
-  font-size="10" font-weight="300" letter-spacing="0.5" fill="#8A9BBF">Your memories, on the big screen</text>
+<!-- Tile lockup: TV beside Immich; full-width lavender Lounge below. -->
+<g font-family="Arial,sans-serif" font-weight="700" letter-spacing="-0.5">
+<text x="111" y="96" font-size="45" fill="#FFFFFF">Immich</text>
+<text x="145" y="168" text-anchor="middle" font-size="68" fill="#C7BAFF">Lounge</text>
+</g>
 </svg>

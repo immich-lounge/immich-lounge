@@ -1,46 +1,48 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="246" height="140" viewBox="0 0 246 140">
 <defs>
-  <radialGradient id="glow" cx="123" cy="68" r="110" gradientUnits="userSpaceOnUse">
+  <radialGradient id="glow" cx="145" cy="105" r="130" gradientUnits="userSpaceOnUse">
     <stop offset="0%" stop-color="#2848C0" stop-opacity="0.5"/>
     <stop offset="100%" stop-color="#0D1120" stop-opacity="0"/>
   </radialGradient>
   <linearGradient id="tvFrame" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#FFFFFF"/><stop offset="100%" stop-color="#D8DCEF"/>
+    <stop offset="0%" stop-color="#FFFFFF"/>
+<stop offset="100%" stop-color="#D8DCEF"/>
   </linearGradient>
   <linearGradient id="tvBezel" x1="0" y1="0" x2="0" y2="1">
-    <stop offset="0%" stop-color="#2D2B48"/><stop offset="100%" stop-color="#17141E"/>
+    <stop offset="0%" stop-color="#2D2B48"/>
+<stop offset="100%" stop-color="#17141E"/>
   </linearGradient>
   <linearGradient id="tvSky" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#2F73D8"/><stop offset="38%" stop-color="#6748D2"/><stop offset="100%" stop-color="#B56FDB"/>
+    <stop offset="0%" stop-color="#2F73D8"/>
+<stop offset="38%" stop-color="#6748D2"/>
+<stop offset="100%" stop-color="#B56FDB"/>
   </linearGradient>
   <linearGradient id="tvMtnA" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#FFB62E"/><stop offset="100%" stop-color="#F15B24"/>
+    <stop offset="0%" stop-color="#FFB62E"/>
+<stop offset="100%" stop-color="#F15B24"/>
   </linearGradient>
   <linearGradient id="tvMtnAS" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#F59E1F"/><stop offset="100%" stop-color="#E45A20"/>
+    <stop offset="0%" stop-color="#F59E1F"/>
+<stop offset="100%" stop-color="#E45A20"/>
   </linearGradient>
   <linearGradient id="tvMtnB" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#99D247"/><stop offset="100%" stop-color="#339D56"/>
+    <stop offset="0%" stop-color="#99D247"/>
+<stop offset="100%" stop-color="#339D56"/>
   </linearGradient>
   <linearGradient id="tvMtnC" x1="0" y1="0" x2="1" y2="1">
-    <stop offset="0%" stop-color="#47A94E"/><stop offset="100%" stop-color="#0F6D64"/>
+    <stop offset="0%" stop-color="#47A94E"/>
+<stop offset="100%" stop-color="#0F6D64"/>
   </linearGradient>
   <radialGradient id="tvSun" cx="50%" cy="50%" r="50%">
-    <stop offset="0%" stop-color="#FFE96F"/><stop offset="100%" stop-color="#FFCA2B"/>
+    <stop offset="0%" stop-color="#FFE96F"/>
+<stop offset="100%" stop-color="#FFCA2B"/>
   </radialGradient>
   <clipPath id="tvClip">
     <rect x="230" y="320" width="564" height="352" rx="20"/>
   </clipPath>
 </defs>
-
-<!-- Background -->
 <rect width="246" height="140" fill="#0D1120"/>
-<ellipse cx="123" cy="68" rx="160" ry="95" fill="url(#glow)"/>
-
-<!-- TV icon: scale=0.151, centered at x=123
-     Frame top ~21, legs bottom ~99
-     Full composition centered at y=70 -->
-<g transform="translate(46, -21) scale(0.151)">
+<g transform="translate(2.5931677018633543, 1.5310559006211157) scale(0.09161490683229814)">
   <rect x="190" y="278" width="644" height="430" rx="30" fill="url(#tvFrame)"/>
   <rect x="210" y="298" width="604" height="390" rx="24" fill="url(#tvBezel)"/>
   <rect x="230" y="320" width="564" height="352" rx="20" fill="url(#tvSky)"/>
@@ -59,8 +61,9 @@
   <path d="M730 714 L802 784 L776 794 L700 734 Z" fill="#221A31"/>
 </g>
 
-<!-- App name — baseline y=117, ~8px gap below legs -->
-<text x="123" y="117" text-anchor="middle"
-  font-family="'Helvetica Neue',Helvetica,Arial,sans-serif"
-  font-size="14" font-weight="700" letter-spacing="0.5" fill="#FFFFFF">Immich Lounge</text>
+<!-- Tile lockup: TV beside Immich; full-width lavender Lounge below. -->
+<g font-family="Arial,sans-serif" font-weight="700" letter-spacing="-0.5">
+<text x="91" y="63" font-size="37" fill="#FFFFFF">Immich</text>
+<text x="123" y="119" text-anchor="middle" font-size="57" fill="#C7BAFF">Lounge</text>
+</g>
 </svg>
