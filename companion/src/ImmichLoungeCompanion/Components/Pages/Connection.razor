@@ -3,7 +3,9 @@
 @inject IHttpClientFactory HttpFactory
 @inject NavigationManager Nav
 
+<PageTitle>Connection · Immich Lounge</PageTitle>
 <h2>Immich Connection</h2>
+<p class="page-intro">Connect your Immich library, then create a profile to choose what plays on Roku.</p>
 
 <div class="settings-card">
     <div class="form-group">
@@ -13,6 +15,13 @@
     <div class="form-group">
         <label for="immich-key">API Key</label>
         <input id="immich-key" @bind="_apiKey" @bind:event="oninput" class="form-control" type="password" disabled="@_busy" />
+        <p class="field-hint">In Immich, open your user menu → Account Settings → API Keys and create a dedicated key for Immich Lounge.</p>
+        <details class="setup-help">
+            <summary>Which API key permissions do I need?</summary>
+            <p>For scoped keys, allow <code>asset.read</code>, <code>asset.statistics</code>, <code>asset.view</code>, <code>album.read</code>, <code>person.read</code>, <code>tag.read</code>, and <code>memory.read</code>. Add <code>asset.download</code> for Original image quality.</p>
+            <p>If your Immich version does not support scoped keys, use a normal key from the account whose photos you want to show.</p>
+        </details>
+        <p class="field-hint"><a href="https://immich-lounge.github.io/api-key/" target="_blank" rel="noopener noreferrer">API key setup guide</a> · <a href="https://immich-lounge.github.io/getting-started/" target="_blank" rel="noopener noreferrer">Roku setup guide</a></p>
     </div>
 
     <div class="btn-row">
@@ -37,6 +46,7 @@
             @if (_testResult.Ok)
             {
                 <span>Connected — @_testResult.ImageCount images, @_testResult.VideoCount videos</span>
+                <p><a href="/profiles">Next: create or choose a profile</a></p>
                 @if (_testResult.SearchApi is { } search)
                 {
                     <p>Immich @(search.ServerVersion ?? "version unknown") · @(search.StructuredSearch ? "Search API v2" : "Legacy search")</p>

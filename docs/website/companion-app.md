@@ -23,6 +23,8 @@ Use it when you need to:
 
 If you need to generate or rotate the key, see [Immich API Key](./api-key.md).
 
+The page includes key creation instructions and an expandable permission list. After a successful connection test, follow **Next: create or choose a profile**.
+
 ![Immich Lounge companion connection page](./assets/screenshots/companion-connection.png){ .doc-screenshot .on-glb }
 <p class="doc-caption">The connection page is the one shared integration point between the companion and immich.</p>
 
@@ -50,6 +52,8 @@ Deleting a profile requires confirmation. It removes the companion profile, not 
 
 Each profile controls both what the Roku shows and how playback should feel.
 
+The summary at the top shows the selected sources, photo interval, shuffle setting, and image quality. **Content Sources** and **Slideshow** stay open; expand **Location**, **Media**, **Overlay & Clock**, **Date & Time**, or **Weather** when needed. These sections keep their existing settings when collapsed.
+
 You can edit display settings before connecting Immich. Follow **Configure connection** to enable source selection and match previews. If sources cannot load, check the connection and use the picker’s retry button; the rest of the editor remains usable.
 
 | Area | What you manage there |
@@ -69,6 +73,8 @@ Schedules choose which profile plays at different times; profiles still hold the
 2. Open **Schedules** and choose **New Schedule**.
 3. Enter a name, choose the time zone and fallback profile, and add weekly time slots.
 4. Save the schedule, then select it on Roku instead of a fixed profile.
+
+The schedule ID is generated from the name. Expand **Customize schedule ID** to change it before saving, including when the generated ID is already in use. Existing schedule IDs stay fixed.
 
 Outside the time slots, the fallback profile plays. Overlapping slots use the first matching row; move rows up to change priority. The channel and screensaver can follow different schedules.
 

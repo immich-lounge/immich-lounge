@@ -4,7 +4,9 @@
 @inject IJSRuntime JS
 @using ImmichLoungeCompanion.Models
 @using System.Text.Json
+@using ImmichLoungeCompanion.Services
 
+<PageTitle>@(Id == null ? "New Schedule" : "Edit Schedule") · Immich Lounge</PageTitle>
 <NavigationLock ConfirmExternalNavigation="@IsDirty" OnBeforeInternalNavigation="ConfirmNavigationAsync" />
 <h2>@(Id == null ? "New Schedule" : "Edit Schedule")</h2>
 <p class="page-intro">Select this schedule on Roku to follow its time slots. Selecting a fixed profile stops following the schedule.</p>
@@ -14,8 +16,12 @@
     <div class="editor-grid">
         <section class="settings-card editor-card">
             <h3>Schedule</h3>
-            <label>ID (slug): <input type="text" @bind="_schedule.Id" disabled="@(Id != null)" placeholder="living-room" /></label>
-            <label>Name: <input type="text" @bind="_schedule.Name" maxlength="100" placeholder="Living room" /></label>
+            <label>Name: <input type="text" @bind:get="_schedule.Name" @bind:set="SetScheduleName" @bind:event="oninput" maxlength="100" placeholder="Living room" /></label>
+            <details>
+                <summary>@(Id == null ? "Customize schedule ID" : "Schedule ID")</summary>
+                <label>Schedule ID: <input type="text" value="@_schedule.Id" @oninput="SetScheduleId" disabled="@(Id != null)" /></label>
+                <p class="field-hint">Generated from the name. Use 3–64 lowercase letters, numbers, or hyphens. Choose a different ID if this name is already in use.</p>
+            </details>
             <label><input type="checkbox" @bind="_schedule.Enabled" /> Enable time slots</label>
             <label class="schedule-time-zone">Time zone:
                 <select @bind="_schedule.TimeZoneId">
@@ -87,6 +93,7 @@
     private string? _snapshot;
     private bool _saving;
     private bool _skipPrompt;
+    private bool _customId;
     private string? _loadedId;
     private static readonly ScheduleDay[] Days = [ScheduleDay.Monday, ScheduleDay.Tuesday, ScheduleDay.Wednesday, ScheduleDay.Thursday, ScheduleDay.Friday, ScheduleDay.Saturday, ScheduleDay.Sunday];
     private record ProfileSummary(string Id, string Name);
@@ -114,6 +121,19 @@
         _snapshot = JsonSerializer.Serialize(_schedule);
         _loadedId = key;
         _skipPrompt = false;
+        _customId = false;
+    }
+
+    private void SetScheduleName(string? name)
+    {
+        _schedule!.Name = name ?? "";
+        if (Id == null && !_customId) _schedule.Id = ProfileIdGenerator.FromName(_schedule.Name);
+    }
+
+    private void SetScheduleId(ChangeEventArgs args)
+    {
+        _customId = true;
+        _schedule!.Id = args.Value?.ToString() ?? "";
     }
 
     private void AddSlot() => _schedule!.Entries.Add(new() { Days = [.. Days] });

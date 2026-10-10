@@ -7,7 +7,8 @@
 @using ImmichLoungeCompanion.Immich.Dtos
 @inject ImmichLoungeCompanion.Services.IDisplayDateFormattingService DateFormatting
 
-<NavigationLock ConfirmExternalNavigation="true" OnBeforeInternalNavigation="@(async context => await ConfirmInternalNavigationAsync(context))" />
+<PageTitle>@(_profile?.Name ?? "Profile") · Immich Lounge</PageTitle>
+<NavigationLock ConfirmExternalNavigation="@IsDirty" OnBeforeInternalNavigation="@(async context => await ConfirmInternalNavigationAsync(context))" />
 
 @if (_profile == null)
 {
@@ -18,6 +19,11 @@ else
     <div class="editor-header">
         <h2>Edit: @_profile.Name</h2>
         <p class="page-intro">Tune what this profile shows, how the slideshow behaves, and which overlays appear on screen.</p>
+        <dl class="profile-summary" aria-label="Profile summary">
+            <div><dt>Photos</dt><dd>@SourceSummary</dd></div>
+            <div><dt>Playback</dt><dd>@_profile.Slideshow.IntervalSeconds seconds per photo · @(_profile.Slideshow.Shuffle ? "Shuffled" : "In order")</dd></div>
+            <div><dt>Image quality</dt><dd>@(_profile.ImageQuality == "original" ? "Original" : "Preview")</dd></div>
+        </dl>
         @if (!_connectionConfigured)
         {
             <p class="alert alert-error" role="status">Connect Immich to choose albums, people, and tags or preview matching photos. You can still edit display settings. <a href="/connection">Configure connection</a>.</p>
@@ -107,35 +113,6 @@ else
         </section>
 
         <section class="settings-card editor-card">
-            <h3>Location</h3>
-            <p class="section-intro">Limit this profile to a country, state / province, or city. Filled fields must all match, including for memories. Leave fields blank for any location.</p>
-            <LocationFilterPicker Value="_locationFilter" OnChanged="StateHasChanged" />
-            <p class="section-intro">Use place names from Immich. Photos without matching location metadata are excluded.</p>
-        </section>
-
-        <section class="settings-card editor-card">
-            <h3>Media</h3>
-            <p class="section-intro">This version is photo-first. Video-related formats stay disabled for now.</p>
-            <label><input type="checkbox" @bind="_profile.MediaTypes.Photos" /> Photos</label>
-            @* <label><input type="checkbox" @bind="_profile.MediaTypes.Videos" /> Videos</label> *@
-            @* <label><input type="checkbox" @bind="_profile.MediaTypes.LivePhotos" /> Live Photos</label> *@
-            @* <label><input type="checkbox" @bind="_profile.MediaTypes.VideoAudio" /> Video Audio</label> *@
-            <label>
-                Image Quality:
-                <select @bind="_profile.ImageQuality">
-                    <option value="preview">Preview (recommended)</option>
-                    <option value="original">Original</option>
-                </select>
-            </label>
-            <label>
-                Minimum file size (KB):
-                <input type="number" value="@GetMinFileSizeKbValue()" @oninput="OnMinFileSizeKbChanged" min="0" step="50" />
-            </label>
-            <p class="section-intro">Leave at 0 to keep all photos. Higher values can hide very small or heavily compressed images.</p>
-            <p class="section-intro">Good starting points: 500 KB is gentle, 1000 KB is moderate, and 2000 KB is stricter.</p>
-        </section>
-
-        <section class="settings-card editor-card">
             <h3>Slideshow</h3>
             <p class="section-intro">Control pace, refresh cadence, and transitions between items.</p>
             <div class="settings-field-grid">
@@ -169,135 +146,174 @@ else
             <label><input type="checkbox" @bind="_profile.Slideshow.PreventScreensaver" /> Prevent System Screensaver from running</label>
         </section>
 
-        <section class="settings-card editor-card">
-            <h3>Overlay & Clock</h3>
-            <p class="section-intro">Set how metadata, the clock, and the persistent date appear during playback.</p>
-            <div class="settings-field-grid">
-                <label>
-                    Overlay Style:
-                    <select @bind="_profile.Display.OverlayStyle">
-                        <option value="none">None</option>
-                        <option value="bottom">Bottom Bar</option>
-                        <option value="corner">Corner Pill</option>
-                    </select>
-                </label>
-                <label>
-                    Background:
-                    <select @bind="_profile.Display.BackgroundEffect">
-                        <option value="none">None</option>
-                        <option value="blur">Blur</option>
-                        <option value="ambilight">Ambilight Glow</option>
-                    </select>
-                </label>
-                <label>
-                    Overlay Behavior:
-                    <select @bind="_profile.Display.OverlayBehavior">
-                        <option value="always">Always On</option>
-                        <option value="fade">Auto-Fade</option>
-                        <option value="manual">Manual (OK button)</option>
-                    </select>
-                </label>
+        <details class="settings-card editor-card advanced-settings">
+            <summary>Location</summary>
+            <div class="advanced-settings-body">
+                <p class="section-intro">Limit this profile to a country, state / province, or city. Filled fields must all match, including for memories. Leave fields blank for any location.</p>
+                <LocationFilterPicker Value="_locationFilter" OnChanged="StateHasChanged" />
+                <p class="section-intro">Use place names from Immich. Photos without matching location metadata are excluded.</p>
             </div>
-            <p class="section-intro">Use Ambilight Glow for a brighter, room-lighting style backdrop behind the photo.</p>
-            <label><input type="checkbox" @bind="_profile.Display.ClockAlwaysVisible" /> Clock Always Visible</label>
-            <label><input type="checkbox" @bind="_profile.Display.ShowDate" /> Show Date</label>
-            <label><input type="checkbox" @bind="_profile.Display.ShowTimer" /> Show Progress Timer</label>
-        </section>
+        </details>
 
-        <section class="settings-card editor-card">
-            <h3>Date & Time</h3>
-            <p class="section-intro">Choose whether playback dates and the clock follow the Roku device locale or a custom profile format.</p>
-            <label>
-                Formatting Source:
-                <select @bind="_profile.Display.FormatSource">
-                    <option value="@ImmichLoungeCompanion.Models.DisplayFormatSource.Roku">Use Roku locale</option>
-                    <option value="@ImmichLoungeCompanion.Models.DisplayFormatSource.Profile">Use custom locale and format</option>
-                </select>
-            </label>
-            @if (_profile.Display.FormatSource == ImmichLoungeCompanion.Models.DisplayFormatSource.Profile)
-            {
-                <div class="settings-field-grid">
-                    <label>
-                        Time Format:
-                        <select @bind="_profile.Display.ClockFormat">
-                            <option value="HH:mm">24h — 14:05</option>
-                            <option value="HH:mm:ss">24h with seconds — 14:05:30</option>
-                            <option value="h:mm tt">12h — 2:05 PM</option>
-                            <option value="h:mm:ss tt">12h with seconds — 2:05:30 PM</option>
-                        </select>
-                    </label>
-                    <label>
-                        Date Format:
-                        <select @bind="_profile.Display.DateFormat">
-                            @foreach (var option in GetDateFormatOptions(_profile.Display.Locale))
-                            {
-                                <option value="@option.Value">@option.Label</option>
-                            }
-                        </select>
-                    </label>
-                </div>
+        <details class="settings-card editor-card advanced-settings">
+            <summary>Media</summary>
+            <div class="advanced-settings-body">
+                <p class="section-intro">This version is photo-first. Video-related formats stay disabled for now.</p>
+                <label><input type="checkbox" @bind="_profile.MediaTypes.Photos" /> Photos</label>
+                @* <label><input type="checkbox" @bind="_profile.MediaTypes.Videos" /> Videos</label> *@
+                @* <label><input type="checkbox" @bind="_profile.MediaTypes.LivePhotos" /> Live Photos</label> *@
+                @* <label><input type="checkbox" @bind="_profile.MediaTypes.VideoAudio" /> Video Audio</label> *@
                 <label>
-                    Date Language:
-                    <select @bind="_profile.Display.Locale">
-                        <option value="en-US">English (US)</option>
-                        <option value="en-GB">English (UK)</option>
-                        <option value="nl-NL">Dutch</option>
-                        <option value="de-DE">German</option>
-                        <option value="fr-FR">French</option>
-                        <option value="es-ES">Spanish</option>
-                        <option value="it-IT">Italian</option>
-                        <option value="pt-BR">Portuguese (Brazil)</option>
-                        <option value="pt-PT">Portuguese (Portugal)</option>
-                        <option value="sv-SE">Swedish</option>
-                        <option value="da-DK">Danish</option>
-                        <option value="nb-NO">Norwegian Bokmål</option>
-                        <option value="fi-FI">Finnish</option>
-                        <option value="pl-PL">Polish</option>
-                        <option value="ja-JP">Japanese</option>
-                        <option value="zh-CN">Chinese (Simplified)</option>
+                    Image Quality:
+                    <select @bind="_profile.ImageQuality">
+                        <option value="preview">Preview (recommended)</option>
+                        <option value="original">Original</option>
                     </select>
                 </label>
-            }
-        </section>
+                <label>
+                    Minimum file size (KB):
+                    <input type="number" value="@GetMinFileSizeKbValue()" @oninput="OnMinFileSizeKbChanged" min="0" step="50" />
+                </label>
+                <p class="section-intro">Leave at 0 to keep all photos. Higher values can hide very small or heavily compressed images.</p>
+                <p class="section-intro">Good starting points: 500 KB is gentle, 1000 KB is moderate, and 2000 KB is stricter.</p>
+            </div>
+        </details>
 
-        <section class="settings-card editor-card editor-card-wide">
-            <h3>Weather</h3>
-            <p class="section-intro">Add a weather overlay by searching for a location or entering coordinates directly.</p>
-            <label><input type="checkbox" @bind="_weatherEnabled" @bind:after="OnWeatherToggled" /> Show Weather Overlay</label>
-            @if (_weatherEnabled && _profile.Weather != null)
-            {
-                <div class="form-group">
-                    <label>Location</label>
-                    <div class="search-row">
-                        <input @bind="_locationQuery" @bind:event="oninput" placeholder="Search city or address…" />
-                        <button type="button" @onclick="SearchLocationAsync" class="btn btn-secondary" disabled="@_locationSearching">
-                            @if (_locationSearching) { <span>Searching…</span> } else { <span>Search</span> }
-                        </button>
-                    </div>
-                    @if (_locationResults.Count > 0)
-                    {
-                        <ul class="search-results">
-                            @foreach (var r in _locationResults)
-                            {
-                                <li @onclick="() => SelectLocation(r)">@r.DisplayName</li>
-                            }
-                        </ul>
-                    }
-                </div>
+        <details class="settings-card editor-card advanced-settings">
+            <summary>Overlay & Clock</summary>
+            <div class="advanced-settings-body">
+                <p class="section-intro">Set how metadata, the clock, and the persistent date appear during playback.</p>
                 <div class="settings-field-grid">
-                    <label>Latitude: <input type="number" step="0.0001" value="@_profile.Weather.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)" @oninput="OnWeatherLatitudeChanged" /></label>
-                    <label>Longitude: <input type="number" step="0.0001" value="@_profile.Weather.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)" @oninput="OnWeatherLongitudeChanged" /></label>
-                    <label>Poll interval (minutes): <input type="number" value="@_profile.Weather.PollIntervalMinutes" @oninput="OnWeatherPollIntervalMinutesChanged" min="5" max="1440" /></label>
                     <label>
-                        Temperature unit:
-                        <select @bind="_profile.Display.WeatherUnit">
-                            <option value="celsius">Celsius (°C)</option>
-                            <option value="fahrenheit">Fahrenheit (°F)</option>
+                        Overlay Style:
+                        <select @bind="_profile.Display.OverlayStyle">
+                            <option value="none">None</option>
+                            <option value="bottom">Bottom Bar</option>
+                            <option value="corner">Corner Pill</option>
+                        </select>
+                    </label>
+                    <label>
+                        Background:
+                        <select @bind="_profile.Display.BackgroundEffect">
+                            <option value="none">None</option>
+                            <option value="blur">Blur</option>
+                            <option value="ambilight">Ambilight Glow</option>
+                        </select>
+                    </label>
+                    <label>
+                        Overlay Behavior:
+                        <select @bind="_profile.Display.OverlayBehavior">
+                            <option value="always">Always On</option>
+                            <option value="fade">Auto-Fade</option>
+                            <option value="manual">Manual (OK button)</option>
                         </select>
                     </label>
                 </div>
-            }
-        </section>
+                <p class="section-intro">Use Ambilight Glow for a brighter, room-lighting style backdrop behind the photo.</p>
+                <label><input type="checkbox" @bind="_profile.Display.ClockAlwaysVisible" /> Clock Always Visible</label>
+                <label><input type="checkbox" @bind="_profile.Display.ShowDate" /> Show Date</label>
+                <label><input type="checkbox" @bind="_profile.Display.ShowTimer" /> Show Progress Timer</label>
+            </div>
+        </details>
+
+        <details class="settings-card editor-card advanced-settings">
+            <summary>Date & Time</summary>
+            <div class="advanced-settings-body">
+                <p class="section-intro">Choose whether playback dates and the clock follow the Roku device locale or a custom profile format.</p>
+                <label>
+                    Formatting Source:
+                    <select @bind="_profile.Display.FormatSource">
+                        <option value="@ImmichLoungeCompanion.Models.DisplayFormatSource.Roku">Use Roku locale</option>
+                        <option value="@ImmichLoungeCompanion.Models.DisplayFormatSource.Profile">Use custom locale and format</option>
+                    </select>
+                </label>
+                @if (_profile.Display.FormatSource == ImmichLoungeCompanion.Models.DisplayFormatSource.Profile)
+                {
+                    <div class="settings-field-grid">
+                        <label>
+                            Time Format:
+                            <select @bind="_profile.Display.ClockFormat">
+                                <option value="HH:mm">24h — 14:05</option>
+                                <option value="HH:mm:ss">24h with seconds — 14:05:30</option>
+                                <option value="h:mm tt">12h — 2:05 PM</option>
+                                <option value="h:mm:ss tt">12h with seconds — 2:05:30 PM</option>
+                            </select>
+                        </label>
+                        <label>
+                            Date Format:
+                            <select @bind="_profile.Display.DateFormat">
+                                @foreach (var option in GetDateFormatOptions(_profile.Display.Locale))
+                                {
+                                    <option value="@option.Value">@option.Label</option>
+                                }
+                            </select>
+                        </label>
+                    </div>
+                    <label>
+                        Date Language:
+                        <select @bind="_profile.Display.Locale">
+                            <option value="en-US">English (US)</option>
+                            <option value="en-GB">English (UK)</option>
+                            <option value="nl-NL">Dutch</option>
+                            <option value="de-DE">German</option>
+                            <option value="fr-FR">French</option>
+                            <option value="es-ES">Spanish</option>
+                            <option value="it-IT">Italian</option>
+                            <option value="pt-BR">Portuguese (Brazil)</option>
+                            <option value="pt-PT">Portuguese (Portugal)</option>
+                            <option value="sv-SE">Swedish</option>
+                            <option value="da-DK">Danish</option>
+                            <option value="nb-NO">Norwegian Bokmål</option>
+                            <option value="fi-FI">Finnish</option>
+                            <option value="pl-PL">Polish</option>
+                            <option value="ja-JP">Japanese</option>
+                            <option value="zh-CN">Chinese (Simplified)</option>
+                        </select>
+                    </label>
+                }
+            </div>
+        </details>
+
+        <details class="settings-card editor-card advanced-settings editor-card-wide">
+            <summary>Weather</summary>
+            <div class="advanced-settings-body">
+                <p class="section-intro">Add a weather overlay by searching for a location or entering coordinates directly.</p>
+                <label><input type="checkbox" @bind="_weatherEnabled" @bind:after="OnWeatherToggled" /> Show Weather Overlay</label>
+                @if (_weatherEnabled && _profile.Weather != null)
+                {
+                    <div class="form-group">
+                        <label>Location</label>
+                        <div class="search-row">
+                            <input @bind="_locationQuery" @bind:event="oninput" placeholder="Search city or address…" />
+                            <button type="button" @onclick="SearchLocationAsync" class="btn btn-secondary" disabled="@_locationSearching">
+                                @if (_locationSearching) { <span>Searching…</span> } else { <span>Search</span> }
+                            </button>
+                        </div>
+                        @if (_locationResults.Count > 0)
+                        {
+                            <ul class="search-results">
+                                @foreach (var r in _locationResults)
+                                {
+                                    <li @onclick="() => SelectLocation(r)">@r.DisplayName</li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                    <div class="settings-field-grid">
+                        <label>Latitude: <input type="number" step="0.0001" value="@_profile.Weather.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)" @oninput="OnWeatherLatitudeChanged" /></label>
+                        <label>Longitude: <input type="number" step="0.0001" value="@_profile.Weather.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)" @oninput="OnWeatherLongitudeChanged" /></label>
+                        <label>Poll interval (minutes): <input type="number" value="@_profile.Weather.PollIntervalMinutes" @oninput="OnWeatherPollIntervalMinutesChanged" min="5" max="1440" /></label>
+                        <label>
+                            Temperature unit:
+                            <select @bind="_profile.Display.WeatherUnit">
+                                <option value="celsius">Celsius (°C)</option>
+                                <option value="fahrenheit">Fahrenheit (°F)</option>
+                            </select>
+                        </label>
+                    </div>
+                }
+            </div>
+        </details>
     </div>
 
     @if (_saveError != null) { <p class="error">@_saveError</p> }
@@ -319,6 +335,11 @@ else
     private List<MemoryTimeZone> _memoryTimeZones = [];
     private bool _canEditContentSources;
     private bool _connectionConfigured;
+    private string SourceSummary => !_canEditContentSources ? "Advanced content rules"
+        : _profile!.ContentSources.Any(source => source.Type != "memories")
+            ? $"{_profile.ContentSources.Count(source => source.Type != "memories")} selected sources ({(_sourceMatchOperator == AssetFilterGroupOperator.And ? "all must match" : "any can match")})"
+                + (_memoriesEnabled || _profile.Memories.IncludeBirthdays ? " + memories" : "")
+            : _memoriesEnabled || _profile.Memories.IncludeBirthdays ? "Memories" : "Whole library";
     private AssetFilterGroupOperator _sourceMatchOperator = AssetFilterGroupOperator.Or;
     private AssetFilterGroupOperator _initialSourceMatchOperator;
     private string? _initialContentSourcesSnapshot;
