@@ -11,6 +11,10 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 ## Unreleased
 
+- With **Shuffle** enabled, get a fresh photo order after each complete loop in both Roku apps. Each device shuffles independently.
+- Fixed late playlist refreshes moving playback back to an earlier group of photos.
+- Choose **Restart with fresh shuffle** from the channel settings menu to start a new order immediately. Reopening an app still resumes where it left off.
+
 - Set the speed of fade, slide, and zoom transitions. Existing profiles keep the same half-second transitions.
 
 - Choose whether photos must match any or all selected sources, and exclude photos containing selected people, including memories.

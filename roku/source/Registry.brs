@@ -219,6 +219,20 @@ function NormalizePlaylistVersion(version as Dynamic) as String
     return version
 end function
 
+function PlaylistContentVersion(version as Dynamic) as String
+    normalized = NormalizePlaylistVersion(version)
+    separator = Instr(1, normalized, "~")
+    if separator > 0 then return Left(normalized, separator - 1)
+    return normalized
+end function
+
+function NextShuffleCycleVersion(version as String) as String
+    seed = Rnd(1000000000)
+    candidate = PlaylistContentVersion(version) + "~" + seed.ToStr()
+    if candidate = version then candidate = PlaylistContentVersion(version) + "~" + (seed + 1).ToStr()
+    return candidate
+end function
+
 function ResolveResumePlaylistVersion(resumeState as Dynamic) as String
     if resumeState = invalid then return ""
     return NormalizePlaylistVersion(resumeState.playlistVersion)

@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using ImmichLoungeCompanion.Models;
@@ -32,6 +33,17 @@ public class PlaylistController(
             ? $"legacy-{entry.GeneratedAt.ToUnixTimeMilliseconds()}"
             : entry.PlaylistVersion;
 
+    private static (string? Version, int Seed) ParseCycleVersion(string? version)
+    {
+        var separator = version?.LastIndexOf('~') ?? -1;
+        if (separator > 0 && int.TryParse(version![(separator + 1)..],
+                NumberStyles.None, CultureInfo.InvariantCulture, out var seed) && seed > 0)
+        {
+            return (version![..separator], seed);
+        }
+        return (version, 0);
+    }
+
     [HttpDelete]
     public IActionResult Invalidate(string id)
     {
@@ -53,6 +65,11 @@ public class PlaylistController(
         if (cached != null)
         {
             var effectivePlaylistVersion = EffectivePlaylistVersion(cached);
+            var (requestedVersion, cycleSeed) = ParseCycleVersion(playlistVersion);
+            if (!profile.Slideshow.Shuffle)
+            {
+                cycleSeed = 0;
+            }
             var totalCount = cached.Assets.Count;
             if (totalCount == 0)
             {
@@ -69,14 +86,21 @@ public class PlaylistController(
                 });
             }
 
-            if (!string.IsNullOrWhiteSpace(playlistVersion) &&
-                !string.Equals(playlistVersion, effectivePlaylistVersion, StringComparison.Ordinal))
+            if (!string.IsNullOrWhiteSpace(requestedVersion) &&
+                !string.Equals(requestedVersion, effectivePlaylistVersion, StringComparison.Ordinal))
             {
                 offset = 0;
             }
 
             offset = ((offset % totalCount) + totalCount) % totalCount;
-            var assets = cached.Assets
+            var orderedAssets = cycleSeed > 0
+                ? PlaylistShuffleOrder.ForCycle(cached.Assets, cycleSeed)
+                : cached.Assets;
+            if (cycleSeed > 0)
+            {
+                effectivePlaylistVersion += "~" + cycleSeed.ToString(CultureInfo.InvariantCulture);
+            }
+            var assets = orderedAssets
                 .Skip(offset)
                 .Take(count)
                 .ToList();

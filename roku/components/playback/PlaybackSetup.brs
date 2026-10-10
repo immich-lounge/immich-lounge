@@ -12,6 +12,8 @@ sub InitPlaybackSceneForScene(ctx as Object)
     ctx.portraitPairs = {}
     ctx.currentPairAssetId = ""
     ctx.pendingRefreshProfile = invalid
+    ctx.pendingRestartShuffle = false
+    ctx.deferredRestartShuffleTask = invalid
     ctx.pendingScheduledProfile = invalid
     ctx.pendingScheduledPlaylist = invalid
     ctx.pendingScheduledAt = 0

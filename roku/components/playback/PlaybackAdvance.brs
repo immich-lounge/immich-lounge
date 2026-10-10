@@ -18,7 +18,7 @@ sub AdvanceToNextForScene(ctx as Object)
     end if
 
     if ctx.playlistIndex + ctx.slideAssetCount >= ctx.playlist.Count() then
-        hasMoreBatches = ctx.totalPlaylistCount > ctx.playlist.Count()
+        hasMoreBatches = HasNextPlaylistWindowForScene(ctx)
         if hasMoreBatches then
             ctx.waitingForNextBatchSwap = true
             FetchNextPlaylistBatchForScene(ctx, ctx.top.isScreensaver)

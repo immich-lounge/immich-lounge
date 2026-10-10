@@ -15,6 +15,7 @@ sub OnTriggerRefreshForScene(ctx as Object)
 end sub
 
 sub TriggerProfileConfigRefreshForScene(ctx as Object, isScreensaver as Boolean)
+    if ctx.pendingRestartShuffle = true then return
     if ctx.profile = invalid then return
     if ctx.profileConfigTask <> invalid then return
     if ctx.refreshProfileTask <> invalid then return
@@ -62,6 +63,7 @@ sub OnProfileConfigResultForScene(ctx as Object, isScreensaver as Boolean)
 end sub
 
 sub TriggerPlaylistRefreshForScene(ctx as Object, isScreensaver as Boolean)
+    if ctx.pendingRestartShuffle = true then return
     if ctx.profile = invalid then return
     if ctx.refreshProfileTask <> invalid or ctx.refreshPlaylistTask <> invalid then return
     if ctx.profileConfigTask <> invalid then
@@ -110,13 +112,35 @@ sub OnRefreshPlaylistResultForScene(ctx as Object, isScreensaver as Boolean)
     task.unobserveField("playlistResult")
     result = task.playlistResult
     refreshedProfile = ctx.pendingRefreshProfile
+    restartShuffle = ctx.pendingRestartShuffle = true
+    if restartShuffle and result <> invalid then
+        if result.ok = true and ctx.isTransitioning = true then
+            ctx.deferredRestartShuffleTask = task
+            return
+        end if
+    end if
     ctx.pendingRefreshProfile = invalid
+    ctx.pendingRestartShuffle = false
     if result = invalid then
         LogDebug(PlaybackLogScope(ctx), "refresh playlist task returned no result")
         return
     end if
 
     if result.ok = true then
+        ' Playback may have swapped windows (or started another shuffle cycle)
+        ' while this request was in flight. Retry against the current position.
+        if not restartShuffle and task.profileId = PlaybackProfileId(ctx.profile, ctx.top.profileId) then
+            if task.playlistOffset <> invalid and task.playlistVersion <> invalid then
+                if task.playlistOffset <> ctx.playlistOffset or NormalizePlaylistVersion(task.playlistVersion) <> NormalizePlaylistVersion(ctx.playlistVersion) then
+                    if refreshedProfile <> invalid then
+                        BeginProfilePlaylistRefreshForScene(ctx, refreshedProfile, isScreensaver)
+                    else
+                        TriggerPlaylistRefreshForScene(ctx, isScreensaver)
+                    end if
+                    return
+                end if
+            end if
+        end if
         if refreshedProfile <> invalid and PlaybackProfileId(refreshedProfile, ctx.top.profileId) <> PlaybackProfileId(ctx.profile, ctx.top.profileId) then
             if result.assets.Count() > 0 then
                 ctx.pendingScheduledProfile = refreshedProfile
@@ -143,6 +167,11 @@ sub OnRefreshPlaylistResultForScene(ctx as Object, isScreensaver as Boolean)
         end if
 
         ctx.playlist = result.assets
+        if ctx.nextBatchTask <> invalid then
+            ctx.nextBatchTask.unobserveField("playlistResult")
+            ctx.nextBatchTask.control = "STOP"
+            ctx.nextBatchTask = invalid
+        end if
         if resultPlaylistVersion <> ctx.playlistVersion or result.offset <> ctx.playlistOffset then ctx.portraitPairs = {}
         ctx.playlistOffset = result.offset
         ctx.nextPlaylistOffset = result.nextOffset
@@ -155,24 +184,46 @@ sub OnRefreshPlaylistResultForScene(ctx as Object, isScreensaver as Boolean)
         ctx.pendingBatchPlaylistVersion = ""
         ctx.pendingNextPlaylistOffset = 0
         ctx.waitingForNextBatchSwap = false
-        ctx.playlistIndex = ResolvePlaylistIndexAfterRefresh(ctx.playlist, currentAssetId, ctx.playlistIndex)
+        if restartShuffle then
+            ctx.playlistIndex = 0
+            ctx.currentPairAssetId = ""
+        else
+            ctx.playlistIndex = ResolvePlaylistIndexAfterRefresh(ctx.playlist, currentAssetId, ctx.playlistIndex)
+        end if
         ' A refreshed window may have moved the right photo away from the left.
         ctx.slideAssetCount = PortraitSlideAdvanceCount(ctx.playlist, ctx.playlistIndex, ctx.currentPairAssetId)
         PersistActivePlaylistCacheForScene(ctx, isScreensaver)
-        if hadNoPhotos and ctx.playlist.Count() > 0 then
+        if (hadNoPhotos or restartShuffle) and ctx.playlist.Count() > 0 then
+            if restartShuffle then
+                ctx.slideTimer.control = "stop"
+                ctx.progressTimer.control = "stop"
+                ctx.progressBar.progress = 0
+                StopMotionAnimationForScene(ctx)
+            end if
             ctx.resumeNeedsSlideLoad = true
             if not ctx.paused then ResumeSlideshowForScene(ctx)
         end if
     else
         LogDebug(PlaybackLogScope(ctx), "refresh playlist failed, continuing with existing playlist")
+        if restartShuffle and ctx.toast <> invalid then ctx.toast.message = "Could not restart shuffle. Try again when the companion is reachable."
     end if
 end sub
 
-sub BeginProfilePlaylistRefreshForScene(ctx as Object, profile as Object, isScreensaver as Boolean)
+function ApplyDeferredShuffleRestartForScene(ctx as Object) as Boolean
+    if ctx.deferredRestartShuffleTask = invalid then return false
+    if ctx.isTransitioning = true or ctx.paused then return false
+    ctx.refreshPlaylistTask = ctx.deferredRestartShuffleTask
+    ctx.deferredRestartShuffleTask = invalid
+    OnRefreshPlaylistResultForScene(ctx, ctx.top.isScreensaver)
+    return true
+end function
+
+sub BeginProfilePlaylistRefreshForScene(ctx as Object, profile as Object, isScreensaver as Boolean, restartShuffle = false as Boolean)
     if ctx.refreshPlaylistTask <> invalid then return
     ctx.pendingScheduledProfile = invalid
     ctx.pendingScheduledPlaylist = invalid
     ctx.pendingRefreshProfile = profile
+    ctx.pendingRestartShuffle = restartShuffle
     task = CreateObject("roSGNode", "CompanionApiTask")
     task.baseUrl = ctx.top.companionUrl
     task.profileId = PlaybackProfileId(profile, ctx.top.profileId)
@@ -181,10 +232,35 @@ sub BeginProfilePlaylistRefreshForScene(ctx as Object, profile as Object, isScre
         task.playlistOffset = ctx.playlistOffset
         task.playlistVersion = ctx.playlistVersion
     end if
+    if restartShuffle then
+        task.playlistOffset = 0
+        task.playlistVersion = NextShuffleCycleVersion(ctx.playlistVersion)
+    end if
     task.playlistCount = PlaybackRegistryPlaylistWindowSize()
     task.observeField("playlistResult", "OnRefreshPlaylistResult")
     ctx.refreshPlaylistTask = task
     task.command = "fetchPlaylist"
+end sub
+
+sub RestartShuffleForScene(ctx as Object)
+    if not ShufflePlaylistLoopsForScene(ctx) then return
+    ' Cancel requests made before this explicit restart so none can restore the
+    ' old window. Leave active playback and saved resume state intact on failure.
+    for each request in [["profileConfigTask", "profileResult"], ["refreshProfileTask", "profileResult"], ["refreshPlaylistTask", "playlistResult"], ["nextBatchTask", "playlistResult"]]
+        task = ctx[request[0]]
+        if task <> invalid then
+            task.unobserveField(request[1])
+            task.control = "STOP"
+            ctx[request[0]] = invalid
+        end if
+    end for
+    ctx.pendingBatchAssets = invalid
+    ctx.deferredRestartShuffleTask = invalid
+    ctx.pendingBatchOffset = 0
+    ctx.pendingBatchPlaylistVersion = ""
+    ctx.pendingNextPlaylistOffset = 0
+    ctx.waitingForNextBatchSwap = false
+    BeginProfilePlaylistRefreshForScene(ctx, ctx.profile, ctx.top.isScreensaver, true)
 end sub
 
 function ApplyScheduledProfileForScene(ctx as Object) as Boolean

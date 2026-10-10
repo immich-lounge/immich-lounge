@@ -6,6 +6,10 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+- Reshuffle at each Roku playlist loop using a device-selected seed carried in the playlist version. Keep windows and resume deterministic within a cycle without mutating the shared companion cache, including playlists shorter than 50 entries.
+- Reject playlist refreshes whose requested window or shuffle cycle was superseded during playback; retry at the current position and stop obsolete batch fetches when applying a refresh.
+- Add a channel settings action to restart with a fresh shuffle, canceling obsolete requests and retaining current playback and resume state if the companion request fails.
+
 - Add `slideshow.transitionDurationSeconds` (0.1–5, below the photo interval), defaulting to 0.5 for existing profiles. Snapshot the duration per transition so Roku animations, background fades, and completion timers agree in both modes.
 
 - Expose flat AND/OR source matching in the companion editor and add people exclusions applied to sources and memories. Preserve nested API rules and use separate person queries for legacy and structured search compatibility.
