@@ -5,8 +5,13 @@ namespace tests
     private keysToRestore = [
       "companionUrl"
       "channelProfileId"
+      "screensaverProfileId"
       "cachedChannelProfile"
       "cachedChannelPlaylist"
+      "cachedScreensaverProfile"
+      "cachedScreensaverPlaylist"
+      "cachedChannelIdentity"
+      "cachedScreensaverIdentity"
       "channelResumeState"
       "screensaverResumeState"
       "testKey"
@@ -20,6 +25,7 @@ namespace tests
           m.registrySnapshot[key] = value
         end if
       end for
+      RegistryClearSavedSetup()
     end function
 
     protected override function afterEach()
@@ -74,6 +80,137 @@ namespace tests
     function test_resumeStateKeys()
       m.assertEqual(ResumeStateRegistryKey(false), "channelResumeState")
       m.assertEqual(ResumeStateRegistryKey(true), "screensaverResumeState")
+    end function
+
+    @describe("Offline cache selection")
+
+    @it("Matching caches and resume positions remain usable in both modes")
+    function test_matchingCache()
+      for each mode in [false, true]
+        m.seedCache(mode, "http://first:4383", "living-room")
+        m.assertEqual(LoadCachedProfileForMode(mode, "http://first:4383", "living-room").id, "living-room")
+        m.assertEqual(LoadCachedPlaylistForMode(mode, "http://first:4383", "living-room").Count(), 1)
+        m.assertEqual(LoadResumeState(mode, "living-room", "http://first:4383").assetId, "photo")
+      end for
+    end function
+
+    @it("Fallback refuses a different profile or companion including reused profile IDs")
+    function test_mismatchedCache()
+      for each mode in [false, true]
+        m.seedCache(mode, "http://first:4383", "living-room")
+        m.assertInvalid(LoadCachedProfileForMode(mode, "http://first:4383", "other"))
+        m.assertEqual(LoadCachedPlaylistForMode(mode, "http://first:4383", "other").Count(), 0)
+        m.assertInvalid(LoadCachedProfileForMode(mode, "http://second:4383", "living-room"))
+        m.assertEqual(LoadCachedPlaylistForMode(mode, "http://second:4383", "living-room").Count(), 0)
+        m.assertInvalid(LoadResumeState(mode, "living-room", "http://second:4383"))
+      end for
+    end function
+
+    @it("Changing a profile clears only its mode when the other profile is explicit")
+    function test_profileSwitch()
+      for each mode in [false, true]
+        RegistrySaveProfileSelection("http://first:4383", "channel", false)
+        RegistrySaveProfileSelection("http://first:4383", "screensaver", true)
+        m.seedCache(false, "http://first:4383", "channel")
+        m.seedCache(true, "http://first:4383", "screensaver")
+        RegistrySaveProfileSelection("http://first:4383", "new-profile", mode)
+        m.assertInvalid(RegistryRead(CachedProfileRegistryKey(mode)))
+        m.assertInvalid(RegistryRead(CachedPlaylistRegistryKey(mode)))
+        m.assertInvalid(RegistryRead(ResumeStateRegistryKey(mode)))
+        m.assertInvalid(RegistryRead(CacheIdentityRegistryKey(mode)))
+        m.assertNotInvalid(RegistryRead(CachedProfileRegistryKey(not mode)))
+        m.assertNotInvalid(RegistryRead(CachedPlaylistRegistryKey(not mode)))
+        m.assertNotInvalid(RegistryRead(ResumeStateRegistryKey(not mode)))
+      end for
+    end function
+
+    @it("Changing the shared companion clears both modes even with the same profile ID")
+    function test_companionSwitch()
+      for each mode in [false, true]
+        RegistrySaveProfileSelection("http://first:4383", "same-id", false)
+        RegistrySaveProfileSelection("http://first:4383", "same-id", true)
+        m.seedCache(false, "http://first:4383", "same-id")
+        m.seedCache(true, "http://first:4383", "same-id")
+        RegistrySaveProfileSelection("http://second:4383", "same-id", mode)
+        for each clearedMode in [false, true]
+          m.assertInvalid(RegistryRead(CachedProfileRegistryKey(clearedMode)))
+          m.assertInvalid(RegistryRead(CachedPlaylistRegistryKey(clearedMode)))
+          m.assertInvalid(RegistryRead(ResumeStateRegistryKey(clearedMode)))
+          m.assertInvalid(RegistryRead(CacheIdentityRegistryKey(clearedMode)))
+        end for
+      end for
+    end function
+
+    @it("Changing the channel profile clears an inherited screensaver cache")
+    function test_inheritedScreensaverSwitch()
+      RegistrySaveProfileSelection("http://first:4383", "old", false)
+      m.seedCache(false, "http://first:4383", "old")
+      m.seedCache(true, "http://first:4383", "old")
+      RegistrySaveProfileSelection("http://first:4383", "new", false)
+      m.assertEqual(GetSavedProfileId(true), "new")
+      m.assertInvalid(RegistryRead(CachedProfileRegistryKey(true)))
+      m.assertInvalid(RegistryRead(CachedPlaylistRegistryKey(true)))
+      m.assertInvalid(RegistryRead(ResumeStateRegistryKey(true)))
+    end function
+
+    @it("Saving the same selection preserves its offline data")
+    function test_unchangedSelection()
+      for each mode in [false, true]
+        RegistrySaveProfileSelection("http://first:4383", "same", mode)
+        m.seedCache(mode, "http://first:4383", "same")
+        RegistrySaveProfileSelection("http://first:4383", "same", mode)
+        m.assertEqual(LoadCachedPlaylistForMode(mode, "http://first:4383", "same").Count(), 1)
+        m.assertNotInvalid(LoadResumeState(mode, "same", "http://first:4383"))
+      end for
+    end function
+
+    @it("Unidentified legacy data is refused and cleared before fresh profile caching")
+    function test_legacyCache()
+      RegistryWriteJson(CachedProfileRegistryKey(false), { id: "old" })
+      RegistryWriteJson(CachedPlaylistRegistryKey(false), [{ id: "old-photo" }])
+      RegistryWriteJson(ResumeStateRegistryKey(false), { profileId: "old" })
+      m.assertInvalid(LoadCachedProfileForMode(false, "http://first:4383", "old"))
+      m.assertEqual(LoadCachedPlaylistForMode(false, "http://first:4383", "old").Count(), 0)
+      PersistProfileCacheForMode({ id: "new" }, "http://first:4383", "new", false)
+      m.assertInvalid(RegistryRead(CachedPlaylistRegistryKey(false)))
+      m.assertInvalid(RegistryRead(ResumeStateRegistryKey(false)))
+      m.assertEqual(LoadCachedProfileForMode(false, "http://first:4383", "new").id, "new")
+    end function
+
+    @it("A cache written for a previous selection cannot be used for the current selection")
+    function test_oldWriterIdentity()
+      m.seedCache(false, "http://first:4383", "new")
+      PersistActivePlaylistCacheForMode([{ id: "old-photo", type: "photo" }], false, "http://first:4383", "old")
+      m.assertEqual(LoadCachedPlaylistForMode(false, "http://first:4383", "new").Count(), 0)
+      m.assertInvalid(LoadCachedProfileForMode(false, "http://first:4383", "new"))
+    end function
+
+    @it("Malformed cache identities and payloads are refused")
+    function test_malformedCache()
+      for each raw in ["{", "[]", "{}"]
+        RegistryWrite(CacheIdentityRegistryKey(false), raw)
+        m.assertFalse(RegistryCacheMatchesSelection(false, "http://first:4383", "profile"))
+      end for
+      m.seedCache(false, "http://first:4383", "profile")
+      RegistryWriteJson(CachedProfileRegistryKey(false), { id: "other" })
+      m.assertInvalid(LoadCachedProfileForMode(false, "http://first:4383", "profile"))
+      RegistryWrite(CachedPlaylistRegistryKey(false), "{}")
+      m.assertEqual(LoadCachedPlaylistForMode(false, "http://first:4383", "profile").Count(), 0)
+    end function
+
+    @it("Clearing cached data also removes both cache identities")
+    function test_clearCacheIdentity()
+      m.seedCache(false, "http://first:4383", "profile")
+      m.seedCache(true, "http://first:4383", "profile")
+      RegistryClearCachedData()
+      m.assertInvalid(RegistryRead(CacheIdentityRegistryKey(false)))
+      m.assertInvalid(RegistryRead(CacheIdentityRegistryKey(true)))
+    end function
+
+    private function seedCache(mode as boolean, companionUrl as string, profileId as string)
+      PersistProfileCacheForMode({ id: profileId }, companionUrl, profileId, mode)
+      PersistActivePlaylistCacheForMode([{ id: "photo", type: "photo" }], mode, companionUrl, profileId)
+      PersistResumeStateForMode({ id: "photo" }, { profileId: profileId, companionUrl: companionUrl }, 0, 0, 0, 1, "v1", mode)
     end function
 
   end class

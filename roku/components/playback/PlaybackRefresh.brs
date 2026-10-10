@@ -45,7 +45,7 @@ sub OnProfileConfigResultForScene(ctx as Object, isScreensaver as Boolean)
 
     if result.ok = true and result.profile <> invalid then
         ctx.profile = result.profile
-        RegistryWrite(CachedProfileRegistryKey(isScreensaver), FormatJSON(ctx.profile))
+        PersistProfileCacheForMode(ctx.profile, ctx.top.companionUrl, ctx.top.profileId, isScreensaver)
         ctx.skipFullRefreshTimerRestart = true
         ApplyProfile()
         ctx.skipFullRefreshTimerRestart = false
@@ -86,7 +86,7 @@ sub OnRefreshProfileResultForScene(ctx as Object, isScreensaver as Boolean)
 
     if result.ok = true then
         ctx.profile = result.profile
-        RegistryWrite(CachedProfileRegistryKey(isScreensaver), FormatJSON(ctx.profile))
+        PersistProfileCacheForMode(ctx.profile, ctx.top.companionUrl, ctx.top.profileId, isScreensaver)
         ApplyProfile()
         task = CreateObject("roSGNode", "CompanionApiTask")
         task.baseUrl = ctx.top.companionUrl

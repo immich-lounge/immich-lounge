@@ -108,7 +108,7 @@ sub PersistResumeStateForScene(ctx as Object, entry as Object, isScreensaver as 
 end sub
 
 sub PersistActivePlaylistCacheForScene(ctx as Object, isScreensaver as Boolean)
-    PersistActivePlaylistCacheForMode(ctx.playlist, isScreensaver)
+    PersistActivePlaylistCacheForMode(ctx.playlist, isScreensaver, ctx.top.companionUrl, ctx.top.profileId)
 end sub
 
 sub OnPausedChangedForScene(ctx as Object)
