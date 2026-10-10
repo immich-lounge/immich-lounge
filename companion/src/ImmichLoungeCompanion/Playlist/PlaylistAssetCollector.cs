@@ -19,15 +19,18 @@ public class PlaylistAssetCollector(IImmichClient immich)
         profile.NormalizeAssetFilter();
 
         Dictionary<string, (ImmichAsset Asset, string? SourceLabel)> allAssets = profile.AssetFilter == null
-            ? await FetchAllAssetsAsync(immichSettings, profile.DateFilter, ct)
-            : await EvaluateRuleAsync(profile.AssetFilter, immichSettings, profile.DateFilter, ct);
+            ? await FetchAllAssetsAsync(immichSettings, profile.DateFilter, profile.LocationFilter, ct)
+            : await EvaluateRuleAsync(profile.AssetFilter, immichSettings, profile.DateFilter, profile.LocationFilter, ct);
 
         if (profile.HasMemoriesSource())
         {
             var memoryAssets = await FetchMemoriesAssetsAsync(immichSettings, ct);
             foreach (var (id, asset) in memoryAssets)
             {
-                allAssets.TryAdd(id, (asset, null));
+                if (MatchesLocation(asset, profile.LocationFilter))
+                {
+                    allAssets.TryAdd(id, (asset, null));
+                }
             }
         }
 
@@ -38,6 +41,7 @@ public class PlaylistAssetCollector(IImmichClient immich)
     private async Task<Dictionary<string, (ImmichAsset Asset, string? SourceLabel)>> FetchAllAssetsAsync(
         ImmichSettings immichSettings,
         DateFilter? dateFilter,
+        LocationFilter? locationFilter,
         CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
@@ -48,6 +52,7 @@ public class PlaylistAssetCollector(IImmichClient immich)
             ApplyDateFilter(request, dateFilter);
         }
 
+        ApplyLocationFilter(request, locationFilter);
         var assets = await immich.SearchAssetsAllPagesAsync(immichSettings, request);
         return ToAssetDictionary(assets, sourceLabel: null);
     }
@@ -56,19 +61,20 @@ public class PlaylistAssetCollector(IImmichClient immich)
         AssetFilterRule rule,
         ImmichSettings immichSettings,
         DateFilter? dateFilter,
+        LocationFilter? locationFilter,
         CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
         if (rule.Kind == AssetFilterRuleKind.Condition)
         {
-            return await FetchConditionAssetsAsync(rule, immichSettings, dateFilter, ct);
+            return await FetchConditionAssetsAsync(rule, immichSettings, dateFilter, locationFilter, ct);
         }
 
         var childResults = new List<Dictionary<string, (ImmichAsset Asset, string? SourceLabel)>>();
         foreach (var child in rule.Children)
         {
-            childResults.Add(await EvaluateRuleAsync(child, immichSettings, dateFilter, ct));
+            childResults.Add(await EvaluateRuleAsync(child, immichSettings, dateFilter, locationFilter, ct));
         }
 
         if (childResults.Count == 0)
@@ -87,11 +93,13 @@ public class PlaylistAssetCollector(IImmichClient immich)
         AssetFilterRule rule,
         ImmichSettings immichSettings,
         DateFilter? dateFilter,
+        LocationFilter? locationFilter,
         CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
         var request = BuildSearchRequest(rule, dateFilter);
+        ApplyLocationFilter(request, locationFilter);
         var assets = await immich.SearchAssetsAllPagesAsync(immichSettings, request);
         var sourceLabel = rule.Type == AssetFilterConditionType.Album ? rule.Label : null;
 
@@ -223,6 +231,23 @@ public class PlaylistAssetCollector(IImmichClient immich)
 
         return request;
     }
+
+    private static void ApplyLocationFilter(SearchAssetsRequest request, LocationFilter? location)
+    {
+        request.Country = CleanLocation(location?.Country);
+        request.State = CleanLocation(location?.State);
+        request.City = CleanLocation(location?.City);
+    }
+
+    private static string? CleanLocation(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static bool MatchesLocation(ImmichAsset asset, LocationFilter? location) =>
+        MatchesField(asset.ExifInfo?.Country, location?.Country) &&
+        MatchesField(asset.ExifInfo?.State, location?.State) &&
+        MatchesField(asset.ExifInfo?.City, location?.City);
+
+    private static bool MatchesField(string? actual, string? expected) =>
+        CleanLocation(expected) is not { } value || string.Equals(actual, value, StringComparison.Ordinal);
 
     private static void ApplyDateFilter(SearchAssetsRequest request, DateFilter filter)
     {

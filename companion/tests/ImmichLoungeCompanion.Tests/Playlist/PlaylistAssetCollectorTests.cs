@@ -10,6 +10,77 @@ namespace ImmichLoungeCompanion.Tests.Playlist;
 [TestClass]
 public class PlaylistAssetCollectorTests
 {
+    [TestMethod]
+    public async Task CollectAsync_LocationAppliesToEveryLeafAndMemories()
+    {
+        var client = Substitute.For<IImmichClient>();
+        var requests = new List<SearchAssetsRequest>();
+        client.SearchAssetsAllPagesAsync(Arg.Any<ImmichSettings>(), Arg.Any<SearchAssetsRequest>())
+            .Returns(call =>
+            {
+                requests.Add(call.Arg<SearchAssetsRequest>());
+                return new List<ImmichAsset> { new() { Id = "search" } };
+            });
+        client.GetMemoriesAsync(Arg.Any<ImmichSettings>(), Arg.Any<DateOnly>()).Returns(
+        [
+            new ImmichMemory
+            {
+                Assets =
+                [
+                    new() { Id = "matching", ExifInfo = new() { Country = "Canada", State = "British Columbia", City = "Vancouver" } },
+                    new() { Id = "wrong-country", ExifInfo = new() { Country = "USA", State = "British Columbia", City = "Vancouver" } },
+                    new() { Id = "wrong-state", ExifInfo = new() { Country = "Canada", State = "Ontario", City = "Vancouver" } },
+                    new() { Id = "wrong-city", ExifInfo = new() { Country = "Canada", State = "British Columbia", City = "Victoria" } },
+                    new() { Id = "missing" }
+                ]
+            }
+        ]);
+        var profile = new Profile
+        {
+            ContentSources =
+            [
+                new() { Type = "album", Id = "album" },
+                new() { Type = "person", Id = "person" },
+                new() { Type = "tag", Id = "tag" },
+                new() { Type = "memories" }
+            ],
+            DateFilter = new() { Type = "range", From = "2020-01-01" },
+            LocationFilter = new() { Country = " Canada ", State = "British Columbia", City = "Vancouver" }
+        };
+        var assets = await new PlaylistAssetCollector(client).CollectAsync(profile, FakeImmich);
+        Assert.AreEqual(3, requests.Count);
+        foreach (var request in requests)
+        {
+            Assert.AreEqual("Canada", request.Country);
+            Assert.AreEqual("British Columbia", request.State);
+            Assert.AreEqual("Vancouver", request.City);
+            Assert.AreEqual("2020-01-01", request.TakenAfter);
+        }
+        CollectionAssert.AreEquivalent(new[] { "search", "matching" }, assets.Keys.ToArray());
+    }
+
+    [TestMethod]
+    public async Task CollectAsync_LocationOnlyFiltersAllAssetsAndBlankFieldsAreUnrestricted()
+    {
+        var client = Substitute.For<IImmichClient>();
+        SearchAssetsRequest? captured = null;
+        client.SearchAssetsAllPagesAsync(Arg.Any<ImmichSettings>(), Arg.Any<SearchAssetsRequest>())
+            .Returns(call =>
+            {
+                captured = call.Arg<SearchAssetsRequest>();
+                return new List<ImmichAsset>();
+            });
+        await new PlaylistAssetCollector(client).CollectAsync(new()
+        {
+            LocationFilter = new() { City = " Zürich ", Country = "  " }
+        }, FakeImmich);
+        Assert.IsNotNull(captured);
+        Assert.AreEqual("Zürich", captured.City);
+        Assert.IsNull(captured.Country);
+        Assert.IsNull(captured.State);
+        Assert.IsNull(captured.AlbumIds);
+    }
+
     private static ImmichSettings FakeImmich => new() { ServerUrl = "http://immich", ApiKey = "k" };
 
     [TestMethod]

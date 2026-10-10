@@ -4,6 +4,13 @@ Technical release notes for Immich Lounge live here.
 
 For a shorter user-facing summary, see [docs/website/changelog.md](./docs/website/changelog.md).
 
+## Unreleased
+
+- Detect the Immich server version and select legacy metadata search or the structured Search API v2 introduced in 3.2; cache detection briefly and refresh it on Test Connection.
+- Preserve legacy ID-list matching, inclusive date boundaries, and profile storage; support both numbered and cursor pagination without mutating caller requests.
+- Add optional country/state/city profile filters, exact-name suggestions, and location filtering of added memories.
+- Keep version-detection failure compatible with legacy search; surface search failures without retrying broader queries.
+
 ## 2026-04-12
 
 - Bumped Roku channel and screensaver manifests to version 1.0.0008.

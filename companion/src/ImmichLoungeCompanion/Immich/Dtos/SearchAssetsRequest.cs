@@ -10,6 +10,9 @@ public class SearchAssetsRequest
     public string? TakenAfter { get; set; }         // ISO 8601 date
     public string? TakenBefore { get; set; }
     public string? Type { get; set; }               // "IMAGE" | "VIDEO" (optional filter)
+    public string? Country { get; set; }
+    public string? State { get; set; }
+    public string? City { get; set; }
     public bool WithExif { get; set; } = true;
     public int Page { get; set; } = 1;
     public int Size { get; set; } = 1000;

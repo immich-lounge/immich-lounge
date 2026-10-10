@@ -22,7 +22,9 @@ These settings are shared by every profile:
 
 Use an immich URL that the Roku can reach on your LAN. `localhost`, `127.0.0.1`, `::1`, and wildcard bind addresses are not valid here.
 
-After saving, use **Test Connection** to make sure the companion can reach immich.
+After saving, use **Test Connection** to make sure the companion can reach Immich. The result also shows the server version and selected search API. Immich Lounge selects Search API v2 for stable Immich 3.2+ servers and legacy search for older servers. If version detection is unavailable, it uses legacy search with the same filters.
+
+Detection refreshes automatically after five minutes; **Test Connection** refreshes it immediately. No settings or profile migration is needed.
 
 ![Immich Lounge companion connection page](./assets/screenshots/companion-connection.png){ .doc-screenshot }
 <p class="doc-caption">The connection page stores the single immich connection used by all profiles.</p>
@@ -59,7 +61,7 @@ A profile decides what to show and how to show it. You can create as many as you
 
 | Area | What it covers |
 |---|---|
-| Content | Albums, people, tags, memories, and optional date filtering |
+| Content | Albums, people, tags, memories, and optional date and location filtering |
 | Playback | Interval, shuffle, transition effect, photo motion, and playlist refresh interval |
 | Display | Overlay style and fields, background effect, date and time formatting, weather, and image quality |
 
@@ -69,6 +71,14 @@ A profile decides what to show and how to show it. You can create as many as you
 <p class="doc-caption">Example slideshow with a left-side overlay, persistent clock, and weather.</p>
 
 When weather is enabled for a profile, you can choose whether the Roku shows temperatures in Celsius or Fahrenheit.
+
+## Location filters
+
+In the profile editor, fill in **Country**, **State / province**, or **City** to limit the playlist by location. Suggestions come from locations in your Immich library. Use the exact names stored in Immich; if suggestions are unavailable, you can enter those names manually.
+
+All filled fields must match. Blank fields impose no restriction. For example, a country alone includes all matching locations in that country. A country and city together require both to match. The location filter applies to selected sources and added memories; photos without the required location metadata are excluded.
+
+Location filters work with both legacy search and Search API v2. They use Immich's location metadata, not a distance or radius around a map point. Leave all three fields blank to preserve the existing playlist behavior.
 
 ## Profile planning
 

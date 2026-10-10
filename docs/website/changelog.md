@@ -8,6 +8,13 @@ User-facing release notes for Immich Lounge live here.
 
 For technical release details, see [CHANGELOG.md](https://github.com/immich-lounge/immich-lounge/blob/main/CHANGELOG.md).
 
+## Unreleased
+
+- Filter profiles by country, state / province, or city, including memories.
+- Get location suggestions from your Immich library.
+- Automatically use the search API supported by your Immich server. Existing profiles need no migration.
+- See the detected server version when testing your connection.
+
 ## 2026-04-12
 
 - Roku channel and screensaver version 1.0.0008.

@@ -11,5 +11,6 @@ public class SearchAssetsPage
 {
     public List<ImmichAsset> Items { get; set; } = [];
     public string? NextPage { get; set; }
+    public string? NextCursor { get; set; }
     public int Total { get; set; }
 }

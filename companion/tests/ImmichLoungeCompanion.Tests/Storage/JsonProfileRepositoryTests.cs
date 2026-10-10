@@ -8,6 +8,25 @@ namespace ImmichLoungeCompanion.Tests.Storage;
 [TestClass]
 public class JsonProfileRepositoryTests
 {
+    [TestMethod]
+    public async Task OldProfileWithoutLocationLoadsAndRetainsSources()
+    {
+        using var dir = new TempDataDirectory();
+        Directory.CreateDirectory(Path.Combine(dir.Path, "profiles"));
+        await File.WriteAllTextAsync(Path.Combine(dir.Path, "profiles", "legacy.json"),
+            """{"schemaVersion":1,"id":"legacy","name":"Legacy","contentSources":[{"type":"album","id":"album","label":"Family"}]}""");
+        var repo = new JsonProfileRepository(dir.Path);
+        var profile = await repo.GetAsync("legacy");
+        Assert.IsNotNull(profile);
+        Assert.IsNull(profile.LocationFilter);
+        Assert.AreEqual("album", profile.ContentSources.Single().Id);
+        await repo.SaveAsync(profile);
+        var reloaded = await repo.GetAsync("legacy");
+        Assert.IsNull(reloaded!.LocationFilter);
+        Assert.AreEqual("album", reloaded.ContentSources.Single().Id);
+        Assert.AreEqual(1, reloaded.SchemaVersion);
+    }
+
     private static Profile MakeProfile(string id) => new()
     {
         Id = id,
