@@ -6,6 +6,8 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+- Bind Roku test completion to a unique ID in each test deployment, ignoring buffered results from earlier runs. Added local runner regression checks to CI.
+
 - Added optional `display.zoomToFit` for landscape photos in both Roku modes; existing profiles default to showing the whole photo. Cover layouts round up to the 3-pixel grid.
 
 - Normalize Immich base URLs in Roku media, background, and metadata requests, including cached profiles with trailing slashes (issue #7, based on PR #14).

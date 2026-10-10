@@ -76,7 +76,11 @@ Useful commands:
 npm run deploy
 npm run deploy:screensaver
 npm run telnet
+npm run test
+npm run test:scripts
 ```
+
+`npm run test` deploys the Rooibos app and waits for that deployment's result and shutdown markers. Each test package has a unique run ID, so buffered results from earlier runs cannot complete the command. `npm run test:deploy` only builds and launches the app. `npm run test:scripts` checks the console runner locally without a Roku.
 
 Official Roku developer docs:
 - [Build a streaming app on the Roku platform](https://developer.roku.com/en-us/develop)

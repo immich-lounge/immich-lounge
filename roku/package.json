@@ -19,6 +19,7 @@
     "deploy": "npm run deploy:stick",
     "deploy:template": "dotenv -- node scripts/deploy.js stick",
     "test": "dotenv -- node scripts/run-tests.js",
+    "test:scripts": "node --test scripts/run-tests.spec.js",
     "test:deploy": "dotenv -- node scripts/deploy.js test",
     "test:list": "node scripts/list-tests.js",
     "telnet": "dotenv -- node -e \"require('child_process').spawnSync('telnet',[process.env.ROKU_HOST,'8085'],{stdio:'inherit'})\""
