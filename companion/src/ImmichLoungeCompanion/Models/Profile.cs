@@ -105,6 +105,7 @@ public class SlideshowSettings
 
 public class DisplaySettings
 {
+    public bool ZoomToFit { get; set; } = false;
     public DisplayFormatSource FormatSource { get; set; } = DisplayFormatSource.Roku;
     public string OverlayStyle { get; set; } = "bottom";
     public string BackgroundEffect { get; set; } = "blur";

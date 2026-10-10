@@ -61,6 +61,16 @@ The most common causes are:
 - `imageQuality` is set to `original` on slower hardware or networks
 - too many consecutive asset load failures, which triggers the built-in retry pause
 
+If you see **Could not load the first photo. Retrying...** on an older Roku app, remove any trailing `/` from the Immich server URL in the companion, save it, and refresh the Roku configuration. For example, use `http://192.168.1.10:2283`. Newer builds remove trailing slashes automatically.
+
+## Playlists fail to build with Memories enabled
+
+Immich v3.0.0–v3.0.2 can reject the date used for **Include Memories (On This Day)**. Check the companion logs for an HTTP `400` on `GET /api/memories`. A successful **Test Connection** does not check this endpoint.
+
+Immich fixed the date validation in [v3.0.3](https://github.com/immich-app/immich/releases/tag/v3.0.3). Upgrade to v3.0.3 or a newer release, then retry with Memories enabled. Until you can upgrade, disable **Include Memories (On This Day)** in the profile and save it to use the other content sources.
+
+If it still fails after upgrading, check the companion logs for the failing endpoint and HTTP status before resetting your configuration.
+
 ## The clock, date, or weather is missing
 
 - make sure those fields are enabled in the profile

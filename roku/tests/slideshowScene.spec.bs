@@ -2,6 +2,123 @@ namespace tests
   @suite("SlideshowScene Helpers")
   class SlideshowSceneTests extends rooibos.BaseTestSuite
 
+    @describe("Photo layout")
+
+    @it("Existing profiles show the whole landscape photo")
+    function test_fitLayoutDefault()
+      node = { bitmapWidth: 4000, bitmapHeight: 3000 }
+      m.assertTrue(ApplyMainPosterLayoutForScene({ sceneWidth: 1920, sceneHeight: 1080 }, node))
+      m.assertEqual(node.width, 1440)
+      m.assertEqual(node.height, 1080)
+      m.assertEqual(node.translation, [240, 0])
+    end function
+
+    @it("Zoom to fit covers the screen and centers a landscape photo")
+    function test_zoomToFitLandscape()
+      node = { bitmapWidth: 4000, bitmapHeight: 3000 }
+      m.assertTrue(ApplyMainPosterLayoutForScene({ sceneWidth: 1920, sceneHeight: 1080, zoomToFit: true }, node))
+      m.assertEqual(node.width, 1920)
+      m.assertEqual(node.height, 1440)
+      m.assertEqual(node.translation, [0, -180])
+      m.assertEqual(node.scale, [1.0, 1.0])
+    end function
+
+    @it("Wide photos fill the height and crop the sides")
+    function test_zoomToFitWideLandscape()
+      node = { bitmapWidth: 4000, bitmapHeight: 1500 }
+      m.assertTrue(ApplyMainPosterLayoutForScene({ sceneWidth: 1920, sceneHeight: 1080, zoomToFit: true }, node))
+      m.assertEqual(node.width, 2880)
+      m.assertEqual(node.height, 1080)
+      m.assertEqual(node.translation, [-480, 0])
+    end function
+
+    @it("Portrait and square photos still show the whole image")
+    function test_zoomToFitPortraitAndSquare()
+      ctx = { sceneWidth: 1920, sceneHeight: 1080, zoomToFit: true }
+      portrait = { bitmapWidth: 3000, bitmapHeight: 4000 }
+      m.assertTrue(ApplyMainPosterLayoutForScene(ctx, portrait))
+      m.assertEqual(portrait.width, 810)
+      m.assertEqual(portrait.height, 1080)
+      m.assertEqual(portrait.translation, [555, 0])
+      square = { bitmapWidth: 3000, bitmapHeight: 3000 }
+      m.assertTrue(ApplyMainPosterLayoutForScene(ctx, square))
+      m.assertEqual(square.width, 1080)
+      m.assertEqual(square.translation, [420, 0])
+    end function
+
+    @it("Disabling zoom to fit resets the same reused poster")
+    function test_zoomToFitDisable()
+      ctx = { sceneWidth: 1920, sceneHeight: 1080, zoomToFit: true }
+      node = { bitmapWidth: 4000, bitmapHeight: 3000 }
+      m.assertTrue(ApplyMainPosterLayoutForScene(ctx, node))
+      ctx.zoomToFit = false
+      m.assertTrue(ApplyMainPosterLayoutForScene(ctx, node))
+      m.assertEqual(node.width, 1440)
+      m.assertEqual(node.translation, [240, 0])
+    end function
+
+    @it("Fill layouts cover all edges and stay on the 3-pixel grid")
+    function test_zoomToFitGrid()
+      ctx = { sceneWidth: 1920, sceneHeight: 1080, zoomToFit: true }
+      for each dimensions in [[4031, 3019], [6017, 1001], [1920, 1080]]
+        node = { bitmapWidth: dimensions[0], bitmapHeight: dimensions[1] }
+        m.assertTrue(ApplyMainPosterLayoutForScene(ctx, node))
+        m.assertEqual(node.width mod 3, 0)
+        m.assertEqual(node.height mod 3, 0)
+        m.assertEqual(node.translation[0] mod 3, 0)
+        m.assertEqual(node.translation[1] mod 3, 0)
+        m.assertTrue(node.translation[0] <= 0)
+        m.assertTrue(node.translation[1] <= 0)
+        m.assertTrue(node.translation[0] + node.width >= 1920)
+        m.assertTrue(node.translation[1] + node.height >= 1080)
+      end for
+    end function
+
+    @it("Ken Burns motion stays inside the crop at both endpoints")
+    function test_zoomToFitMotionCoverage()
+      ctx = { sceneWidth: 1920, sceneHeight: 1080, zoomToFit: true }
+      node = { width: 1920, height: 1440 }
+      plan = {
+        startScale: 1.0, endScale: 1.06
+        startTranslation: [18, -9999], endTranslation: [-9999, 9999]
+      }
+      ConstrainPhotoMotionPlanForScene(ctx, node, plan)
+      m.assertEqual(plan.startTranslation, [0.0, -360.0])
+      for each stage in ["start", "end"]
+        scale = plan[stage + "Scale"]
+        translation = plan[stage + "Translation"]
+        m.assertTrue(translation[0] + 960 * (1 - scale) <= 0)
+        m.assertTrue(translation[1] + 720 * (1 - scale) <= 0)
+        m.assertTrue(translation[0] + 960 + 960 * scale >= 1920)
+        m.assertTrue(translation[1] + 720 + 720 * scale >= 1080)
+      end for
+    end function
+
+    @it("Normal photo motion is unchanged when zoom to fit is off")
+    function test_fitMotionUnchanged()
+      plan = { startScale: 1.0, endScale: 1.06, startTranslation: [18, 9], endTranslation: [-9, -18] }
+      ConstrainPhotoMotionPlanForScene({ zoomToFit: false }, { width: 1920, height: 1440 }, plan)
+      m.assertEqual(plan.startTranslation, [18, 9])
+      m.assertEqual(plan.endTranslation, [-9, -18])
+    end function
+
+    @it("Profile refresh leaves motion on the current fitted photo alone")
+    function test_zoomToFitEnabledDuringTransition()
+      ctx = { sceneWidth: 1920, sceneHeight: 1080, zoomToFit: true }
+      node = { width: 1440, height: 1080 }
+      plan = { startScale: 1.0, endScale: 1.06, startTranslation: [240, 0], endTranslation: [246, 3] }
+      ConstrainPhotoMotionPlanForScene(ctx, node, plan)
+      m.assertEqual(plan.startTranslation, [240, 0])
+      m.assertEqual(plan.endTranslation, [246, 3])
+    end function
+
+    @it("Unknown bitmap dimensions wait for layout retry")
+    function test_layoutNotReady()
+      node = { bitmapWidth: 0, bitmapHeight: 0, width: 1920, height: 1080 }
+      m.assertFalse(ApplyMainPosterLayoutForScene({ sceneWidth: 1920, sceneHeight: 1080, zoomToFit: true }, node))
+      m.assertEqual(node.width, 1920)
+    end function
+
     @describe("HistoryBuffer")
 
     @it("Pop returns most recently pushed entry")

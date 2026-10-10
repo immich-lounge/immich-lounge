@@ -6,6 +6,7 @@ sub ApplyProfileForScene(ctx as Object)
     display = ctx.profile.display
     formatting = ResolveDisplayFormatting(display)
     if display <> invalid then
+        ctx.zoomToFit = display.zoomToFit = true
         ctx.overlay.overlayStyle = ValueOrDefault(display.overlayStyle, "none")
         ctx.backgroundEffect = ValueOrDefault(display.backgroundEffect, "blur")
         ctx.overlay.overlayFields = ValueOrDefault(display.overlayFields, [])
@@ -18,6 +19,7 @@ sub ApplyProfileForScene(ctx as Object)
         ctx.showTimer = ValueOrDefault(display.showTimer, true)
         ctx.progressBar.visible = ctx.showTimer
     else
+        ctx.zoomToFit = false
         ctx.backgroundEffect = "blur"
         ctx.overlay.clockFormat = formatting.clockFormat
         ctx.overlay.dateFormat = formatting.dateFormat

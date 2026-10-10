@@ -47,6 +47,31 @@ namespace tests
       m.assertEqual(BuildMediaUrl(entry, profile), "http://192.168.1.10:2283/api/assets/abc123/original")
     end function
 
+    @it("Trailing slashes and whitespace are removed for all media endpoints")
+    function test_mediaUrlTrailingSlashes()
+      profile = { immich: { serverUrl: " http://192.168.1.10:2283/immich/// " }, imageQuality: "preview" }
+      base = "http://192.168.1.10:2283/immich/api/assets/"
+      photo = { id: "abc123", type: "photo" }
+      m.assertEqual(BuildMediaUrl(photo, profile), base + "abc123/thumbnail?size=preview")
+      m.assertEqual(BuildBackgroundMediaUrl(photo, profile), base + "abc123/thumbnail?size=thumbnail")
+      profile.imageQuality = "original"
+      m.assertEqual(BuildMediaUrl(photo, profile), base + "abc123/original")
+      video = { id: "vid001", type: "video" }
+      m.assertEqual(BuildMediaUrl(video, profile), base + "vid001/video/playback")
+      m.assertEqual(BuildBackgroundMediaUrl(video, profile), base + "vid001/video/playback")
+      livePhoto = { id: "photo001", type: "livePhoto", livePhotoVideoId: "video001" }
+      m.assertEqual(BuildMediaUrl(livePhoto, profile), base + "video001/video/playback")
+    end function
+
+    @it("Missing server URL does not produce a relative media URL")
+    function test_mediaUrlMissingServer()
+      entry = { id: "abc123", type: "photo" }
+      profile = { immich: {} }
+      m.assertEqual(BuildMediaUrl(entry, profile), "")
+      m.assertEqual(BuildBackgroundMediaUrl(entry, profile), "")
+      m.assertEqual(NormalizeImmichServerUrl(" /// "), "")
+    end function
+
     @it("Video uses video/playback endpoint")
     function test_mediaUrlVideo()
       entry = { id: "vid001", type: "video" }

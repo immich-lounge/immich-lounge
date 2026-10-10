@@ -72,6 +72,12 @@ A profile decides what to show and how to show it. You can create as many as you
 
 When weather is enabled for a profile, you can choose whether the Roku shows temperatures in Celsius or Fahrenheit.
 
+### Zoom to fit
+
+In the profile's **Slideshow** settings, enable **Zoom to fit (landscape photos)** to fill the screen with landscape photos. This preserves the photo's proportions and crops the edges as needed. Portrait and square photos still show the whole image.
+
+The setting is off by default and works in both the channel and screensaver. After the Roku refreshes the profile, it applies to the next photo displayed.
+
 ## Location filters
 
 In the profile editor, fill in **Country**, **State / province**, or **City** to limit the playlist by location. Suggestions come from locations in your Immich library. Use the exact names stored in Immich; if suggestions are unavailable, you can enter those names manually.

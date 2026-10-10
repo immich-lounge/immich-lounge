@@ -12,6 +12,52 @@ namespace ImmichLoungeCompanion.Tests.Immich;
 public class ImmichClientTests
 {
     [TestMethod]
+    public async Task GetMemoriesAsync_SendsPlainDateAndReadsMemoryAssets()
+    {
+        var handler = new StubHttpMessageHandler(request =>
+        {
+            Assert.AreEqual(HttpMethod.Get, request.Method);
+            Assert.AreEqual("http://immich.example/api/memories?for=2026-09-02", request.RequestUri!.AbsoluteUri);
+            Assert.AreEqual("test-key", request.Headers.GetValues("x-api-key").Single());
+            return JsonResponse("""
+                [{ "id": "memory-1", "type": "on_this_day", "assets": [{ "id": "photo-1", "type": "IMAGE" }] }]
+                """);
+        });
+        using var httpClient = new HttpClient(handler);
+        var client = new ImmichClient(new StubHttpClientFactory(httpClient), NullLogger<ImmichClient>.Instance);
+
+        var memories = await client.GetMemoriesAsync(new ImmichSettings
+        {
+            ServerUrl = "http://immich.example/",
+            ApiKey = "test-key"
+        }, new DateOnly(2026, 9, 2));
+
+        Assert.HasCount(1, memories);
+        Assert.AreEqual("memory-1", memories[0].Id);
+        Assert.HasCount(1, memories[0].Assets);
+        Assert.AreEqual("photo-1", memories[0].Assets[0].Id);
+    }
+
+    [TestMethod]
+    public async Task GetMemoriesAsync_PropagatesBadRequestInsteadOfReturningNoMemories()
+    {
+        var handler = new StubHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.BadRequest)
+        {
+            Content = new StringContent("Invalid date", Encoding.UTF8, "text/plain")
+        });
+        using var httpClient = new HttpClient(handler);
+        var client = new ImmichClient(new StubHttpClientFactory(httpClient), NullLogger<ImmichClient>.Instance);
+
+        var error = await Assert.ThrowsAsync<HttpRequestException>(() => client.GetMemoriesAsync(new ImmichSettings
+        {
+            ServerUrl = "http://immich.example",
+            ApiKey = "test-key"
+        }, new DateOnly(2026, 9, 2)));
+
+        Assert.AreEqual(HttpStatusCode.BadRequest, error.StatusCode);
+    }
+
+    [TestMethod]
     public async Task GetAlbumsAsync_ReturnsOwnAlbumsOnlyUntilImmichSupportsSharedAlbumSearch()
     {
         var requests = new List<string>();

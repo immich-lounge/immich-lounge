@@ -9,6 +9,7 @@
     "source/PlaybackConstants.brs",
     "source/DateTimeFormatting.brs",
     "components/playback/PlaybackEffects.brs",
+    { "src": "components/playback/PlaybackRing.brs", "dest": "source/PlaybackRing.brs" },
     "source/PlaylistRegistry.brs",
     "source/Registry.brs",
     "source/Utils.brs",

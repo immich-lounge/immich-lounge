@@ -17,6 +17,10 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 - Automatically use the search API supported by your Immich server. Existing profiles need no migration.
 - See the detected server version when testing your connection.
 
+- Added **Zoom to fit** to fill the screen with landscape photos by cropping their edges.
+
+- Fixed photo loading when the Immich server URL ends with a slash.
+
 ## 2026-04-12
 
 - Roku channel and screensaver version 1.0.0008.

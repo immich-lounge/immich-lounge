@@ -8,13 +8,26 @@ function ApplyMainPosterLayoutForScene(ctx as Object, node as Object) as Boolean
     scaleX = ctx.sceneWidth / bitmapWidth
     scaleY = ctx.sceneHeight / bitmapHeight
     scale = scaleX
-    if scaleY < scale then scale = scaleY
+    zoomToFit = ctx.zoomToFit = true and bitmapWidth > bitmapHeight
+    if zoomToFit then
+        if scaleY > scale then scale = scaleY
+    else
+        if scaleY < scale then scale = scaleY
+    end if
 
     fittedWidth = Int(bitmapWidth * scale)
     fittedHeight = Int(bitmapHeight * scale)
 
-    fittedWidth = fittedWidth - (fittedWidth mod 3)
-    fittedHeight = fittedHeight - (fittedHeight mod 3)
+    if zoomToFit then
+        ' Round up so snapping to the 3-pixel grid cannot expose an empty edge.
+        fittedWidth = Int(bitmapWidth * scale / 3) * 3
+        fittedHeight = Int(bitmapHeight * scale / 3) * 3
+        if fittedWidth < bitmapWidth * scale then fittedWidth = fittedWidth + 3
+        if fittedHeight < bitmapHeight * scale then fittedHeight = fittedHeight + 3
+    else
+        fittedWidth = fittedWidth - (fittedWidth mod 3)
+        fittedHeight = fittedHeight - (fittedHeight mod 3)
+    end if
     if fittedWidth <= 0 then fittedWidth = 3
     if fittedHeight <= 0 then fittedHeight = 3
 
@@ -30,6 +43,28 @@ function ApplyMainPosterLayoutForScene(ctx as Object, node as Object) as Boolean
     node.scaleRotateCenter = [Int(fittedWidth / 2), Int(fittedHeight / 2)]
     return true
 end function
+
+sub ConstrainPhotoMotionPlanForScene(ctx as Object, node as Object, plan as Dynamic)
+    if plan = invalid or ctx.zoomToFit <> true then return
+    if node.width <= node.height then return
+    ' A profile refresh can enable zoom while the current photo still has its
+    ' fitted layout. Only constrain motion after a covering layout is applied.
+    if node.width < ctx.sceneWidth or node.height < ctx.sceneHeight then return
+
+    ' Match the center used by the motion animation. Clamping both endpoints
+    ' keeps the viewport covered throughout its interpolated scale and pan.
+    centerX = Int(node.width / 2)
+    centerY = Int(node.height / 2)
+    for each stage in ["start", "end"]
+        scale = plan[stage + "Scale"]
+        translation = plan[stage + "Translation"]
+        minX = ctx.sceneWidth - centerX - (node.width - centerX) * scale
+        maxX = centerX * (scale - 1.0)
+        minY = ctx.sceneHeight - centerY - (node.height - centerY) * scale
+        maxY = centerY * (scale - 1.0)
+        plan[stage + "Translation"] = [Clamp(translation[0], minX, maxX), Clamp(translation[1], minY, maxY)]
+    end for
+end sub
 
 sub QueueLayoutRetryForScene(ctx as Object)
     ctx.layoutRetryAttempts = ctx.layoutRetryAttempts + 1
