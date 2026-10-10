@@ -1,8 +1,12 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using ImmichLoungeCompanion.Storage;
+using ImmichLoungeCompanion.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -68,7 +72,20 @@ public class PlaylistCacheWorker(
 
     private async Task RebuildExpiredCachesAsync(CancellationToken ct)
     {
-        var allProfiles = await profiles.GetAllAsync();
+        List<Profile> allProfiles;
+        try
+        {
+            allProfiles = await profiles.GetAllAsync();
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        {
+            logger.LogError(ex, "Could not read profiles for playlist refresh; retrying on the next refresh cycle");
+            return;
+        }
         foreach (var profile in allProfiles)
         {
             if (ct.IsCancellationRequested)
