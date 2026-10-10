@@ -20,7 +20,7 @@ You need:
 If you already use Docker Compose for immich, add the companion service from the repo-root `docker-compose.yml`.
 
 ```yaml title="docker-compose.yml"
---8<-- "https://raw.githubusercontent.com/immich-lounge/immich-lounge/master/docker-compose.yml"
+--8<-- "docker-compose.yml"
 ```
 
 ```bash

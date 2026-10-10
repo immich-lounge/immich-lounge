@@ -6,6 +6,11 @@ repo_name: immich-lounge/immich-lounge
 docs_dir: docs/website
 site_dir: _out/website
 use_directory_urls: true
+strict: true
+
+validation:
+  invalid_links: true
+  invalid_link_anchors: true
 
 theme:
   variant: modern
@@ -50,7 +55,8 @@ markdown_extensions:
   - pymdownx.highlight
   - pymdownx.snippets:
       check_paths: true
-      url_download: true
+      base_path:
+        - .
   - pymdownx.superfences
   - toc:
       permalink: true

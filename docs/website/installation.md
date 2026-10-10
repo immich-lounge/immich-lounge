@@ -22,7 +22,7 @@ Reference file:
 Copy/paste snippet:
 
 ```yaml title="docker-compose.yml"
---8<-- "https://raw.githubusercontent.com/immich-lounge/immich-lounge/master/docker-compose.yml"
+--8<-- "docker-compose.yml"
 ```
 
 ```bash
