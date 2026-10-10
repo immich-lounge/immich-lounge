@@ -31,6 +31,8 @@ jobs:
       - name: Test
         run: dotnet test --project tests/ImmichLoungeCompanion.Tests/ImmichLoungeCompanion.Tests.csproj --configuration Release --no-restore
 
+      - name: Build development fixture tooling
+        run: dotnet build tests/LiveImmich/LiveImmich.csproj --configuration Release
       - name: Build Docker image
         run: docker build -t immich-lounge-companion:test .
 
