@@ -102,6 +102,16 @@ namespace tests
       m.assertEqual(plan.endTranslation, [-9, -18])
     end function
 
+    @it("Profile refresh leaves motion on the current fitted photo alone")
+    function test_zoomToFitEnabledDuringTransition()
+      ctx = { sceneWidth: 1920, sceneHeight: 1080, zoomToFit: true }
+      node = { width: 1440, height: 1080 }
+      plan = { startScale: 1.0, endScale: 1.06, startTranslation: [240, 0], endTranslation: [246, 3] }
+      ConstrainPhotoMotionPlanForScene(ctx, node, plan)
+      m.assertEqual(plan.startTranslation, [240, 0])
+      m.assertEqual(plan.endTranslation, [246, 3])
+    end function
+
     @it("Unknown bitmap dimensions wait for layout retry")
     function test_layoutNotReady()
       node = { bitmapWidth: 0, bitmapHeight: 0, width: 1920, height: 1080 }

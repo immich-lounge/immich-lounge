@@ -47,6 +47,9 @@ end function
 sub ConstrainPhotoMotionPlanForScene(ctx as Object, node as Object, plan as Dynamic)
     if plan = invalid or ctx.zoomToFit <> true then return
     if node.width <= node.height then return
+    ' A profile refresh can enable zoom while the current photo still has its
+    ' fitted layout. Only constrain motion after a covering layout is applied.
+    if node.width < ctx.sceneWidth or node.height < ctx.sceneHeight then return
 
     ' Match the center used by the motion animation. Clamping both endpoints
     ' keeps the viewport covered throughout its interpolated scale and pan.
