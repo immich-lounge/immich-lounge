@@ -111,6 +111,8 @@ sub StartActiveSlideMotionForScene(ctx as Object)
     end if
     if plan = invalid then return
 
+    ConstrainPhotoMotionPlanForScene(ctx, node, plan)
+
     node.scale = [plan.startScale, plan.startScale]
     node.translation = plan.startTranslation
     node.scaleRotateCenter = [Int(node.width / 2), Int(node.height / 2)]

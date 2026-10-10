@@ -10,6 +10,8 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 ## Unreleased
 
+- Added **Zoom to fit** to fill the screen with landscape photos by cropping their edges.
+
 - Fixed photo loading when the Immich server URL ends with a slash.
 
 ## 2026-04-12

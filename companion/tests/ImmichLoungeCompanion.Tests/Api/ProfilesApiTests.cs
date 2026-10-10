@@ -51,9 +51,34 @@ public class ProfilesApiTests : IDisposable
         var body = await response.Content.ReadFromJsonAsync<Profile>();
         Assert.AreEqual("living-room", body!.Id);
         Assert.IsNotNull(body);
+        Assert.IsFalse(body.Display.ZoomToFit);
         Assert.IsNotNull(body.AssetFilter);
         Assert.AreEqual(AssetFilterRuleKind.Group, body.AssetFilter.Kind);
         Assert.AreEqual(AssetFilterGroupOperator.Or, body.AssetFilter.Operator);
+    }
+
+    [TestMethod]
+    public async Task ZoomToFit_IsSavedServedAndCanBeDisabled()
+    {
+        var profile = new Profile
+        {
+            Id = "zoom-fit",
+            Name = "Zoom fit",
+            Display = new DisplaySettings { ZoomToFit = true }
+        };
+        var created = await _client.PostAsJsonAsync("/api/profiles", profile);
+        Assert.AreEqual(HttpStatusCode.Created, created.StatusCode);
+        var response = await created.Content.ReadFromJsonAsync<Profile>();
+        Assert.IsTrue(response!.Display.ZoomToFit);
+
+        var saved = await _client.GetFromJsonAsync<Profile>("/api/profiles/zoom-fit");
+        Assert.IsTrue(saved!.Display.ZoomToFit);
+        saved.Display.ZoomToFit = false;
+        var updated = await _client.PutAsJsonAsync("/api/profiles/zoom-fit", saved);
+        Assert.AreEqual(HttpStatusCode.OK, updated.StatusCode);
+
+        var reloaded = await _client.GetFromJsonAsync<Profile>("/api/profiles/zoom-fit");
+        Assert.IsFalse(reloaded!.Display.ZoomToFit);
     }
 
     [TestMethod]
