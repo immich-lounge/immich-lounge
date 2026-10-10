@@ -15,8 +15,8 @@ $output = Join-Path $primaryRoot '_out/live-immich'
 $compose = Join-Path $output 'compose.yml'
 $project = Join-Path $PSScriptRoot 'LiveImmich.csproj'
 $stacks = @(
-    @{ Name = 'v31'; Version = 'v3.1.0'; Port = 12283; Restart = 'no' },
-    @{ Name = 'v32'; Version = 'v3.2.0'; Port = 13283; Restart = 'unless-stopped' }
+    @{ Name = 'v31'; Project = 'immich-lounge-compat-v31'; Version = 'v3.1.0'; Port = 12283; Restart = 'no' },
+    @{ Name = 'v32'; Project = 'immich-lounge-dev'; Version = 'v3.2.0'; Port = 13283; Restart = 'unless-stopped' }
 ) | Where-Object { $Target -eq 'Both' -or ($Target -eq 'Development' -and $_.Name -eq 'v32') -or ($Target -eq 'Legacy' -and $_.Name -eq 'v31') }
 
 docker info --format '{{.ServerVersion}}' | Out-Null
@@ -28,15 +28,44 @@ if ($Action -in 'Start', 'Test') {
     dotnet build $project --configuration Release --nologo
     if ($LASTEXITCODE -ne 0) { throw 'Live test runner build failed.' }
 }
+$accountGuide = @"
+# Local Immich development accounts
+
+Generated local guide. Account passwords and API keys stay in the JSON files below; this guide does not duplicate them.
+
+| Instance | URL | Docker project | Account file |
+|---|---|---|---|
+| Development (3.2) | http://127.0.0.1:13283 | immich-lounge-dev | [v32-account.json](v32-account.json) |
+| Legacy compatibility (3.1) | http://127.0.0.1:12283 | immich-lounge-compat-v31 | [v31-account.json](v31-account.json) |
+
+## Which account to use
+
+- **Manual development:** sign in as development@immich-lounge.test. Read adminEmail and adminPassword from the instance's account JSON. This is the administrator account; use it for manual photos, settings, and development experiments.
+- **Automated fixtures:** fixtures@immich-lounge.test. Its login is stored as email and password; its restricted companion key is apiKey. Keep this account's photos, albums, credentials, and sharing unchanged.
+- **Database:** DB_PASSWORD is stored in the instance's .env file. The database is internal to Docker and has no host port.
+
+## Container names
+
+Development: immich-lounge-dev-server, immich-lounge-dev-database, immich-lounge-dev-redis.
+
+Legacy: immich-lounge-compat-v31-server, immich-lounge-compat-v31-database, immich-lounge-compat-v31-redis.
+
+## Persistence
+
+This folder is in the primary checkout and is gitignored. Docker volumes hold the photos and database; JSON/.env files hold the credentials needed to reuse them. Keep both. Existing volumes retain their original immich-lounge-search-v31/v32 names; renaming containers does not migrate or delete data.
+
+Do not publish this directory or commit credentials. Start/Test regenerates this guide; keep personal notes in a separate local file.
+"@
+[IO.File]::WriteAllText((Join-Path $output 'ACCOUNTS.local.md'), $accountGuide)
 foreach ($stack in $stacks) {
     $envFile = Join-Path $output "$($stack.Name).env"
     if (!(Test-Path -LiteralPath $envFile)) {
         if ($Action -in 'Stop', 'Status') { Write-Host "$($stack.Name): not configured"; continue }
         $password = [Guid]::NewGuid().ToString('N')
         $configPath = (Join-Path $output 'immich.json').Replace('\', '/')
-        [IO.File]::WriteAllText($envFile, "IMMICH_VERSION=$($stack.Version)`nIMMICH_PORT=$($stack.Port)`nIMMICH_RESTART=$($stack.Restart)`nDB_PASSWORD=$password`nIMMICH_CONFIG_PATH=$configPath`n")
+        [IO.File]::WriteAllText($envFile, "IMMICH_VERSION=$($stack.Version)`nIMMICH_PORT=$($stack.Port)`nIMMICH_RESTART=$($stack.Restart)`nDB_PASSWORD=$password`nIMMICH_CONFIG_PATH=$configPath`nIMMICH_STACK_NAME=$($stack.Project)`nIMMICH_VOLUME_PREFIX=$($stack.Project)`n")
     }
-    $composeArgs = @('compose', '-p', "immich-lounge-search-$($stack.Name)", '--env-file', $envFile, '-f', $compose)
+    $composeArgs = @('compose', '-p', $stack.Project, '--env-file', $envFile, '-f', $compose)
     if ($Action -eq 'Stop') {
         & docker @composeArgs stop
         if ($LASTEXITCODE -ne 0) { throw "Could not stop $($stack.Name)." }
@@ -45,6 +74,15 @@ foreach ($stack in $stacks) {
     if ($Action -eq 'Status') {
         & docker @composeArgs ps
         continue
+    }
+    # Explicit external volume names keep data stable even if container/project names change.
+    $environment = [IO.File]::ReadAllText($envFile)
+    $prefixMatch = [regex]::Match($environment, '(?m)^IMMICH_VOLUME_PREFIX=([a-z0-9_-]+)\r?$')
+    if (!$prefixMatch.Success) { throw "Missing or invalid IMMICH_VOLUME_PREFIX in $envFile." }
+    foreach ($suffix in 'library', 'database') {
+        $volumeName = $prefixMatch.Groups[1].Value + '_' + $suffix
+        & docker volume create --label "immich-lounge.development=$($stack.Project)" $volumeName | Out-Null
+        if ($LASTEXITCODE -ne 0) { throw "Could not prepare $volumeName." }
     }
     & docker @composeArgs up -d
     if ($LASTEXITCODE -ne 0) { throw "Could not start $($stack.Name)." }

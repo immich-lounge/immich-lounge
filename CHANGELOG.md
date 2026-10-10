@@ -6,6 +6,7 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+- Give the development and compatibility Docker projects distinct names, preserve their existing external data volumes, and generate a gitignored local account guide without duplicating credentials.
 - Add a persistent local Immich 3.2 development stack and a separate 3.1 compatibility stack, with isolated fixture accounts and 60 live search/playlist checks.
 
 - Detect the Immich server version and select legacy metadata search or the structured Search API v2 introduced in 3.2; cache detection briefly and refresh it on Test Connection.

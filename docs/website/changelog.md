@@ -10,7 +10,7 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 ## Unreleased
 
-- Validate search compatibility against live Immich 3.1 and 3.2 test servers.
+- Validate search compatibility against live Immich 3.1 and 3.2 test servers, with a reusable development setup and separate fixture accounts.
 
 - Filter profiles by country, state / province, or city, including memories.
 - Get location suggestions from your Immich library.

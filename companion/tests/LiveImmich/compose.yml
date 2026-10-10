@@ -1,6 +1,7 @@
 # Dedicated test stacks only. Never point these volumes at an existing Immich library.
 services:
   immich-server:
+    container_name: ${IMMICH_STACK_NAME:?Set IMMICH_STACK_NAME}-server
     image: ghcr.io/immich-app/immich-server:${IMMICH_VERSION:?Set IMMICH_VERSION}
     ports:
       - "127.0.0.1:${IMMICH_PORT:?Set IMMICH_PORT}:2283"
@@ -19,9 +20,11 @@ services:
       - redis
     restart: ${IMMICH_RESTART:-no}
   redis:
+    container_name: ${IMMICH_STACK_NAME:?Set IMMICH_STACK_NAME}-redis
     image: docker.io/valkey/valkey:9@sha256:70739f85ad2ee01a726a965584a0f94895f01b0c60b3cc8b0aeef11eaa6888cf
     restart: ${IMMICH_RESTART:-no}
   database:
+    container_name: ${IMMICH_STACK_NAME:?Set IMMICH_STACK_NAME}-database
     image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
     environment:
       POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
@@ -34,4 +37,8 @@ services:
     restart: ${IMMICH_RESTART:-no}
 volumes:
   library:
+    external: true
+    name: ${IMMICH_VOLUME_PREFIX:?Set IMMICH_VOLUME_PREFIX}_library
   database:
+    external: true
+    name: ${IMMICH_VOLUME_PREFIX:?Set IMMICH_VOLUME_PREFIX}_database
