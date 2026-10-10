@@ -258,6 +258,20 @@ public class ImmichClient(IHttpClientFactory httpClientFactory, ILogger<ImmichCl
         return allAssets;
     }
 
+    public async Task<ImmichAsset?> GetAssetAsync(ImmichSettings settings, string assetId, CancellationToken ct = default)
+    {
+        var (client, baseUrl) = BuildClient(settings);
+        using var req = ApiRequest(HttpMethod.Get, baseUrl, $"api/assets/{Uri.EscapeDataString(assetId)}", settings.ApiKey);
+        using var response = await client.SendAsync(req, ct);
+        // A photo deleted between memory selection and hydration should be skipped.
+        if (response.StatusCode == HttpStatusCode.NotFound)
+        {
+            return null;
+        }
+        await EnsureSuccessAsync(response, "GET /api/assets/{id}");
+        return await response.Content.ReadFromJsonAsync<ImmichAsset>(JsonOptions, ct);
+    }
+
     public async Task<List<ImmichMemory>> GetMemoriesAsync(ImmichSettings settings, DateOnly date)
     {
         var (client, baseUrl) = BuildClient(settings);

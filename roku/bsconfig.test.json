@@ -12,6 +12,7 @@
     { "src": "components/playback/*.brs", "dest": "source/" },
     "components/CompanionApiTask.*",
     "components/AssetMetaTask.*",
+    "components/OverlayComponent.*",
     "components/WeatherTask.*",
     "source/WeatherAndClock.brs",
     "source/WeatherAndClockController.brs",

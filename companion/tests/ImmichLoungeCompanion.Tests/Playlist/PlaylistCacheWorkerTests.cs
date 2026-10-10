@@ -12,6 +12,45 @@ namespace ImmichLoungeCompanion.Tests.Playlist;
 [TestClass]
 public sealed class PlaylistCacheWorkerTests
 {
+    private sealed class FixedClock(DateTimeOffset now) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => now;
+    }
+
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public async Task MidnightRefresh_UsesProfileDayInsteadOfNormalRefreshInterval(bool hasMemories)
+    {
+        var profiles = Substitute.For<IProfileRepository>();
+        var cache = Substitute.For<IPlaylistCache>();
+        var builder = Substitute.For<IPlaylistBuilder>();
+        var profile = new Profile
+        {
+            Id = "midnight", Memories = new() { IncludeBirthdays = hasMemories, TimeZoneId = "Europe/Zurich" },
+            Slideshow = new() { RefreshIntervalMinutes = 1440 }
+        };
+        profiles.GetAllAsync().Returns([profile]);
+        profiles.GetAsync(profile.Id).Returns(profile);
+        cache.Get(profile.Id).Returns(new PlaylistCacheEntry([], DateTimeOffset.Parse("2026-10-09T21:58:00Z")));
+        cache.TryStartBuilding(profile.Id).Returns(true);
+        builder.BuildAsync(profile, Arg.Any<CancellationToken>()).Returns([]);
+        var rebuilt = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        cache.TrySet(profile.Id, Arg.Any<PlaylistCacheEntry>(), Arg.Any<long>()).Returns(_ => { rebuilt.TrySetResult(); return true; });
+        using var worker = new PlaylistCacheWorker(builder, cache, profiles, NullLogger<PlaylistCacheWorker>.Instance,
+            new FixedClock(DateTimeOffset.Parse("2026-10-09T22:01:00Z")));
+        await RefreshAsync(worker);
+        if (hasMemories)
+        {
+            await rebuilt.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await builder.Received(1).BuildAsync(profile, Arg.Any<CancellationToken>());
+        }
+        else
+        {
+            await builder.DidNotReceive().BuildAsync(profile, Arg.Any<CancellationToken>());
+        }
+    }
+
     [TestMethod]
     [DataRow(false, false)]
     [DataRow(false, true)]

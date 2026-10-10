@@ -16,8 +16,10 @@ public class PlaylistCacheWorker(
     IPlaylistBuilder builder,
     IPlaylistCache cache,
     IProfileRepository profiles,
-    ILogger<PlaylistCacheWorker> logger) : BackgroundService
+    ILogger<PlaylistCacheWorker> logger,
+    TimeProvider? timeProvider = null) : BackgroundService
 {
+    private readonly TimeProvider _time = timeProvider ?? TimeProvider.System;
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
@@ -45,6 +47,8 @@ public class PlaylistCacheWorker(
             }
 
             var existing = cache.Get(profileId);
+            // Stamp the build's day before fetching, so a build crossing midnight is refreshed.
+            var startedAt = _time.GetUtcNow();
             var assets = await builder.BuildAsync(profile, ct);
             if (profile.Slideshow.Shuffle && existing?.Assets.Count > 0)
             {
@@ -59,7 +63,8 @@ public class PlaylistCacheWorker(
                 playlistVersion = Guid.NewGuid().ToString("N");
             }
 
-            if (!cache.TrySet(profileId, new(assets, DateTimeOffset.UtcNow, playlistVersion), generation))
+            var generatedAt = profile.HasMemoriesSource() ? startedAt : _time.GetUtcNow();
+            if (!cache.TrySet(profileId, new(assets, generatedAt, playlistVersion), generation))
             {
                 logger.LogInformation("Discarded invalidated playlist build for profile {ProfileId}", profileId);
                 return;
@@ -108,9 +113,12 @@ public class PlaylistCacheWorker(
             var interval = TimeSpan.FromMinutes(profile.Slideshow.RefreshIntervalMinutes);
             var rebuildWindow = TimeSpan.FromMinutes(
                 Math.Clamp(profile.Slideshow.RefreshIntervalMinutes * 0.2, 1, 10));
-            var age = DateTimeOffset.UtcNow - entry.GeneratedAt;
+            var now = _time.GetUtcNow();
+            var age = now - entry.GeneratedAt;
+            var memoryDayChanged = profile.HasMemoriesSource() &&
+                MemoryDate.For(profile, entry.GeneratedAt) != MemoryDate.For(profile, now);
 
-            if (age >= interval - rebuildWindow)
+            if (memoryDayChanged || age >= interval - rebuildWindow)
             {
                 _ = Task.Run(() => RebuildAsync(profile.Id, false, ct), ct);
             }

@@ -12,6 +12,25 @@ namespace ImmichLoungeCompanion.Tests.Immich;
 public class ImmichClientTests
 {
     [TestMethod]
+    public async Task GetAssetAsync_ReadsMetadataAndSkipsDeletedPhotos()
+    {
+        var handler = new StubHttpMessageHandler(request =>
+        {
+            Assert.AreEqual("test-key", request.Headers.GetValues("x-api-key").Single());
+            return request.RequestUri!.AbsolutePath.EndsWith("deleted")
+                ? new HttpResponseMessage(HttpStatusCode.NotFound)
+                : JsonResponse("""{"id":"photo","type":"IMAGE","exifInfo":{"country":"Switzerland","fileSizeInByte":2048000}}""");
+        });
+        using var httpClient = new HttpClient(handler);
+        var client = new ImmichClient(new StubHttpClientFactory(httpClient), NullLogger<ImmichClient>.Instance);
+        var settings = new ImmichSettings { ServerUrl = "http://immich.example/", ApiKey = "test-key" };
+        var photo = await client.GetAssetAsync(settings, "photo");
+        Assert.AreEqual("Switzerland", photo!.ExifInfo!.Country);
+        Assert.AreEqual(2048000L, photo.ExifInfo.FileSizeInByte);
+        Assert.IsNull(await client.GetAssetAsync(settings, "deleted"));
+    }
+
+    [TestMethod]
     public async Task GetMemoriesAsync_SendsPlainDateAndReadsMemoryAssets()
     {
         var handler = new StubHttpMessageHandler(request =>
@@ -20,7 +39,7 @@ public class ImmichClientTests
             Assert.AreEqual("http://immich.example/api/memories?for=2026-09-02", request.RequestUri!.AbsoluteUri);
             Assert.AreEqual("test-key", request.Headers.GetValues("x-api-key").Single());
             return JsonResponse("""
-                [{ "id": "memory-1", "type": "on_this_day", "assets": [{ "id": "photo-1", "type": "IMAGE" }] }]
+                [{ "id": "memory-1", "type": "birthday", "data": { "year": 2014, "personId": "person-1", "personName": "Emma" }, "assets": [{ "id": "photo-1", "type": "IMAGE" }] }]
                 """);
         });
         using var httpClient = new HttpClient(handler);
@@ -34,6 +53,10 @@ public class ImmichClientTests
 
         Assert.HasCount(1, memories);
         Assert.AreEqual("memory-1", memories[0].Id);
+        Assert.AreEqual("birthday", memories[0].Type);
+        Assert.AreEqual("Emma", memories[0].Data!.PersonName);
+        Assert.AreEqual("person-1", memories[0].Data!.PersonId);
+        Assert.AreEqual(2014, memories[0].Data!.Year);
         Assert.HasCount(1, memories[0].Assets);
         Assert.AreEqual("photo-1", memories[0].Assets[0].Id);
     }
