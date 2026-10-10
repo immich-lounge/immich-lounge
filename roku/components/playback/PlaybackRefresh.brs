@@ -132,6 +132,8 @@ sub OnRefreshPlaylistResultForScene(ctx as Object, isScreensaver as Boolean)
             ApplyProfile()
         end if
         resultPlaylistVersion = NormalizePlaylistVersion(result.playlistVersion)
+        hadNoPhotos = true
+        if ctx.playlist <> invalid then hadNoPhotos = ctx.playlist.Count() = 0
         currentAssetId = invalid
         if ctx.playlist <> invalid and ctx.playlistIndex >= 0 and ctx.playlistIndex < ctx.playlist.Count() then
             currentEntry = ctx.playlist[ctx.playlistIndex]
@@ -157,6 +159,10 @@ sub OnRefreshPlaylistResultForScene(ctx as Object, isScreensaver as Boolean)
         ' A refreshed window may have moved the right photo away from the left.
         ctx.slideAssetCount = PortraitSlideAdvanceCount(ctx.playlist, ctx.playlistIndex, ctx.currentPairAssetId)
         PersistActivePlaylistCacheForScene(ctx, isScreensaver)
+        if hadNoPhotos and ctx.playlist.Count() > 0 then
+            ctx.resumeNeedsSlideLoad = true
+            if not ctx.paused then ResumeSlideshowForScene(ctx)
+        end if
     else
         LogDebug(PlaybackLogScope(ctx), "refresh playlist failed, continuing with existing playlist")
     end if

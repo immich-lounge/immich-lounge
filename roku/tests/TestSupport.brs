@@ -1,6 +1,11 @@
 ' TestSupport.brs - test-build-only helpers mapped into the source scope.
 ' These mirror small pure helpers that otherwise live in component scopes.
 
+' Component callback boundary for shared refresh helpers in the test source scope.
+' Actual rendering is exercised by the production scene; tests stub slide loading and persistence.
+sub ApplyProfile()
+end sub
+
 function BuildPlaylistUrl(baseUrl as String, profileId as String, count as Integer, offset = 0 as Integer) as String
     return baseUrl + "/api/profiles/" + profileId + "/playlist?count=" + Str(count).Trim() + "&offset=" + Str(offset).Trim()
 end function
@@ -71,9 +76,4 @@ end function
 function ResetFailureCounter(counter as Integer) as Integer
     if counter < 0 then return 0
     return 0
-end function
-
-function GetDisplayInterval(entry as Object, intervalSeconds as Integer) as Integer
-    if entry.type = "video" or entry.type = "livePhoto" then return 0
-    return intervalSeconds
 end function

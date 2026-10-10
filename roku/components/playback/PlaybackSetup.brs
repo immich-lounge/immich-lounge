@@ -58,6 +58,7 @@ sub InitPlaybackSceneForScene(ctx as Object)
     ctx.waitingForNextBatchSwap = false
     ctx.consecutiveFails = 0
     ctx.paused = false
+    ctx.resumeNeedsSlideLoad = false
     ctx.overlayVisible = true
     ctx.cachedWeather = invalid
     ctx.profile = invalid

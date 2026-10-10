@@ -239,6 +239,15 @@ end sub
 sub ResumeSlideshowForScene(ctx as Object)
     ctx.paused = false
     if ctx.playlist.Count() > 0 then
+        if ctx.resumeNeedsSlideLoad = true then
+            ctx.resumeNeedsSlideLoad = false
+            ctx.currentPairAssetId = ""
+            ctx.slideAssetCount = 1
+            emptyGroup = ctx.top.findNode("emptyPlaylistGroup")
+            if emptyGroup <> invalid then emptyGroup.visible = false
+            ShowCurrentSlideForScene(ctx)
+            return
+        end if
         entry = ctx.playlist[ctx.playlistIndex]
         interval = GetDisplayInterval(entry, ctx.intervalSeconds)
         if interval > 0 then

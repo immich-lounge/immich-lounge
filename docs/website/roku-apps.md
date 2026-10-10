@@ -82,6 +82,8 @@ Press `*` during playback in the channel to open the settings dialog.
 
 The Roku also checks the active profile configuration about every 5 minutes and applies display, clock, and weather changes without replacing the current playlist. Use **Refresh Now** when you intentionally want to re-fetch both the profile and playlist immediately.
 
+If an empty playlist gains photos, playback starts when the next playlist refresh finds them. A paused channel waits until you resume. This also works when a previously playing playlist becomes empty and later gains photos again.
+
 Offline fallback uses only cached data from the selected companion and profile. Changing a profile clears that mode's cache and resume position; changing the shared companion clears both modes. If the screensaver inherits the channel profile, changing that profile also clears the screensaver cache. The new selection must load successfully before it is available offline.
 
 After updating from a version that did not record the cache's companion and profile, open each Roku app while the companion is reachable to refresh its offline cache.
