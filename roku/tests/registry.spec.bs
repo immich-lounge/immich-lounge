@@ -207,6 +207,23 @@ namespace tests
       m.assertInvalid(RegistryRead(CacheIdentityRegistryKey(true)))
     end function
 
+    @it("Schedule caches require both the selected companion and the resolved profile")
+    function test_scheduleCacheIdentity()
+      for each mode in [false, true]
+        selection = "schedule:living-room"
+        top = { profileId: selection, companionUrl: "http://first:4383", profile: { id: selection, playbackProfileId: "day-profile" } }
+        PersistProfileCacheForMode(top.profile, top.companionUrl, selection, mode)
+        PersistActivePlaylistCacheForMode([{ id: "day-photo" }], mode, top.companionUrl, selection)
+        PersistResumeStateForMode({ id: "day-photo" }, top, 0, 0, 0, 1, "day-version", mode)
+        state = LoadResumeState(mode, selection, top.companionUrl)
+        m.assertTrue(CachedPlaylistMatchesPlayback(state, selection, "day-profile"))
+        m.assertFalse(CachedPlaylistMatchesPlayback(state, selection, "night-profile"))
+        m.assertInvalid(LoadResumeState(mode, selection, "http://second:4383"))
+        m.assertEqual(LoadCachedPlaylistForMode(mode, "http://second:4383", selection).Count(), 0)
+        m.assertEqual(LoadCachedProfileForMode(mode, top.companionUrl, selection).playbackProfileId, "day-profile")
+      end for
+    end function
+
     private function seedCache(mode as boolean, companionUrl as string, profileId as string)
       PersistProfileCacheForMode({ id: profileId }, companionUrl, profileId, mode)
       PersistActivePlaylistCacheForMode([{ id: "photo", type: "photo" }], mode, companionUrl, profileId)

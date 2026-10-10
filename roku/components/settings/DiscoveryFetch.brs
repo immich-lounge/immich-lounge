@@ -103,7 +103,7 @@ sub CommitProfileSelectionForScene(ctx as Object, profile as Object)
     ctx.top.profileSelected = profile
 
     if ctx.top.isScreensaver then
-        ShowCompletionDialogForScene(ctx, "Settings Saved", "Your screensaver companion and profile have been updated.")
+        ShowCompletionDialogForScene(ctx, "Settings Saved", "Your screensaver companion and playback selection have been updated.")
     else
         HideAllPanelsForScene(ctx)
         ctx.statusLabel.text = "Starting slideshow..."

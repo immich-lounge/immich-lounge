@@ -15,6 +15,8 @@ var builder = WebApplication.CreateBuilder(args);
 var dataDir = builder.Configuration["DataDirectory"] ?? "/data";
 
 // Storage
+builder.Services.AddSingleton<IScheduleRepository>(sp => new JsonScheduleRepository(dataDir,
+    sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<JsonScheduleRepository>>()));
 builder.Services.AddSingleton<ISettingsRepository>(_ => new JsonSettingsRepository(dataDir));
 builder.Services.AddSingleton<IProfileRepository>(sp => new JsonProfileRepository(dataDir,
     sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<JsonProfileRepository>>()));
@@ -64,6 +66,8 @@ builder.Services.AddSingleton<ImmichLoungeCompanion.Immich.IImmichClient,
     ImmichLoungeCompanion.Immich.ImmichClient>();
 
 // Scoped UI state
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<ImmichLoungeCompanion.Services.ProfileScheduleService>();
 builder.Services.AddScoped<ImmichLoungeCompanion.Services.CompanionState>();
 builder.Services.AddSingleton<ImmichLoungeCompanion.Services.IDisplayDateFormattingService,
     ImmichLoungeCompanion.Services.DisplayDateFormattingService>();

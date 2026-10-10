@@ -20,7 +20,11 @@ sub ShowSettingsDialogForScene(ctx as Object)
     profileName = ""
     if ctx.profile <> invalid and ctx.profile.name <> invalid then profileName = ctx.profile.name
     dlg.message = ["Profile: " + profileName, ctx.top.companionUrl]
-    dlg.buttons = ["Refresh Now", "Change Profile", "Change Companion", "Clear Cache", "Clear Saved Setup", "Close"]
+    if IsScheduleSelectionId(ctx.top.profileId) then
+        scheduleName = ValueOrDefault(ctx.profile.selectionName, Mid(ctx.top.profileId, 10))
+        dlg.message = ["Schedule: " + scheduleName, "Playing profile: " + profileName, ctx.top.companionUrl]
+    end if
+    dlg.buttons = ["Refresh Now", "Choose Profile or Schedule", "Change Companion", "Clear Cache", "Clear Saved Setup", "Close"]
     dlg.observeField("buttonSelected", "OnSettingsButton")
     dlg.observeField("wasClosed", "OnSettingsDismissed")
     ctx.top.dialog = dlg

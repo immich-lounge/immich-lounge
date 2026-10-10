@@ -1,0 +1,155 @@
+@page "/schedules/{Id}/edit"
+@inject IHttpClientFactory HttpFactory
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@using ImmichLoungeCompanion.Models
+@using System.Text.Json
+
+<NavigationLock ConfirmExternalNavigation="@IsDirty" OnBeforeInternalNavigation="ConfirmNavigationAsync" />
+<h2>@(Id == null ? "New Schedule" : "Edit Schedule")</h2>
+<p class="page-intro">Select this schedule on Roku to follow its time slots. Selecting a fixed profile stops following the schedule.</p>
+@if (_error != null) { <p class="error">@_error</p> }
+@if (_schedule != null)
+{
+    <div class="editor-grid">
+        <section class="settings-card editor-card">
+            <h3>Schedule</h3>
+            <label>ID (slug): <input type="text" @bind="_schedule.Id" disabled="@(Id != null)" placeholder="living-room" /></label>
+            <label>Name: <input type="text" @bind="_schedule.Name" maxlength="100" placeholder="Living room" /></label>
+            <label><input type="checkbox" @bind="_schedule.Enabled" /> Enable time slots</label>
+            <label class="schedule-time-zone">Time zone:
+                <select @bind="_schedule.TimeZoneId">
+                    <option value="UTC">UTC</option>
+                    @if (_schedule.TimeZoneId != "UTC" && !_timeZones.Any(zone => zone.Id == _schedule.TimeZoneId))
+                    { <option value="@_schedule.TimeZoneId">@_schedule.TimeZoneId</option> }
+                    @foreach (var zone in _timeZones.Where(zone => zone.Id != "UTC"))
+                    { <option value="@zone.Id">@zone.DisplayName (@zone.Id)</option> }
+                </select>
+            </label>
+            <label>Fallback profile:
+                <select @bind="_schedule.FallbackProfileId">
+                    <option value="">Choose a profile</option>
+                    @if (!_profiles.Any(profile => profile.Id == _schedule.FallbackProfileId) && !string.IsNullOrEmpty(_schedule.FallbackProfileId))
+                    { <option value="@_schedule.FallbackProfileId">Missing: @_schedule.FallbackProfileId</option> }
+                    @foreach (var profile in _profiles) { <option value="@profile.Id">@profile.Name</option> }
+                </select>
+            </label>
+            <p class="field-hint">Used outside the time slots, when time slots are disabled, or if a scheduled profile has been deleted.</p>
+        </section>
+        <section class="settings-card editor-card">
+            <h3>Time slots</h3>
+            @foreach (var slot in _schedule.Entries)
+            {
+                <fieldset class="schedule-slot" @key="slot">
+                    <legend>Time slot @(_schedule.Entries.IndexOf(slot) + 1)</legend>
+                    <label>Profile:
+                        <select @bind="slot.ProfileId">
+                            <option value="">Choose a profile</option>
+                            @if (!_profiles.Any(profile => profile.Id == slot.ProfileId) && !string.IsNullOrEmpty(slot.ProfileId))
+                            { <option value="@slot.ProfileId">Missing: @slot.ProfileId</option> }
+                            @foreach (var profile in _profiles) { <option value="@profile.Id">@profile.Name</option> }
+                        </select>
+                    </label>
+                    <div class="settings-field-grid">
+                        <label>From: <input type="time" value="@slot.Start" @onchange='args => slot.Start = args.Value?.ToString() ?? ""' /></label>
+                        <label>Until: <input type="time" value="@slot.End" @onchange='args => slot.End = args.Value?.ToString() ?? ""' /></label>
+                    </div>
+                    <div class="schedule-days">
+                        @foreach (var day in Days)
+                        { <label><input type="checkbox" checked="@slot.Days.Contains(day)" @onchange="args => ToggleDay(slot, day, args)" /> @day</label> }
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-secondary" @onclick="() => MoveUp(slot)" disabled="@(_schedule.Entries.IndexOf(slot) == 0)">Move up</button>
+                        <button class="btn btn-danger" @onclick="() => _schedule.Entries.Remove(slot)">Remove</button>
+                    </div>
+                </fieldset>
+            }
+            <button class="btn btn-secondary" @onclick="AddSlot" disabled="@(_schedule.Entries.Count >= 32)">Add time slot</button>
+            <p class="field-hint">The first matching slot wins. Days refer to when the slot starts. Earlier end times run into the next day; equal times mean 24 hours. Schedules are checked each minute while the companion is available.</p>
+        </section>
+    </div>
+    <div class="editor-footer">
+        <span>@(IsDirty ? "Unsaved changes" : Id == null ? "Not saved yet" : "All changes saved")</span>
+        <div class="btn-row">
+            <button class="btn btn-primary" @onclick="SaveAsync" disabled="@_saving">Save Schedule</button>
+            <button class="btn btn-secondary" @onclick='() => Nav.NavigateTo("/schedules")'>Cancel</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string? Id { get; set; }
+    private HttpClient Http => HttpFactory.CreateClient("local");
+    private ProfileSchedule? _schedule;
+    private List<ProfileSummary> _profiles = [];
+    private List<TimeZoneSummary> _timeZones = [];
+    private string? _error;
+    private string? _snapshot;
+    private bool _saving;
+    private bool _skipPrompt;
+    private string? _loadedId;
+    private static readonly ScheduleDay[] Days = [ScheduleDay.Monday, ScheduleDay.Tuesday, ScheduleDay.Wednesday, ScheduleDay.Thursday, ScheduleDay.Friday, ScheduleDay.Saturday, ScheduleDay.Sunday];
+    private record ProfileSummary(string Id, string Name);
+    private record TimeZoneSummary(string Id, string DisplayName);
+    private record ErrorResponse(string Error);
+    private bool IsDirty => _schedule != null && JsonSerializer.Serialize(_schedule) != _snapshot;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var key = Id == null ? "create" : "edit:" + Id;
+        if (_loadedId == key) { return; }
+        _error = null;
+        _profiles = await Http.GetFromJsonAsync<List<ProfileSummary>>("/api/profiles") ?? [];
+        _timeZones = await Http.GetFromJsonAsync<List<TimeZoneSummary>>("/api/schedule-time-zones") ?? [];
+        if (Id == null)
+        {
+            _schedule = new();
+        }
+        else
+        {
+            var response = await Http.GetAsync($"/api/schedules/{Id}");
+            _schedule = response.IsSuccessStatusCode ? await response.Content.ReadFromJsonAsync<ProfileSchedule>() : null;
+            if (_schedule == null) { _error = "Schedule not found."; }
+        }
+        _snapshot = JsonSerializer.Serialize(_schedule);
+        _loadedId = key;
+        _skipPrompt = false;
+    }
+
+    private void AddSlot() => _schedule!.Entries.Add(new() { Days = [.. Days] });
+    private static void ToggleDay(ProfileScheduleEntry slot, ScheduleDay day, ChangeEventArgs args)
+    {
+        slot.Days.Remove(day);
+        if (args.Value is true) { slot.Days.Add(day); }
+    }
+    private void MoveUp(ProfileScheduleEntry slot)
+    {
+        var entries = _schedule!.Entries;
+        var index = entries.IndexOf(slot);
+        if (index <= 0) { return; }
+        entries.RemoveAt(index);
+        entries.Insert(index - 1, slot);
+    }
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        try
+        {
+            var response = Id == null ? await Http.PostAsJsonAsync("/api/schedules", _schedule) : await Http.PutAsJsonAsync($"/api/schedules/{Id}", _schedule);
+            if (!response.IsSuccessStatusCode)
+            {
+                _error = (await response.Content.ReadFromJsonAsync<ErrorResponse>())?.Error ?? "Could not save the schedule.";
+                return;
+            }
+            _snapshot = JsonSerializer.Serialize(_schedule);
+            _error = null;
+            _skipPrompt = true;
+            Nav.NavigateTo($"/schedules/{_schedule!.Id}/edit");
+        }
+        finally { _saving = false; }
+    }
+    private async Task ConfirmNavigationAsync(LocationChangingContext context)
+    {
+        if (!_skipPrompt && IsDirty && !await JS.InvokeAsync<bool>("confirm", "Discard unsaved schedule changes?")) { context.PreventNavigation(); }
+    }
+}

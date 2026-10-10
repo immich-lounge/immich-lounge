@@ -21,7 +21,7 @@ sub FetchNextPlaylistBatchForScene(ctx as Object, isScreensaver as Boolean)
     if ctx.nextBatchTask <> invalid and ctx.nextBatchTask.control = "RUN" then return
     task = CreateObject("roSGNode", "CompanionApiTask")
     task.baseUrl = ctx.top.companionUrl
-    task.profileId = ctx.top.profileId
+    task.profileId = PlaybackProfileId(ctx.profile, ctx.top.profileId)
     task.isScreensaver = isScreensaver
     task.playlistOffset = ctx.nextPlaylistOffset
     task.playlistVersion = ctx.playlistVersion

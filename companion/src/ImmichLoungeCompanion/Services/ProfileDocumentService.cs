@@ -24,14 +24,17 @@ public class ProfileDocumentService(ISettingsRepository settings) : IProfileDocu
 
     private static string? CleanLocation(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    public async Task<object> BuildResponseAsync(Profile profile)
+    public async Task<object> BuildResponseAsync(Profile profile, string? selectionId = null, bool followingSchedule = false, string? selectionName = null)
     {
         var globalSettings = await settings.LoadAsync();
 
         return new
         {
             profile.SchemaVersion,
-            profile.Id,
+            Id = selectionId ?? profile.Id,
+            PlaybackProfileId = profile.Id,
+            FollowingSchedule = followingSchedule,
+            SelectionName = selectionName,
             profile.Name,
             profile.Description,
             Immich = new { globalSettings.Immich.ServerUrl, globalSettings.Immich.ApiKey },

@@ -7,7 +7,7 @@
     <field id="profileSelected" type="assocarray" value="{}" />
   </interface>
   <children>
-    <Label id="title" text="Select a Profile"
+    <Label id="title" text="Select a Profile or Schedule"
            color="#FFFFFFFF" font="font:MediumBoldSystemFont"
            translation="[0, 0]" />
     <LabelList id="list"

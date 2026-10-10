@@ -6,6 +6,8 @@ sub AdvanceToNextForScene(ctx as Object)
     ctx.progressTimer.control = "stop"
     ctx.progressBar.progress = 0
 
+    if ApplyScheduledProfileForScene(ctx) then return
+
     if ApplyPendingBatchSwapForScene(ctx, ctx.top.isScreensaver) then
         ShowCurrentSlideForScene(ctx)
         return

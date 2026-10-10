@@ -73,7 +73,7 @@ Press `*` during playback in the channel to open the settings dialog.
 | Action | What it does |
 |---|---|
 | `Refresh Now` | Re-fetches the current profile and playlist immediately. |
-| `Change Profile` | Keeps the companion URL but lets you pick a different profile for channel mode. |
+| `Choose Profile or Schedule` | Keeps the companion URL and lets you pick a fixed profile or a named schedule for channel mode. Selecting a fixed profile stops following a schedule. |
 | `Change Companion` | Switches the Roku to a different companion host. |
 | `Clear Cache` | Removes cached profile and playlist data for the current mode. |
 

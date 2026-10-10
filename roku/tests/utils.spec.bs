@@ -2,6 +2,23 @@ namespace tests
   @suite("Utils Helpers")
   class UtilsTests extends rooibos.BaseTestSuite
 
+    @describe("Scheduled playback identity")
+
+    @it("Keeps selection separate and rejects a cache from another playback profile")
+    function test_scheduleIdentity()
+      m.assertTrue(IsScheduleSelectionId("schedule:living-room"))
+      m.assertFalse(IsScheduleSelectionId("living-room"))
+      m.assertEqual(PlaybackProfileId({ playbackProfileId: "day-profile" }, "living-room"), "day-profile")
+      m.assertEqual(PlaybackProfileId({}, "living-room"), "living-room")
+      m.assertTrue(CachedPlaylistMatchesPlayback(invalid, "living-room", "living-room"))
+      m.assertFalse(CachedPlaylistMatchesPlayback(invalid, "living-room", "day-profile"))
+      m.assertTrue(CachedPlaylistMatchesPlayback({ playbackProfileId: "day-profile" }, "living-room", "day-profile"))
+      m.assertFalse(CachedPlaylistMatchesPlayback({ playbackProfileId: "day-profile" }, "living-room", "living-room"))
+      m.assertFalse(CachedPlaylistMatchesPlayback({ profileId: "schedule:living-room", playbackProfileId: "day-profile" }, "day-profile", "day-profile"))
+      m.assertFalse(CachedPlaylistMatchesPlayback({ profileId: "day-profile" }, "schedule:living-room", "day-profile"))
+      m.assertTrue(CachedPlaylistMatchesPlayback({ profileId: "schedule:living-room", playbackProfileId: "day-profile" }, "schedule:living-room", "day-profile"))
+    end function
+
     @describe("TruncateStr")
 
     @it("Short string is returned unchanged")

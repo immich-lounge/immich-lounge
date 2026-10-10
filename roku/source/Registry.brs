@@ -192,12 +192,15 @@ sub RegistryWriteJson(key as String, value as Object)
     sec.Flush()
 end sub
 
-function LoadResumeState(isScreensaver as Boolean, profileId as String, companionUrl as String) as Dynamic
-    if not RegistryCacheMatchesSelection(isScreensaver, companionUrl, profileId) then return invalid
+function LoadResumeStateForMode(isScreensaver as Boolean) as Dynamic
     raw = RegistryRead(ResumeStateRegistryKey(isScreensaver))
     if raw = invalid then return invalid
+    return ParseJson_Safe(raw)
+end function
 
-    parsed = ParseJson_Safe(raw)
+function LoadResumeState(isScreensaver as Boolean, profileId as String, companionUrl as String) as Dynamic
+    if not RegistryCacheMatchesSelection(isScreensaver, companionUrl, profileId) then return invalid
+    parsed = LoadResumeStateForMode(isScreensaver)
     if type(parsed) <> "roAssociativeArray" then return invalid
     if parsed.profileId = invalid or parsed.profileId <> profileId then return invalid
 
@@ -303,6 +306,7 @@ sub PersistResumeStateForMode(entry as Object, top as Object, playlistIndex as I
     RegistryPrepareCacheForMode(isScreensaver, top.companionUrl, top.profileId)
     state = {
         profileId: top.profileId
+        playbackProfileId: PlaybackProfileId(top.profile, top.profileId)
         assetId: ValueOrDefault(entry.id, "")
         playlistIndex: playlistIndex
         playlistOffset: playlistOffset

@@ -17,7 +17,7 @@ sub FetchCurrentMetaForScene(ctx as Object, entry as Object)
     task.immichBaseUrl = ctx.profile.immich.serverUrl
     task.apiKey = ctx.profile.immich.apiKey
     task.companionUrl = ctx.top.companionUrl
-    task.profileId = ctx.top.profileId
+    task.profileId = PlaybackProfileId(ctx.profile, ctx.top.profileId)
     task.formatSource = ctx.formatSource
     task.useLocalDateFormatting = ctx.top.useLocalDateFormatting
     task.dateFormat = ctx.overlay.dateFormat
@@ -53,7 +53,7 @@ sub PrefetchNextMetaForScene(ctx as Object)
     task.immichBaseUrl = ctx.profile.immich.serverUrl
     task.apiKey = ctx.profile.immich.apiKey
     task.companionUrl = ctx.top.companionUrl
-    task.profileId = ctx.top.profileId
+    task.profileId = PlaybackProfileId(ctx.profile, ctx.top.profileId)
     task.formatSource = ctx.formatSource
     task.useLocalDateFormatting = ctx.top.useLocalDateFormatting
     task.dateFormat = ctx.overlay.dateFormat
@@ -104,7 +104,7 @@ function ApplyPendingBatchSwapForScene(ctx as Object, isScreensaver as Boolean) 
 end function
 
 sub PersistResumeStateForScene(ctx as Object, entry as Object, isScreensaver as Boolean)
-    PersistResumeStateForMode(entry, ctx.top, ctx.playlistIndex, ctx.playlistOffset, ctx.nextPlaylistOffset, ctx.totalPlaylistCount, ctx.playlistVersion, isScreensaver)
+    PersistResumeStateForMode(entry, { profileId: ctx.top.profileId, companionUrl: ctx.top.companionUrl, profile: ctx.profile }, ctx.playlistIndex, ctx.playlistOffset, ctx.nextPlaylistOffset, ctx.totalPlaylistCount, ctx.playlistVersion, isScreensaver)
 end sub
 
 sub PersistActivePlaylistCacheForScene(ctx as Object, isScreensaver as Boolean)

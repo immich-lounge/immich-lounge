@@ -53,7 +53,7 @@ sub StartScreensaverSlideshow(companionUrl as String, profileId as String, scene
                 ShowToast(scene, "Using cached config")
             end if
 
-            playlistResult = FetchStartupPlaylist(companionUrl, profileId, true, port, "AppControllerScreensaver", scene)
+            playlistResult = FetchStartupPlaylist(companionUrl, profileId, true, port, "AppControllerScreensaver", scene, profile)
             if playlistResult.status = "exit" then return
             if playlistResult.status = "unavailable" then
                 ShowFullScreenError(scene, "Could not load a playlist." + Chr(10) + "Retrying automatically in about " + retrySeconds.ToStr() + " seconds." + Chr(10) + "Open Roku Screensaver Settings for Immich Lounge to check the saved setup.")
@@ -72,6 +72,12 @@ sub StartScreensaverSlideshow(companionUrl as String, profileId as String, scene
             end if
 
             if playlist = invalid or playlist.Count() = 0 then
+                if profile.followingSchedule = true then
+                    ConfigureSlideshowSceneForLaunch(scene, profile, [], companionUrl, profileId, true, launchPlaylistResult, 0, useLocalDateFormatting)
+                    ShowFullScreenError(scene, "No photos found for the current profile." + Chr(10) + "Waiting for the next scheduled profile.")
+                    WaitForSlideshowSceneAction(scene, port, false)
+                    return
+                end if
                 ShowFullScreenError(scene, "No photos found." + Chr(10) + "Add content sources to the selected profile, then confirm the screensaver setup in Roku Screensaver Settings.")
                 return
             end if
