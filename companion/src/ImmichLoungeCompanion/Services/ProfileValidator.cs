@@ -46,6 +46,11 @@ public class ProfileValidator : IProfileValidator
             return "Minimum file size must be 0 KB or greater.";
         }
 
+        if (profile.ExcludedPeople.Exists(person => person.Type != "person" || string.IsNullOrWhiteSpace(person.Id)))
+        {
+            return "Excluded people must have type person and a non-empty id.";
+        }
+
         return profile.ValidateAssetFilter();
     }
 

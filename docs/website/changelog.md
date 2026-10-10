@@ -10,6 +10,8 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 ## Unreleased
 
+- Choose whether photos must match any or all selected sources, and exclude photos containing selected people, including memories.
+
 - Added reusable schedules that switch between profiles at set times and days, with a fallback profile. Choose a fixed profile or a schedule on each Roku.
 
 

@@ -38,7 +38,13 @@ After changing a profile's content sources, **Preview Match Count** uses the new
 
 Saving a profile or connection settings clears the affected companion playlists. Any build already using the previous settings is discarded; the next playlist request builds from the saved settings.
 
-Profiles with advanced content rules created through the API keep those rules when edited in the companion. Their album, people, and tag selectors are unavailable; edit the rules through the API. Memories and display settings can still be changed in the companion.
+Choose **Any (OR)** to include photos matching any selected album, person, or tag, or **All (AND)** to require every selection. No selected sources means the whole library. **Exclude people (NOT)** removes photos containing any excluded person from all results, including added memories. For example, select your children with **Any**, then exclude yourself to show either child without you.
+
+Memories are added to the source results; they do not have to match the selected sources. Location restrictions and people exclusions still apply to memories.
+
+Profiles with nested content rules created through the API keep those rules when edited in the companion. Their source selectors are unavailable; edit the nested rules through the API. Excluded people, memories, and display settings can still be changed in the companion.
+
+The companion collects all matching result pages and removes duplicates. With **Shuffle** enabled, it randomizes the playlist when building it; it does not randomly choose a smaller sample. The Roku fetches the playlist in windows and keeps its place while the playlist version stays the same. Rebuilding can change the order. With shuffle off, photos are ordered by their original date, newest first.
 
 ![Immich Lounge companion profiles page](./assets/screenshots/companion-profiles.png){ .doc-screenshot }
 <p class="doc-caption">Each profile can target a different room, use case, or screensaver setup.</p>

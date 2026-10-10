@@ -40,6 +40,7 @@ public class ProfileDocumentService(ISettingsRepository settings) : IProfileDocu
             Immich = new { globalSettings.Immich.ServerUrl, globalSettings.Immich.ApiKey },
             profile.ContentSources,
             profile.AssetFilter,
+            profile.ExcludedPeople,
             profile.MediaTypes,
             profile.DateFilter,
             profile.LocationFilter,

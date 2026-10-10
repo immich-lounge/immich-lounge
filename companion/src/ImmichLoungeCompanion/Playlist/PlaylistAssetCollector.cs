@@ -34,6 +34,19 @@ public class PlaylistAssetCollector(IImmichClient immich)
             }
         }
 
+        // Query each person separately: ID-list matching differs across Immich API versions.
+        // Exclusions cover memories too, including those outside the profile's date range.
+        foreach (var personId in profile.ExcludedPeople.Select(person => person.Id).Distinct(StringComparer.Ordinal))
+        {
+            ct.ThrowIfCancellationRequested();
+            var excluded = await immich.SearchAssetsAllPagesAsync(immichSettings,
+                new SearchAssetsRequest { PersonIds = [personId] });
+            foreach (var asset in excluded)
+            {
+                allAssets.Remove(asset.Id);
+            }
+        }
+
         ApplyQualityFilter(allAssets, profile.Quality);
         return allAssets;
     }

@@ -6,6 +6,8 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+- Expose flat AND/OR source matching in the companion editor and add people exclusions applied to sources and memories. Preserve nested API rules and use separate person queries for legacy and structured search compatibility.
+
 - Added independent named schedules under `/data/schedules`, with explicit fallback profiles, time zones and weekly slots. Roku can choose a fixed profile or a schedule independently in each mode; playback switches settings and playlist together and tracks effective profile identity for resume/cache requests.
 
 

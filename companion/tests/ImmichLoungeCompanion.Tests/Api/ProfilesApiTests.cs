@@ -20,6 +20,17 @@ public class ProfilesApiTests : IDisposable
     public void Dispose() => _factory.Dispose();
 
     [TestMethod]
+    [DataRow("album", "id")]
+    [DataRow("person", " ")]
+    public async Task InvalidExcludedPeople_AreRejectedOnCreateAndPreview(string type, string id)
+    {
+        var profile = new Profile { Id = "invalid-exclusion", Name = "Invalid",
+            ExcludedPeople = [new() { Type = type, Id = id }] };
+        Assert.AreEqual(HttpStatusCode.BadRequest, (await _client.PostAsJsonAsync("/api/profiles", profile)).StatusCode);
+        Assert.AreEqual(HttpStatusCode.BadRequest, (await _client.PostAsJsonAsync("/api/profiles/preview-count", profile)).StatusCode);
+    }
+
+    [TestMethod]
     public async Task LocationFilter_RoundTripsThroughCreateGetUpdateAndDisk()
     {
         var profile = new Profile

@@ -11,6 +11,69 @@ namespace ImmichLoungeCompanion.Tests.Playlist;
 public class PlaylistAssetCollectorTests
 {
     [TestMethod]
+    public async Task CollectAsync_ExcludesAnyPersonFromSourcesAndMemories()
+    {
+        var client = Substitute.For<IImmichClient>();
+        var requests = new List<SearchAssetsRequest>();
+        client.SearchAssetsAllPagesAsync(FakeImmich, Arg.Any<SearchAssetsRequest>()).Returns(call =>
+        {
+            var request = call.Arg<SearchAssetsRequest>();
+            requests.Add(request);
+            return request.PersonIds?.SingleOrDefault() switch
+            {
+                "parent" => [new ImmichAsset { Id = "family" }, new ImmichAsset { Id = "old-memory" }],
+                "other" => [new ImmichAsset { Id = "other-person" }],
+                _ => [new ImmichAsset { Id = "child-only" }, new ImmichAsset { Id = "family" }, new ImmichAsset { Id = "other-person" }]
+            };
+        });
+        client.GetMemoriesAsync(FakeImmich, Arg.Any<DateOnly>()).Returns(
+            [new ImmichMemory { Assets = [new() { Id = "old-memory" }, new() { Id = "safe-memory" }] }]);
+        var profile = new Profile
+        {
+            ContentSources = [new() { Type = "person", Id = "child" }, new() { Type = "memories" }],
+            DateFilter = new() { Type = "range", From = "2026-01-01" },
+            ExcludedPeople = [new() { Type = "person", Id = "parent" }, new() { Type = "person", Id = "other" }, new() { Type = "person", Id = "parent" }]
+        };
+        var assets = await new PlaylistAssetCollector(client).CollectAsync(profile, FakeImmich);
+        CollectionAssert.AreEquivalent(new[] { "child-only", "safe-memory" }, assets.Keys.ToArray());
+        Assert.AreEqual(3, requests.Count, "Duplicate exclusions should not repeat the query.");
+        foreach (var request in requests.Skip(1))
+        {
+            Assert.IsNull(request.TakenAfter, "Exclusions must cover memories outside the date range.");
+            Assert.AreEqual(1, request.PersonIds!.Count);
+        }
+    }
+
+    [TestMethod]
+    public async Task CollectAsync_ExclusionsAloneUseWholeLibraryAndCanProduceEmptyResults()
+    {
+        var client = Substitute.For<IImmichClient>();
+        client.SearchAssetsAllPagesAsync(FakeImmich, Arg.Any<SearchAssetsRequest>())
+            .Returns([new ImmichAsset { Id = "excluded" }]);
+        var assets = await new PlaylistAssetCollector(client).CollectAsync(new Profile
+        {
+            ExcludedPeople = [new() { Type = "person", Id = "parent" }]
+        }, FakeImmich);
+        Assert.AreEqual(0, assets.Count);
+        await client.Received(1).SearchAssetsAllPagesAsync(FakeImmich,
+            Arg.Is<SearchAssetsRequest>(request => request.PersonIds == null));
+    }
+
+    [TestMethod]
+    public async Task CollectAsync_FailedExclusionDoesNotServeUnfilteredResults()
+    {
+        var client = Substitute.For<IImmichClient>();
+        client.SearchAssetsAllPagesAsync(FakeImmich, Arg.Any<SearchAssetsRequest>()).Returns(call =>
+            call.Arg<SearchAssetsRequest>().PersonIds == null
+                ? Task.FromResult(new List<ImmichAsset> { new() { Id = "photo" } })
+                : Task.FromException<List<ImmichAsset>>(new HttpRequestException("Search failed")));
+        await Assert.ThrowsAsync<HttpRequestException>(() => new PlaylistAssetCollector(client).CollectAsync(new Profile
+        {
+            ExcludedPeople = [new() { Type = "person", Id = "parent" }]
+        }, FakeImmich));
+    }
+
+    [TestMethod]
     public async Task CollectAsync_LocationAppliesToEveryLeafAndMemories()
     {
         var client = Substitute.For<IImmichClient>();

@@ -66,7 +66,9 @@ public sealed class ProfileEditorTests : IDisposable
     }
 
     [TestMethod]
-    public async Task UnchangedFlatRules_PreserveMissingLabelsAndMemories()
+    [DataRow(AssetFilterGroupOperator.Or)]
+    [DataRow(AssetFilterGroupOperator.And)]
+    public async Task UnchangedFlatRules_PreserveMissingLabelsAndMemories(AssetFilterGroupOperator matchOperator)
     {
         using var client = _factory.CreateClient();
         var original = new Profile
@@ -75,7 +77,7 @@ public sealed class ProfileEditorTests : IDisposable
             ContentSources = [new() { Type = "Memories", Id = "memories" }],
             AssetFilter = new()
             {
-                Kind = AssetFilterRuleKind.Group, Operator = AssetFilterGroupOperator.Or,
+                Kind = AssetFilterRuleKind.Group, Operator = matchOperator,
                 Children = [new() { Kind = AssetFilterRuleKind.Condition, Type = AssetFilterConditionType.Album, Id = "album-1" }]
             }
         };
@@ -134,7 +136,8 @@ public sealed class ProfileEditorTests : IDisposable
                 Children =
                 [
                     new() { Kind = AssetFilterRuleKind.Condition, Type = AssetFilterConditionType.Album, Id = "album-1" },
-                    new() { Kind = AssetFilterRuleKind.Condition, Type = AssetFilterConditionType.Person, Id = "person-1" }
+                    new() { Kind = AssetFilterRuleKind.Group, Operator = AssetFilterGroupOperator.Or,
+                        Children = [new() { Kind = AssetFilterRuleKind.Condition, Type = AssetFilterConditionType.Person, Id = "person-1" }] }
                 ]
             }
         };
@@ -163,7 +166,7 @@ public sealed class ProfileEditorTests : IDisposable
         profile.AssetFilter.Children[0].Label = "Renamed";
         Assert.IsTrue(profile.CanEditContentSources(), "Ordering and labels do not change the source selection.");
         profile.AssetFilter.Operator = AssetFilterGroupOperator.And;
-        Assert.IsFalse(profile.CanEditContentSources());
+        Assert.IsTrue(profile.CanEditContentSources(), "The match control can represent a flat AND group.");
         profile.AssetFilter.Operator = AssetFilterGroupOperator.Or;
         profile.AssetFilter.Children[0].Id = "custom-person";
         Assert.IsTrue(profile.CanEditContentSources(), "Flat OR rules can be edited even with a stale source list.");
@@ -201,14 +204,69 @@ public sealed class ProfileEditorTests : IDisposable
         Assert.AreEqual("new-album", reloaded.AssetFilter!.Children.Single().Id);
     }
 
+    [TestMethod]
+    public async Task MatchAllAndExclusions_AffectPreviewAndSurviveSave()
+    {
+        using var client = _factory.CreateClient();
+        var (editor, profile) = await LoadEditorAsync(client, new Profile
+        {
+            Id = "people-rules", Name = "People rules",
+            ContentSources = [new() { Type = "person", Id = "child" }, new() { Type = "album", Id = "family" }]
+        });
+        typeof(ProfileEditor).GetField("_sourceMatchOperator", PrivateInstance)!.SetValue(editor, AssetFilterGroupOperator.And);
+        profile.ExcludedPeople.Add(new() { Type = "person", Id = "parent", Label = "Parent" });
+        _factory.ImmichClient.SearchAssetsAllPagesAsync(Arg.Any<ImmichSettings>(), Arg.Any<SearchAssetsRequest>())
+            .Returns(call => call.Arg<SearchAssetsRequest>() switch
+            {
+                { PersonIds: ["parent"] } => [new ImmichAsset { Id = "with-parent", Type = "IMAGE" }],
+                { PersonIds: ["child"] } => [new ImmichAsset { Id = "child-only", Type = "IMAGE" }, new ImmichAsset { Id = "with-parent", Type = "IMAGE" }, new ImmichAsset { Id = "outside-album", Type = "IMAGE" }],
+                _ => [new ImmichAsset { Id = "child-only", Type = "IMAGE" }, new ImmichAsset { Id = "with-parent", Type = "IMAGE" }]
+            });
+        var payload = BuildPayload(editor);
+        Assert.AreEqual(AssetFilterGroupOperator.And, payload.AssetFilter!.Operator);
+        var preview = await client.PostAsJsonAsync("/api/profiles/preview-count", payload);
+        Assert.AreEqual(HttpStatusCode.OK, preview.StatusCode);
+        var result = await preview.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.AreEqual(1, result.GetProperty("matchedAssets").GetInt32());
+        Assert.AreEqual(HttpStatusCode.OK, (await client.PutAsJsonAsync("/api/profiles/people-rules", payload)).StatusCode);
+        var (reloadedEditor, reloaded) = await ReloadEditorAsync(client, profile.Id);
+        Assert.AreEqual(AssetFilterGroupOperator.And, GetField(reloadedEditor, "_sourceMatchOperator"));
+        Assert.AreEqual("parent", reloaded.ExcludedPeople.Single().Id);
+        reloaded.ContentSources.Add(new() { Type = "tag", Id = "holiday" });
+        Assert.AreEqual(AssetFilterGroupOperator.And, BuildPayload(reloadedEditor).AssetFilter!.Operator);
+    }
+
+    [TestMethod]
+    public async Task Exclusions_CanBeRemovedWithoutChangingSourceRules()
+    {
+        using var client = _factory.CreateClient();
+        var (editor, profile) = await LoadEditorAsync(client, new Profile
+        {
+            Id = "remove-exclusion", Name = "Remove exclusion",
+            ContentSources = [new() { Type = "person", Id = "child" }],
+            ExcludedPeople = [new() { Type = "person", Id = "parent" }]
+        });
+        profile.ExcludedPeople.Clear();
+        var payload = BuildPayload(editor);
+        Assert.AreEqual(0, payload.ExcludedPeople.Count);
+        Assert.AreEqual("child", payload.AssetFilter!.Children.Single().Id);
+        Assert.AreEqual(HttpStatusCode.OK, (await client.PutAsJsonAsync("/api/profiles/remove-exclusion", payload)).StatusCode);
+        Assert.AreEqual(0, (await client.GetFromJsonAsync<Profile>("/api/profiles/remove-exclusion"))!.ExcludedPeople.Count);
+    }
+
     private static async Task<(ProfileEditor Editor, Profile Profile)> LoadEditorAsync(HttpClient client, Profile profile)
     {
         var created = await client.PostAsJsonAsync("/api/profiles", profile);
         Assert.AreEqual(HttpStatusCode.Created, created.StatusCode);
+        return await ReloadEditorAsync(client, profile.Id);
+    }
+
+    private static async Task<(ProfileEditor Editor, Profile Profile)> ReloadEditorAsync(HttpClient client, string id)
+    {
         var httpFactory = Substitute.For<IHttpClientFactory>();
         httpFactory.CreateClient("local").Returns(client);
         var editor = new ProfileEditor();
-        typeof(ProfileEditor).GetProperty("Id")!.SetValue(editor, profile.Id);
+        typeof(ProfileEditor).GetProperty("Id")!.SetValue(editor, id);
         typeof(ProfileEditor).GetProperty("HttpFactory", PrivateInstance)!.SetValue(editor, httpFactory);
         // Exercise the component's real load and request preparation without a browser or renderer.
         await (Task)typeof(ProfileEditor).GetMethod("LoadProfileAsync", PrivateInstance)!.Invoke(editor, null)!;

@@ -11,6 +11,7 @@ public class Profile
     public string? Description { get; set; }
     public List<ContentSource> ContentSources { get; set; } = [];
     public AssetFilterRule? AssetFilter { get; set; }
+    public List<ContentSource> ExcludedPeople { get; set; } = [];
     public MediaTypes MediaTypes { get; set; } = new();
     public DateFilter? DateFilter { get; set; }
     public LocationFilter? LocationFilter { get; set; }
