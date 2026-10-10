@@ -2,6 +2,7 @@
    Loads items from /api/immich/<type>s and allows add/remove. *@
 
 @inject IHttpClientFactory HttpFactory
+@using System.Text.Json
 
 <div class="source-picker">
     <div class="chips">
@@ -10,18 +11,26 @@
         {
             <span class="chip">
                 @selected.Label
-                <button @onclick="() => Remove(selected)">×</button>
+                <button @onclick="() => Remove(selected)" aria-label="Remove @selected.Label">×</button>
             </span>
         }
     </div>
-    <input @bind="_search" @bind:event="oninput" @bind:after="FilterItems"
-           placeholder="Search @SourceType..." class="search-input" />
+    <input type="text" @bind="_search" @bind:event="oninput" @bind:after="FilterItems"
+           aria-label="Search @SourceType" placeholder="Search @SourceType..." class="search-input" disabled="@(_loading || _loadError != null)" />
+    @if (_loading) { <p class="field-hint" role="status">Loading sources…</p> }
+    @if (_loadError != null)
+    {
+        <p class="field-hint" role="alert">@_loadError <a href="/connection">Configure connection</a>.</p>
+        <button type="button" class="btn btn-secondary" @onclick="LoadItemsAsync">Retry loading @SourceType sources</button>
+    }
+    else if (!_loading && _items.Count == 0) { <p class="field-hint">No @SourceType sources available in Immich.</p> }
+    else if (!string.IsNullOrWhiteSpace(_search) && _filtered.Count == 0) { <p class="field-hint" role="status">No matching @SourceType sources.</p> }
     <div class="dropdown" @onmouseleave="() => _showDropdown = false">
         @if (_showDropdown)
         {
             @foreach (var item in _filtered.Take(10))
             {
-                <div class="dropdown-item" @onclick="() => Add(item)">@item.Name</div>
+                <button type="button" class="dropdown-item" @onclick="() => Add(item)">@item.Name</button>
             }
         }
     </div>
@@ -36,8 +45,12 @@
     private List<SourceItem> _items = [], _filtered = [];
     private string _search = "";
     private bool _showDropdown;
+    private bool _loading;
+    private string? _loadError;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync() => LoadItemsAsync();
+
+    private async Task LoadItemsAsync()
     {
         var endpoint = SourceType switch
         {
@@ -46,8 +59,21 @@
             "tag"    => "/api/immich/tags",
             _ => throw new ArgumentException("Invalid source type")
         };
-        _items = await Http.GetFromJsonAsync<List<SourceItem>>(endpoint) ?? [];
-        _filtered = _items;
+        _loading = true;
+        _loadError = null;
+        _showDropdown = false;
+        try
+        {
+            _items = await Http.GetFromJsonAsync<List<SourceItem>>(endpoint) ?? [];
+            FilterItems();
+            _showDropdown = false;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or TaskCanceledException)
+        {
+            _items = []; _filtered = [];
+            _loadError = "Could not load sources from Immich. Check the server URL and API key, then retry.";
+        }
+        finally { _loading = false; }
     }
 
     private void FilterItems()
