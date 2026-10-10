@@ -39,6 +39,10 @@ npm run docker:down
 
 The repo-root [`docker-compose.yml`](./docker-compose.yml) is the end-user reference snippet for published companion images. [`docker-compose.local.yml`](./docker-compose.local.yml) is the contributor-local variant that builds from the current source.
 
+### Development Immich servers
+
+For persistent local Immich 3.2 and 3.1 servers, see [the development setup](docs/maintainer/immich-development.md). Accounts and mounted configuration live in the primary checkout's gitignored `.local/immich/`; keep this directory alongside the Docker volumes. Use the development administrator account for manual photos and keep the fixture account unchanged.
+
 ### Roku
 
 ```bash
