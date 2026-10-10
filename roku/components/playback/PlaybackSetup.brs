@@ -6,6 +6,7 @@ sub InitPlaybackSceneForScene(ctx as Object)
     ctx.bgTargetOpacity = 0.34
     ctx.backgroundEffect = "blur"
     ctx.photoMotion = "none"
+    ctx.zoomToFit = false
 
     ctx.overlay = ctx.top.findNode("overlay")
     ctx.toast = ctx.top.findNode("toast")

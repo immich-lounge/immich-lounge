@@ -26,6 +26,7 @@ sub StartTransitionForScene(ctx as Object, fromSlot as Integer, toSlot as Intege
     fromBaseTranslation = fromNode.translation
     toBaseTranslation = toNode.translation
     ctx.activeMotionPlan = BuildPhotoMotionPlanForMode(ctx.photoMotion, entry, toNode, toBaseTranslation)
+    ConstrainPhotoMotionPlanForScene(ctx, toNode, ctx.activeMotionPlan)
 
     ctx.pendingBgFromSlot = fromSlot
     ctx.pendingBgToSlot = toSlot
