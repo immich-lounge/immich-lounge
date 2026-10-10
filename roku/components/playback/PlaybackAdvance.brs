@@ -15,7 +15,7 @@ sub AdvanceToNextForScene(ctx as Object)
         FetchNextPlaylistBatchForScene(ctx, ctx.top.isScreensaver)
     end if
 
-    if ctx.playlistIndex >= ctx.playlist.Count() - 1 then
+    if ctx.playlistIndex + ctx.slideAssetCount >= ctx.playlist.Count() then
         hasMoreBatches = ctx.totalPlaylistCount > ctx.playlist.Count()
         if hasMoreBatches then
             ctx.waitingForNextBatchSwap = true
@@ -35,7 +35,7 @@ sub AdvanceToNextForScene(ctx as Object)
 
         ctx.playlistIndex = 0
     else
-        ctx.playlistIndex = ctx.playlistIndex + 1
+        ctx.playlistIndex = NextPortraitSlideIndex(ctx.playlistIndex, ctx.playlist.Count(), ctx.slideAssetCount)
     end if
 
     ShowCurrentSlideForScene(ctx)
@@ -47,17 +47,20 @@ sub AdvanceToPrevForScene(ctx as Object)
     ctx.progressTimer.control = "stop"
     ctx.progressBar.progress = 0
 
-    if ctx.playlistIndex > 0 then
-        ctx.playlistIndex = ctx.playlistIndex - 1
-    else
-        ctx.playlistIndex = ctx.playlist.Count() - 1
-    end if
+    ctx.playlistIndex = PreviousPortraitSlideIndex(ctx.playlist, ctx.playlistIndex, ctx.portraitPairs, ctx.sideBySidePortraits)
 
     ShowCurrentSlideForScene(ctx)
 end sub
 
 sub OnTransitionSafetyTimeoutForScene(ctx as Object)
     if ctx.isTransitioning then
+        if ctx.nextMainReady and not ctx.nextPairReady then
+            if TryFallbackPortraitLoadForScene(ctx) then return
+            DropPendingPortraitForScene(ctx)
+            ctx.transitionSafetyTimer.control = "stop"
+            CommitSlideForScene(ctx, ctx.loadingFromSlot, ctx.loadingToSlot, ctx.pendingEntry)
+            return
+        end if
         if TryFallbackMainPosterLoadForScene(ctx) then return
         LogDebug(PlaybackLogScope(ctx), "Transition safety timeout fired - clearing stuck flag")
         ctx.isTransitioning = false

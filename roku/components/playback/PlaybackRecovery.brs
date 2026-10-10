@@ -15,6 +15,7 @@ sub PrepareStartupStatusForScene(ctx as Object)
 end sub
 
 sub HandleAssetLoadFailureForScene(ctx as Object)
+    ctx.slideAssetCount = 1
     HideLoadingIndicatorForScene(ctx)
     ctx.layoutRetryAttempts = 0
     ctx.layoutRetryTimer.control = "stop"
@@ -60,15 +61,27 @@ sub OnRetryTimerForScene(ctx as Object)
 end sub
 
 sub OnLayoutRetryTimerForScene(ctx as Object)
+    if ctx.loadingCommitted then return
     if ctx.loadingToSlot < 0 or ctx.loadingToSlot >= ctx.mainPosters.Count() then return
     node = ctx.mainPosters[ctx.loadingToSlot]
     if node.loadStatus <> "ready" then return
+    if ctx.nextMainReady then
+        paired = ctx.pairedPosters[ctx.loadingToSlot]
+        if not ctx.nextPairReady and paired.loadStatus = "ready" then
+            if not ApplyLoadedPortraitPairForScene(ctx) then QueueLayoutRetryForScene(ctx)
+        end if
+        TryCommitLoadedSlideForScene(ctx)
+        return
+    end if
     if ApplyMainPosterLayoutForScene(ctx, node) then
         LogDebug(PlaybackLogScope(ctx), "Layout retry succeeded for slot=" + ctx.loadingToSlot.ToStr())
-        if ctx.nextMainReady and ctx.nextBgReady and not ctx.loadingCommitted then
-            ctx.transitionSafetyTimer.control = "stop"
-            CommitSlideForScene(ctx, ctx.loadingFromSlot, ctx.loadingToSlot, ctx.pendingEntry)
+        ctx.nextMainReady = true
+        TryStartPortraitPairForScene(ctx)
+        paired = ctx.pairedPosters[ctx.loadingToSlot]
+        if not ctx.nextPairReady and paired.loadStatus = "ready" then
+            if not ApplyLoadedPortraitPairForScene(ctx) then QueueLayoutRetryForScene(ctx)
         end if
+        TryCommitLoadedSlideForScene(ctx)
     else
         QueueLayoutRetryForScene(ctx)
     end if

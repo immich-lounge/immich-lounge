@@ -6,6 +6,7 @@
 ' directly so the test runner actually starts on device.
 
 sub RunUserInterface(aa as Object)
+    print "[Immich Lounge Test Run]: " + ReadAsciiFile("pkg:/test-run-id.txt").Trim()
     Rooibos_init("RooibosScene")
 end sub
 

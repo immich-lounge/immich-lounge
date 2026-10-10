@@ -78,6 +78,7 @@ public class ProfilesApiTests : IDisposable
         Assert.AreEqual("living-room", body!.Id);
         Assert.IsNotNull(body);
         Assert.IsFalse(body.Display.ZoomToFit);
+        Assert.IsFalse(body.Display.SideBySidePortraits);
         Assert.IsNotNull(body.AssetFilter);
         Assert.AreEqual(AssetFilterRuleKind.Group, body.AssetFilter.Kind);
         Assert.AreEqual(AssetFilterGroupOperator.Or, body.AssetFilter.Operator);
@@ -105,6 +106,26 @@ public class ProfilesApiTests : IDisposable
 
         var reloaded = await _client.GetFromJsonAsync<Profile>("/api/profiles/zoom-fit");
         Assert.IsFalse(reloaded!.Display.ZoomToFit);
+    }
+
+    [TestMethod]
+    public async Task SideBySidePortraits_IsSavedServedAndCanBeDisabled()
+    {
+        var profile = new Profile
+        {
+            Id = "portrait-pair",
+            Name = "Portrait pair",
+            Display = new DisplaySettings { SideBySidePortraits = true }
+        };
+        var created = await _client.PostAsJsonAsync("/api/profiles", profile);
+        Assert.AreEqual(HttpStatusCode.Created, created.StatusCode);
+        var saved = await _client.GetFromJsonAsync<Profile>("/api/profiles/portrait-pair");
+        Assert.IsTrue(saved!.Display.SideBySidePortraits);
+        saved.Display.SideBySidePortraits = false;
+        var updated = await _client.PutAsJsonAsync("/api/profiles/portrait-pair", saved);
+        Assert.AreEqual(HttpStatusCode.OK, updated.StatusCode);
+        var reloaded = await _client.GetFromJsonAsync<Profile>("/api/profiles/portrait-pair");
+        Assert.IsFalse(reloaded!.Display.SideBySidePortraits);
     }
 
     [TestMethod]

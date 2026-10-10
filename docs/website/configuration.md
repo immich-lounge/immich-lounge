@@ -78,6 +78,14 @@ In the profile's **Slideshow** settings, enable **Zoom to fit (landscape photos)
 
 The setting is off by default and works in both the channel and screensaver. After the Roku refreshes the profile, it applies to the next photo displayed.
 
+### Side-by-side portraits
+
+Enable **Show portrait photos side by side** in the profile's **Slideshow** settings to pair consecutive portrait photos. Both photos are shown in full for one slideshow interval. Landscape, square, and unmatched portrait photos show alone. Pairs stay within the current playlist window and do not cross its boundary.
+
+The setting is off by default and works in both the channel and screensaver, including cached playlists. The overlay describes the left photo. Pairs fade together (or switch immediately if transitions are set to None); Ken Burns motion still applies to single photos.
+
+If the right photo cannot load, the left shows alone and the right is retried as the next item. Changes apply to the next photo displayed after the profile refresh.
+
 ## Location filters
 
 In the profile editor, fill in **Country**, **State / province**, or **City** to limit the playlist by location. Suggestions come from locations in your Immich library. Use the exact names stored in Immich; if suggestions are unavailable, you can enter those names manually.

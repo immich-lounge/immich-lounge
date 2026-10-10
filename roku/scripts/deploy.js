@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
+const { randomUUID } = require('crypto');
 const { spawnSync } = require('child_process');
 const rokuDeploy = require('roku-deploy');
 
@@ -37,6 +38,9 @@ async function main() {
     const outDir = path.join(runRoot, 'pkg');
 
     runBsc(variant.buildProject, buildDir);
+    if (variantName === 'test') {
+        fs.writeFileSync(path.join(buildDir, 'test-run-id.txt'), process.env.ROKU_TEST_RUN_ID || randomUUID());
+    }
 
     const config = loadConfig(variant.configFile);
     disableProxyForHost(config.host);

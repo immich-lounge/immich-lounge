@@ -62,6 +62,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Test Roku scripts
+        run: npm run test:scripts
+
       - name: Lint channel
         run: npm run lint
 

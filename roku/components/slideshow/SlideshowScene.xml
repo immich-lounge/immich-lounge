@@ -36,6 +36,8 @@
   </children>
   <script type="text/brightscript" uri="pkg:/source/Utils.brs" />
   <script type="text/brightscript" uri="pkg:/source/MediaUrls.brs" />
+  <script type="text/brightscript" uri="pkg:/source/PortraitPairs.brs" />
+  <script type="text/brightscript" uri="pkg:/components/playback/PlaybackPortraits.brs" />
   <script type="text/brightscript" uri="pkg:/source/DateTimeFormatting.brs" />
   <script type="text/brightscript" uri="pkg:/source/PlaybackConstants.brs" />
   <script type="text/brightscript" uri="pkg:/components/playback/PlaybackRing.brs" />

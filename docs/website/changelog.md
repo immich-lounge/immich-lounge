@@ -16,6 +16,10 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 - Automatically use the search API supported by your Immich server. Existing profiles need no migration.
 - See the detected server version when testing your connection.
 
+- Fixed the developer test command accepting results from an earlier Roku test run.
+
+- Added an option to show consecutive portrait photos side by side without cropping.
+
 - Added **Zoom to fit** to fill the screen with landscape photos by cropping their edges.
 
 - Fixed photo loading when the Immich server URL ends with a slash.
