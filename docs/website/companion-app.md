@@ -1,4 +1,5 @@
 ---
+description: "Manage the Immich connection, slideshow profiles, playlists, and schedules in the companion web app."
 icon: material/monitor-dashboard
 ---
 

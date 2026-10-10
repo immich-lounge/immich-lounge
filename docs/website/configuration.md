@@ -1,4 +1,5 @@
 ---
+description: "Choose photo sources, playback settings, overlays, weather, and schedules for your Roku slideshow."
 icon: material/tune-variant
 ---
 

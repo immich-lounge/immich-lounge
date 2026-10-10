@@ -1,4 +1,5 @@
 ---
+description: "Display your Immich photos as a slideshow or screensaver on Roku, with profiles and schedules managed in a self-hosted companion."
 title: Immich Lounge
 icon: material/home-outline
 hide:

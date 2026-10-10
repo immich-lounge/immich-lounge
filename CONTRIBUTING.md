@@ -108,6 +108,8 @@ Official Roku developer docs:
 
 The documentation site is built with Zensical using the existing [`mkdocs.yml`](./mkdocs.yml) compatibility path. Public website content lives under [`docs/website/`](./docs/website/). The generated site output goes to `_out/website/`. If you add or rename public docs pages, update [`mkdocs.yml`](./mkdocs.yml) too.
 
+Give public pages a concise `description` in front matter for search previews and generated social cards. The `llmstxt` sections in `mkdocs.yml` choose which pages get Markdown exports and a **Copy as Markdown** action. Include new setup or help pages in the appropriate section. Social cards and Markdown exports are generated under `_out/website/`; do not commit them.
+
 Mark screenshots with `.on-glb` to enable click-to-enlarge; keep logos outside the lightbox. Use content tabs for genuine setup alternatives, admonitions for important notes, and collapsible details for optional explanations. The page edit action points to `master` and `docs/website/` in the source repository.
 
 Use a repository-local Python environment so the preview uses the same pinned Zensical version as CI. From the repository root on Windows:

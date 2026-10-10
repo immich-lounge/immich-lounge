@@ -1,4 +1,5 @@
 ---
+description: "Start the companion, connect it to Immich, create a profile, and set up your Roku."
 icon: material/rocket-launch-outline
 ---
 

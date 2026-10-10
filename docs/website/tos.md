@@ -1,4 +1,5 @@
 ---
+description: "Terms for using Immich Lounge."
 icon: material/file-document-outline
 ---
 
