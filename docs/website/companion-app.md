@@ -14,10 +14,11 @@ The Connection page stores the shared immich connection used by every profile.
 
 Use it when you need to:
 
-- change the friendly name shown in the UI
 - update the immich server URL
 - replace the API key
-- verify access with **Test Connection**
+- save the entered settings and verify access with **Save & Test Connection**
+
+**Save** stores the settings without testing. **Save & Test Connection** stores them first, then checks access to Immich. A failed test does not undo the saved settings.
 
 If you need to generate or rotate the key, see [Immich API Key](./api-key.md).
 
@@ -34,6 +35,12 @@ Use it when you want to:
 - edit an existing profile
 - remove a profile you no longer need
 - compare which profiles exist before switching the Roku to a different one
+
+When there are no profiles yet, choose **Create a Profile**. Enter a name; the companion generates a profile ID automatically. Use **Customize profile ID** if you want a different ID or the generated one is already in use.
+
+**Refresh Playlist** requests a rebuild for one profile; **Refresh All Playlists** requests it for every profile. The confirmation means the request was accepted, not that the background rebuild has finished.
+
+Deleting a profile requires confirmation. It removes the companion profile, not your Immich photos. Update any schedule or Roku selection that refers to the deleted profile.
 
 ![Immich Lounge companion profiles page](./assets/screenshots/companion-profiles.png){ .doc-screenshot }
 <p class="doc-caption">Profiles are where most day-to-day tuning happens after setup is complete.</p>
