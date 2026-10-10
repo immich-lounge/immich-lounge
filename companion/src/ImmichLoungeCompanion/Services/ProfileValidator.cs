@@ -46,7 +46,7 @@ public class ProfileValidator : IProfileValidator
             return "Minimum file size must be 0 KB or greater.";
         }
 
-        return profile.ValidateAssetFilter();
+        return ProfileScheduleService.Validate(profile.Schedule) ?? profile.ValidateAssetFilter();
     }
 
     private static bool IsMediaTypesValid(MediaTypes m) => m.Photos || m.Videos || m.LivePhotos;

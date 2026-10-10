@@ -63,6 +63,8 @@ builder.Services.AddSingleton<ImmichLoungeCompanion.Immich.IImmichClient,
     ImmichLoungeCompanion.Immich.ImmichClient>();
 
 // Scoped UI state
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<ImmichLoungeCompanion.Services.ProfileScheduleService>();
 builder.Services.AddScoped<ImmichLoungeCompanion.Services.CompanionState>();
 builder.Services.AddSingleton<ImmichLoungeCompanion.Services.IDisplayDateFormattingService,
     ImmichLoungeCompanion.Services.DisplayDateFormattingService>();

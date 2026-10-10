@@ -98,3 +98,13 @@ That means you can:
 <p class="doc-caption">Use the Roku settings menu to refresh, switch profile, change companion, or clear cache.</p>
 
 For the actual Roku-side behavior and menu actions, see [Using the Roku Apps](./roku-apps.md).
+
+## Profile schedules
+
+In a profile's editor, enable **Profile schedule**, choose a time zone, and add time slots with a target profile and starting days. Select this profile on each Roku that should follow the schedule. The channel and screensaver can follow different profiles and schedules.
+
+Outside the time slots, the selected profile's own content and settings apply. Each slot uses the target profile's content and settings, without following that target's schedule. Overlapping slots use the first matching row; use **Move up** to change priority.
+
+Start times are included and end times are excluded. An earlier end time runs into the next day: a Friday 22:00–06:00 slot ends on Saturday morning. Equal start and end times mean 24 hours from the starting day. Slots follow local time in the chosen zone, including daylight saving changes.
+
+Once loaded, a schedule is checked each minute while playback runs. Enabling a schedule on an already running profile can take up to five minutes to be detected. A paused slideshow waits to switch until playback resumes. If the target playlist is empty or unavailable, the current slideshow continues and the Roku retries. If a target profile is deleted, the selected profile is used instead. When the companion is offline, the Roku keeps its last configuration; schedule changes require the companion.

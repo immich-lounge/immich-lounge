@@ -180,7 +180,7 @@ function StartSlideshowFlow(companionUrl as String, profileId as String, scene a
                 ShowToast(scene, "Config may be incompatible — update the channel")
             end if
 
-            playlistResult = FetchStartupPlaylist(companionUrl, profileId, isScreensaver, port, "AppController")
+            playlistResult = FetchStartupPlaylist(companionUrl, profileId, isScreensaver, port, "AppController", invalid, profile)
             if playlistResult.status = "exit" then return "exit"
             if playlistResult.status = "unavailable" then
                 action = HandleStartupUnavailable(scene, port, companionUrl, "Could not load a playlist from the companion.", promptedForSetup)

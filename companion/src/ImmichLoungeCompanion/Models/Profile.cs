@@ -18,6 +18,7 @@ public class Profile
     public QualitySettings Quality { get; set; } = new();
     public string ImageQuality { get; set; } = "preview";
     public WeatherSettings? Weather { get; set; }
+    public ProfileSchedule? Schedule { get; set; }
 }
 
 public class ContentSource

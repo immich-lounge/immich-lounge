@@ -34,7 +34,7 @@ end sub
 
 ' GET /api/profiles/:id → { ok, profile: enrichedProfile }
 sub FetchProfile()
-    url = m.top.baseUrl + "/api/profiles/" + m.top.profileId
+    url = m.top.baseUrl + "/api/profiles/" + m.top.profileId + "?resolveSchedule=true"
     r = HttpGetJson(url, {})
     result = { ok: false, statusCode: r.statusCode, error: r.error }
     if r.statusCode = 200 then

@@ -18,7 +18,8 @@ public class ProfilesController(
     IPlaylistCache cache,
     IPlaylistBuilder playlistBuilder,
     IProfileValidator profileValidator,
-    IProfileDocumentService profileDocuments) : ControllerBase
+    IProfileDocumentService profileDocuments,
+    ProfileScheduleService schedules) : ControllerBase
 {
     private static readonly Regex ValidId = new(@"^[a-z0-9][a-z0-9\-]{1,62}[a-z0-9]$", RegexOptions.Compiled);
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -49,7 +50,7 @@ public class ProfilesController(
             return Conflict(new { error = "Profile id already exists." });
         }
 
-        var validationError = profileValidator.Validate(profile);
+        var validationError = profileValidator.Validate(profile) ?? await schedules.ValidateTargetsAsync(profile);
         if (validationError != null)
         {
             return BadRequest(new { error = validationError });
@@ -60,12 +61,17 @@ public class ProfilesController(
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> Get(string id)
+    public async Task<IActionResult> Get(string id, [FromQuery] bool resolveSchedule = false)
     {
         var profile = await profiles.GetAsync(id);
         if (profile == null)
         {
             return NotFound(new { error = "Profile not found." });
+        }
+
+        if (resolveSchedule)
+        {
+            return Ok(await profileDocuments.BuildResponseAsync(await schedules.ResolveAsync(profile), profile));
         }
 
         return Ok(await profileDocuments.BuildResponseAsync(profile));
@@ -90,7 +96,7 @@ public class ProfilesController(
         updated.Id = id; // URL id is authoritative
         profileDocuments.Normalize(updated);
 
-        var validationError = profileValidator.Validate(updated);
+        var validationError = profileValidator.Validate(updated) ?? await schedules.ValidateTargetsAsync(updated);
         if (validationError != null)
         {
             return BadRequest(new { error = validationError });

@@ -49,6 +49,7 @@ sub ApplyProfileForScene(ctx as Object)
     end if
     if ctx.profileConfigTimer <> invalid then
         ctx.profileConfigTimer.duration = PlaybackProfileConfigRefreshSeconds()
+        if ctx.profile.scheduleEnabled = true then ctx.profileConfigTimer.duration = 60
         ctx.profileConfigTimer.control = "start"
     end if
 

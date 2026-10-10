@@ -6,6 +6,8 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+- Added weekly per-profile schedules with explicit time zones, overnight slots, ordered overlap resolution, and validation. Both Roku modes poll scheduled selections each minute and switch profile and playlist together when the target has photos; resume/cache identity tracks the effective playback profile.
+
 - Bind Roku test completion to a unique ID in each test deployment, ignoring buffered results from earlier runs. Added local runner regression checks to CI.
 
 - Added optional `display.sideBySidePortraits` in both Roku modes, using loaded bitmap dimensions to pair adjacent portrait photos without adding playlist or registry fields. Added pair-aware navigation, refresh handling, and secondary-image fallback.

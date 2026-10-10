@@ -19,7 +19,7 @@ sub FetchClockDateForScene(ctx as Object)
     end if
     task = CreateObject("roSGNode", "CompanionApiTask")
     task.baseUrl = ctx.top.companionUrl
-    task.profileId = ctx.top.profileId
+    task.profileId = PlaybackProfileId(ctx.profile, ctx.top.profileId)
     task.observeField("clockResult", "OnClockDateResult")
     ctx.clockDateTask = task
     task.command = "fetchClock"

@@ -238,6 +238,7 @@ sub PersistResumeStateForMode(entry as Object, top as Object, playlistIndex as I
     if entry = invalid then return
     state = {
         profileId: top.profileId
+        playbackProfileId: PlaybackProfileId(top.profile, top.profileId)
         assetId: ValueOrDefault(entry.id, "")
         playlistIndex: playlistIndex
         playlistOffset: playlistOffset

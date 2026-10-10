@@ -162,6 +162,37 @@ body {
 }
 
 /* ── Settings card ────────────────────────────────────── */
+.schedule-slot {
+    min-width: 0;
+    margin: 1rem 0;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+}
+.schedule-slot legend { padding: 0 0.4rem; font-size: 0.9rem; }
+.editor-card .schedule-time-zone { display: grid; }
+.schedule-time-zone select { width: 100%; min-width: 0; }
+.schedule-days {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.15rem 0.75rem;
+    margin: 0.75rem 0;
+}
+.schedule-slot label:has(input[type="time"]) { display: grid; gap: 0.3rem; }
+.schedule-slot input[type="time"] {
+    width: 100%;
+    min-width: 0;
+    padding: 0.45rem;
+    font-family: var(--font-ui);
+    color: var(--text-primary);
+    color-scheme: dark;
+    background: var(--bg-elevated);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    outline: none;
+}
+.schedule-slot input[type="time"]:focus { border-color: var(--accent); }
+
 .settings-card {
     background: var(--bg-surface);
     border: 2px solid var(--border);

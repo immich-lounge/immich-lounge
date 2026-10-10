@@ -10,6 +10,8 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 ## Unreleased
 
+- Added profile schedules for different times and days of the week, independently selectable on each Roku.
+
 - Fixed the developer test command accepting results from an earlier Roku test run.
 
 - Added an option to show consecutive portrait photos side by side without cropping.

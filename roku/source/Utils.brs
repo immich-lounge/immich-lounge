@@ -121,3 +121,11 @@ function NormalizeImmichServerUrl(serverUrl as Dynamic) as String
     end while
     return base
 end function
+function PlaybackProfileId(profile as Dynamic, selectedId as String) as String
+    if profile <> invalid and profile.playbackProfileId <> invalid and profile.playbackProfileId <> "" then return profile.playbackProfileId
+    return selectedId
+end function
+
+function CachedPlaylistMatchesPlayback(resumeState as Dynamic, selectedId as String, playbackId as String) as Boolean
+    return PlaybackProfileId(resumeState, selectedId) = playbackId
+end function

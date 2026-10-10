@@ -33,6 +33,62 @@ else
 
     <div class="editor-grid">
         <section class="settings-card editor-card">
+            <h3>Profile schedule</h3>
+            <p class="section-intro">Switch to another profile at set times. Outside these slots, this profile plays as usual. Select this profile on each Roku that should follow its schedule.</p>
+            <label><input type="checkbox" checked="@(_profile.Schedule?.Enabled == true)" @onchange="ToggleSchedule" /> Enable schedule</label>
+            @if (_profile.Schedule != null)
+            {
+                <label class="schedule-time-zone">Time zone:
+                    <select @bind="_profile.Schedule.TimeZoneId">
+                        <option value="UTC">UTC</option>
+                        @if (_profile.Schedule.TimeZoneId != "UTC" && !_timeZones.Any(zone => zone.Id == _profile.Schedule.TimeZoneId))
+                        {
+                            <option value="@_profile.Schedule.TimeZoneId">@_profile.Schedule.TimeZoneId</option>
+                        }
+                        @foreach (var zone in _timeZones.Where(zone => zone.Id != "UTC"))
+                        {
+                            <option value="@zone.Id">@zone.DisplayName (@zone.Id)</option>
+                        }
+                    </select>
+                </label>
+                @foreach (var slot in _profile.Schedule.Entries)
+                {
+                    <fieldset class="schedule-slot" @key="slot">
+                        <legend>Time slot @(_profile.Schedule.Entries.IndexOf(slot) + 1)</legend>
+                        <label>Profile:
+                            <select @bind="slot.ProfileId">
+                                <option value="">Choose a profile</option>
+                                @if (!_scheduleProfiles.Any(profile => profile.Id == slot.ProfileId) && !string.IsNullOrEmpty(slot.ProfileId))
+                                {
+                                    <option value="@slot.ProfileId">Missing profile: @slot.ProfileId</option>
+                                }
+                                @foreach (var profile in _scheduleProfiles.Where(profile => profile.Id != Id))
+                                {
+                                    <option value="@profile.Id">@profile.Name</option>
+                                }
+                            </select>
+                        </label>
+                        <div class="settings-field-grid">
+                            <label>From: <input type="time" value="@slot.Start" @onchange='args => slot.Start = args.Value?.ToString() ?? ""' /></label>
+                            <label>Until: <input type="time" value="@slot.End" @onchange='args => slot.End = args.Value?.ToString() ?? ""' /></label>
+                        </div>
+                        <div class="schedule-days">
+                            @foreach (var day in ScheduleDays)
+                            {
+                                <label><input type="checkbox" checked="@slot.Days.Contains(day)" @onchange="args => ToggleScheduleDay(slot, day, args)" /> @day</label>
+                            }
+                        </div>
+                        <div class="btn-row">
+                            <button type="button" class="btn btn-secondary" @onclick="() => MoveScheduleSlotUp(slot)" disabled="@(_profile.Schedule.Entries.IndexOf(slot) == 0)">Move up</button>
+                            <button type="button" class="btn btn-danger" @onclick="() => _profile.Schedule.Entries.Remove(slot)">Remove</button>
+                        </div>
+                    </fieldset>
+                }
+                <button type="button" class="btn btn-secondary" @onclick="AddScheduleSlot" disabled="@(_profile.Schedule.Entries.Count >= 32)">Add time slot</button>
+                <p class="field-hint">Overlapping slots use the first match. An end time earlier than the start runs into the next day; equal times mean 24 hours. Days refer to when the slot starts. Switches take effect within about a minute while the companion is available.</p>
+            }
+        </section>
+        <section class="settings-card editor-card">
             <h3>Content Sources</h3>
             <p class="section-intro">Choose which albums, people, tags, and memories feed this profile.</p>
             <SourcePicker SourceType="album" @bind-Selected="_profile.ContentSources" />
@@ -261,6 +317,35 @@ else
     private string? _initialSnapshot;
     private string? _loadedProfileId;
     private bool _skipNavigationPrompt;
+    private List<ScheduleProfile> _scheduleProfiles = [];
+    private List<ScheduleTimeZone> _timeZones = [];
+    private static readonly ImmichLoungeCompanion.Models.ScheduleDay[] ScheduleDays = [ImmichLoungeCompanion.Models.ScheduleDay.Monday, ImmichLoungeCompanion.Models.ScheduleDay.Tuesday, ImmichLoungeCompanion.Models.ScheduleDay.Wednesday, ImmichLoungeCompanion.Models.ScheduleDay.Thursday, ImmichLoungeCompanion.Models.ScheduleDay.Friday, ImmichLoungeCompanion.Models.ScheduleDay.Saturday, ImmichLoungeCompanion.Models.ScheduleDay.Sunday];
+    private record ScheduleProfile(string Id, string Name);
+    private record ScheduleTimeZone(string Id, string DisplayName);
+
+    private void ToggleSchedule(ChangeEventArgs args)
+    {
+        if (_profile == null) return;
+        _profile.Schedule ??= new();
+        _profile.Schedule.Enabled = args.Value is true;
+    }
+
+    private void AddScheduleSlot() => _profile?.Schedule?.Entries.Add(new() { Days = [.. ScheduleDays] });
+
+    private static void ToggleScheduleDay(ImmichLoungeCompanion.Models.ProfileScheduleEntry slot, ImmichLoungeCompanion.Models.ScheduleDay day, ChangeEventArgs args)
+    {
+        slot.Days.Remove(day);
+        if (args.Value is true) slot.Days.Add(day);
+    }
+
+    private void MoveScheduleSlotUp(ImmichLoungeCompanion.Models.ProfileScheduleEntry slot)
+    {
+        var entries = _profile!.Schedule!.Entries;
+        var index = entries.IndexOf(slot);
+        if (index <= 0) return;
+        entries.RemoveAt(index);
+        entries.Insert(index - 1, slot);
+    }
 
     private record GeocodeResult(string DisplayName, string Lat, string Lon);
     private record ErrorResponse(string Error);
@@ -291,6 +376,8 @@ else
 
         var response = await Http.GetFromJsonAsync<ImmichLoungeCompanion.Models.Profile>($"/api/profiles/{Id}");
         _profile = response;
+        _scheduleProfiles = await Http.GetFromJsonAsync<List<ScheduleProfile>>("/api/profiles") ?? [];
+        _timeZones = await Http.GetFromJsonAsync<List<ScheduleTimeZone>>("/api/schedule-time-zones") ?? [];
         _memoriesEnabled = _profile?.ContentSources.Any(s => s.Type == "memories") ?? false;
         _weatherEnabled = _profile?.Weather?.Enabled ?? false;
         _initialSnapshot = BuildSnapshot();

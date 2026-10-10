@@ -11,6 +11,9 @@ sub InitPlaybackSceneForScene(ctx as Object)
     ctx.slideAssetCount = 1
     ctx.portraitPairs = {}
     ctx.currentPairAssetId = ""
+    ctx.pendingRefreshProfile = invalid
+    ctx.pendingScheduledProfile = invalid
+    ctx.pendingScheduledPlaylist = invalid
 
     ctx.overlay = ctx.top.findNode("overlay")
     ctx.toast = ctx.top.findNode("toast")

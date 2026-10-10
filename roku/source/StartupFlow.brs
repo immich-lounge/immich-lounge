@@ -89,17 +89,24 @@ function FetchStartupProfile(companionUrl as String, profileId as String, isScre
     end while
 end function
 
-function FetchStartupPlaylist(companionUrl as String, profileId as String, isScreensaver as Boolean, port as Object, logScope as String, loadingScene = invalid as Dynamic) as Object
+function FetchStartupPlaylist(companionUrl as String, profileId as String, isScreensaver as Boolean, port as Object, logScope as String, loadingScene = invalid as Dynamic, profile = invalid as Dynamic) as Object
     resumeState = LoadResumeState(isScreensaver, profileId)
     resumeOffset = ResolveResumePlaylistOffset(resumeState)
     resumePlaylistVersion = ResolveResumePlaylistVersion(resumeState)
     cachedPlaylist = LoadCachedPlaylistForMode(isScreensaver)
+    playbackId = PlaybackProfileId(profile, profileId)
+    if not CachedPlaylistMatchesPlayback(resumeState, profileId, playbackId) then
+        resumeState = invalid
+        cachedPlaylist = []
+        resumeOffset = 0
+        resumePlaylistVersion = ""
+    end if
 
     LogDebug(logScope, "fetching playlist offset=" + resumeOffset.ToStr() + " cachedCount=" + cachedPlaylist.Count().ToStr())
 
     playlistTask = CreateObject("roSGNode", "CompanionApiTask")
     playlistTask.baseUrl = companionUrl
-    playlistTask.profileId = profileId
+    playlistTask.profileId = playbackId
     playlistTask.isScreensaver = isScreensaver
     playlistTask.playlistOffset = resumeOffset
     playlistTask.playlistVersion = resumePlaylistVersion
