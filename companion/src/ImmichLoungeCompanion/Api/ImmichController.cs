@@ -10,6 +10,13 @@ namespace ImmichLoungeCompanion.Api;
 [Route("api/immich")]
 public class ImmichController(IImmichClient immich, ISettingsRepository settings) : ControllerBase
 {
+    [HttpGet("capabilities")]
+    public async Task<IActionResult> Capabilities()
+    {
+        var s = await settings.LoadAsync();
+        return Ok(await immich.GetSearchApiCapabilitiesAsync(s.Immich));
+    }
+
     [HttpGet("test")]
     public async Task<IActionResult> Test()
     {

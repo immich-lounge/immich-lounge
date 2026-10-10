@@ -19,15 +19,15 @@ public class PlaylistEntryProjectorTests
             Slideshow = new() { Shuffle = false }
         };
 
-        var assets = new Dictionary<string, (ImmichAsset Asset, string? SourceLabel)>
+        var assets = new Dictionary<string, CollectedAsset>
         {
-            ["older"] = (new ImmichAsset
+            ["older"] = new(new ImmichAsset
             {
                 Id = "older",
                 Type = "IMAGE",
                 ExifInfo = new ImmichExifInfo { DateTimeOriginal = "2024-01-01T00:00:00Z" }
             }, null),
-            ["newer"] = (new ImmichAsset
+            ["newer"] = new(new ImmichAsset
             {
                 Id = "newer",
                 Type = "IMAGE",
@@ -48,10 +48,10 @@ public class PlaylistEntryProjectorTests
             MediaTypes = new() { Photos = true, Videos = false, LivePhotos = false }
         };
 
-        var assets = new Dictionary<string, (ImmichAsset Asset, string? SourceLabel)>
+        var assets = new Dictionary<string, CollectedAsset>
         {
-            ["photo-1"] = (new ImmichAsset { Id = "photo-1", Type = "IMAGE" }, null),
-            ["video-1"] = (new ImmichAsset { Id = "video-1", Type = "VIDEO" }, null)
+            ["photo-1"] = new(new ImmichAsset { Id = "photo-1", Type = "IMAGE" }, null),
+            ["video-1"] = new(new ImmichAsset { Id = "video-1", Type = "VIDEO" }, null)
         };
 
         var entries = PlaylistEntryProjector.CreateEntries(assets, profile);

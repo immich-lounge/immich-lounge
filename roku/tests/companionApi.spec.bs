@@ -16,6 +16,19 @@ namespace tests
 
     @describe("PrepareEntryForRegistry")
 
+    @it("Omits birthday captions from short and long offline playlists")
+    function test_noCachedBirthdayCaptions()
+      for each count in [1, 60]
+        entries = []
+        for i = 1 to count
+          entries.Push({ id: "photo" + Str(i).Trim(), type: "photo", birthdayCaption: "Emma's birthday" })
+        end for
+        cached = TruncatePlaylistForRegistry(entries)
+        m.assertInvalid(cached[0].birthdayCaption)
+        m.assertEqual(entries[0].birthdayCaption, "Emma's birthday")
+      end for
+    end function
+
     @it("Truncates sourceLabel to 20 characters")
     function test_truncateLabel()
       entry = { id: "abc", type: "photo", sourceLabel: "This Label Is Way Too Long For Registry" }

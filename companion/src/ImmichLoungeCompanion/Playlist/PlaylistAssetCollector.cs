@@ -9,27 +9,47 @@ using ImmichLoungeCompanion.Models;
 
 namespace ImmichLoungeCompanion.Playlist;
 
-public class PlaylistAssetCollector(IImmichClient immich)
+public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProvider = null)
 {
-    public async Task<Dictionary<string, (ImmichAsset Asset, string? SourceLabel)>> CollectAsync(
+    private readonly TimeProvider _time = timeProvider ?? TimeProvider.System;
+    public async Task<Dictionary<string, CollectedAsset>> CollectAsync(
         Profile profile,
         ImmichSettings immichSettings,
         CancellationToken ct = default)
     {
         profile.NormalizeAssetFilter();
 
-        Dictionary<string, (ImmichAsset Asset, string? SourceLabel)> allAssets = profile.AssetFilter == null
-            ? await FetchAllAssetsAsync(immichSettings, profile.DateFilter, profile.LocationFilter, ct)
-            : await EvaluateRuleAsync(profile.AssetFilter, immichSettings, profile.DateFilter, profile.LocationFilter, ct);
+        Dictionary<string, CollectedAsset> allAssets = profile.AssetFilter != null
+            ? await EvaluateRuleAsync(profile.AssetFilter, immichSettings, profile.DateFilter, profile.LocationFilter, ct)
+            : profile.HasMemoriesSource()
+                ? new(StringComparer.Ordinal)
+                : await FetchAllAssetsAsync(immichSettings, profile.DateFilter, profile.LocationFilter, ct);
 
         if (profile.HasMemoriesSource())
         {
-            var memoryAssets = await FetchMemoriesAssetsAsync(immichSettings, ct);
+            var memoryAssets = await FetchMemoriesAssetsAsync(profile, immichSettings, ct);
             foreach (var (id, asset) in memoryAssets)
             {
-                if (MatchesLocation(asset, profile.LocationFilter))
+                ct.ThrowIfCancellationRequested();
+                allAssets.TryGetValue(id, out var existing);
+                var candidate = existing?.Asset ?? asset.Asset;
+                // Memory responses may omit EXIF. Reuse search metadata or hydrate only
+                // when a filter needs it; never interpret an abbreviated response as no match.
+                if (NeedsMemoryMetadata(profile) && candidate.ExifInfo == null)
                 {
-                    allAssets.TryAdd(id, (asset, null));
+                    candidate = await immich.GetAssetAsync(immichSettings, id, ct);
+                }
+                if (candidate != null && MatchesLocation(candidate, profile.LocationFilter))
+                {
+                    if (existing != null)
+                    {
+                        // Keep album context while attaching the birthday context once.
+                        allAssets[id] = existing with { Asset = candidate, BirthdayCaption = asset.BirthdayCaption ?? existing.BirthdayCaption };
+                    }
+                    else
+                    {
+                        allAssets.Add(id, asset with { Asset = candidate });
+                    }
                 }
             }
         }
@@ -38,7 +58,11 @@ public class PlaylistAssetCollector(IImmichClient immich)
         return allAssets;
     }
 
-    private async Task<Dictionary<string, (ImmichAsset Asset, string? SourceLabel)>> FetchAllAssetsAsync(
+    private static bool NeedsMemoryMetadata(Profile profile) =>
+        profile.Quality.MinFileSizeKb is > 0 || CleanLocation(profile.LocationFilter?.Country) != null ||
+        CleanLocation(profile.LocationFilter?.State) != null || CleanLocation(profile.LocationFilter?.City) != null;
+
+    private async Task<Dictionary<string, CollectedAsset>> FetchAllAssetsAsync(
         ImmichSettings immichSettings,
         DateFilter? dateFilter,
         LocationFilter? locationFilter,
@@ -57,7 +81,7 @@ public class PlaylistAssetCollector(IImmichClient immich)
         return ToAssetDictionary(assets, sourceLabel: null);
     }
 
-    private async Task<Dictionary<string, (ImmichAsset Asset, string? SourceLabel)>> EvaluateRuleAsync(
+    private async Task<Dictionary<string, CollectedAsset>> EvaluateRuleAsync(
         AssetFilterRule rule,
         ImmichSettings immichSettings,
         DateFilter? dateFilter,
@@ -71,7 +95,7 @@ public class PlaylistAssetCollector(IImmichClient immich)
             return await FetchConditionAssetsAsync(rule, immichSettings, dateFilter, locationFilter, ct);
         }
 
-        var childResults = new List<Dictionary<string, (ImmichAsset Asset, string? SourceLabel)>>();
+        var childResults = new List<Dictionary<string, CollectedAsset>>();
         foreach (var child in rule.Children)
         {
             childResults.Add(await EvaluateRuleAsync(child, immichSettings, dateFilter, locationFilter, ct));
@@ -79,7 +103,7 @@ public class PlaylistAssetCollector(IImmichClient immich)
 
         if (childResults.Count == 0)
         {
-            return new Dictionary<string, (ImmichAsset Asset, string? SourceLabel)>(StringComparer.Ordinal);
+            return new Dictionary<string, CollectedAsset>(StringComparer.Ordinal);
         }
 
         return rule.Operator switch
@@ -89,7 +113,7 @@ public class PlaylistAssetCollector(IImmichClient immich)
         };
     }
 
-    private async Task<Dictionary<string, (ImmichAsset Asset, string? SourceLabel)>> FetchConditionAssetsAsync(
+    private async Task<Dictionary<string, CollectedAsset>> FetchConditionAssetsAsync(
         AssetFilterRule rule,
         ImmichSettings immichSettings,
         DateFilter? dateFilter,
@@ -106,31 +130,55 @@ public class PlaylistAssetCollector(IImmichClient immich)
         return ToAssetDictionary(assets, sourceLabel);
     }
 
-    private async Task<Dictionary<string, ImmichAsset>> FetchMemoriesAssetsAsync(
+    private async Task<Dictionary<string, CollectedAsset>> FetchMemoriesAssetsAsync(
+        Profile profile,
         ImmichSettings immichSettings,
         CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
-        var today = DateOnly.FromDateTime(DateTime.Now);
+        var today = MemoryDate.For(profile, _time.GetUtcNow());
+        var includeBirthdays = profile.Memories.IncludeBirthdays &&
+            (await immich.GetSearchApiCapabilitiesAsync(immichSettings))?.BirthdayMemories == true;
+        if (!profile.HasOnThisDaySource() && !includeBirthdays)
+        {
+            return new(StringComparer.Ordinal);
+        }
         var memories = await immich.GetMemoriesAsync(immichSettings, today);
-        var results = new Dictionary<string, ImmichAsset>(StringComparer.Ordinal);
+        var results = new Dictionary<string, CollectedAsset>(StringComparer.Ordinal);
 
         foreach (var memory in memories)
         {
+            var birthday = string.Equals(memory.Type, "birthday", StringComparison.Ordinal);
+            // Empty types are tolerated for older servers; unknown future types stay opt-in.
+            if (birthday ? !includeBirthdays : !profile.HasOnThisDaySource() ||
+                (memory.Type != "on_this_day" && !string.IsNullOrEmpty(memory.Type)))
+            {
+                continue;
+            }
+            var caption = birthday && profile.Memories.ShowBirthdayCaptions
+                ? (string.IsNullOrWhiteSpace(memory.Data?.PersonName) ? "Birthday memories" : $"{memory.Data.PersonName.Trim()}'s birthday")
+                : null;
             foreach (var asset in memory.Assets)
             {
-                results.TryAdd(asset.Id, asset);
+                if (results.TryGetValue(asset.Id, out var existing))
+                {
+                    results[asset.Id] = existing with { BirthdayCaption = existing.BirthdayCaption ?? caption };
+                }
+                else
+                {
+                    results.Add(asset.Id, new(asset, null, caption));
+                }
             }
         }
 
         return results;
     }
 
-    private static Dictionary<string, (ImmichAsset Asset, string? SourceLabel)> Union(
-        IEnumerable<Dictionary<string, (ImmichAsset Asset, string? SourceLabel)>> childResults)
+    private static Dictionary<string, CollectedAsset> Union(
+        IEnumerable<Dictionary<string, CollectedAsset>> childResults)
     {
-        var combined = new Dictionary<string, (ImmichAsset Asset, string? SourceLabel)>(StringComparer.Ordinal);
+        var combined = new Dictionary<string, CollectedAsset>(StringComparer.Ordinal);
 
         foreach (var child in childResults)
         {
@@ -143,14 +191,14 @@ public class PlaylistAssetCollector(IImmichClient immich)
         return combined;
     }
 
-    private static Dictionary<string, (ImmichAsset Asset, string? SourceLabel)> Intersect(
-        IReadOnlyList<Dictionary<string, (ImmichAsset Asset, string? SourceLabel)>> childResults)
+    private static Dictionary<string, CollectedAsset> Intersect(
+        IReadOnlyList<Dictionary<string, CollectedAsset>> childResults)
     {
-        var intersection = new Dictionary<string, (ImmichAsset Asset, string? SourceLabel)>(childResults[0], StringComparer.Ordinal);
+        var intersection = new Dictionary<string, CollectedAsset>(childResults[0], StringComparer.Ordinal);
 
         foreach (var key in intersection.Keys.ToList())
         {
-            var matchingEntries = new List<(ImmichAsset Asset, string? SourceLabel)> { intersection[key] };
+            var matchingEntries = new List<CollectedAsset> { intersection[key] };
             var missingFromChild = false;
 
             for (var i = 1; i < childResults.Count; i++)
@@ -172,28 +220,28 @@ public class PlaylistAssetCollector(IImmichClient immich)
 
             intersection[key] = matchingEntries.Count == 1
                 ? matchingEntries[0]
-                : (matchingEntries[0].Asset, null);
+                : new CollectedAsset(matchingEntries[0].Asset, null);
         }
 
         return intersection;
     }
 
-    private static Dictionary<string, (ImmichAsset Asset, string? SourceLabel)> ToAssetDictionary(
+    private static Dictionary<string, CollectedAsset> ToAssetDictionary(
         IEnumerable<ImmichAsset> assets,
         string? sourceLabel)
     {
-        var results = new Dictionary<string, (ImmichAsset Asset, string? SourceLabel)>(StringComparer.Ordinal);
+        var results = new Dictionary<string, CollectedAsset>(StringComparer.Ordinal);
 
         foreach (var asset in assets)
         {
-            results.TryAdd(asset.Id, (asset, sourceLabel));
+            results.TryAdd(asset.Id, new(asset, sourceLabel));
         }
 
         return results;
     }
 
     private static void ApplyQualityFilter(
-        Dictionary<string, (ImmichAsset Asset, string? SourceLabel)> assets,
+        Dictionary<string, CollectedAsset> assets,
         QualitySettings quality)
     {
         if (quality.MinFileSizeKb is not > 0)

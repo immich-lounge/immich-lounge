@@ -12,6 +12,8 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 ## Unreleased
 
 - Start cached channel and screensaver photos in about five seconds plus image-loading time when the companion is unavailable.
+- Add birthday memories from Immich 3.3 or later, with optional captions. Choose birthdays, On This Day memories, or both.
+- Choose a time zone for memories and refresh them when the day changes. Profiles with only memories selected now show only those memories.
 
 - Added reusable schedules that switch between profiles at set times and days, with a fallback profile. Choose a fixed profile or a schedule on each Roku.
 

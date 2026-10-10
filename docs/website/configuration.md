@@ -78,6 +78,16 @@ Profiles with advanced content rules created through the API keep those rules wh
 
 When weather is enabled for a profile, you can choose whether the Roku shows temperatures in Celsius or Fahrenheit.
 
+### Memories
+
+In **Content Sources**, choose **Include On This Day memories**, **Include birthday memories**, or both. When memories are the only selected source, the playlist contains only those memories. With albums, people, or tags selected, memories are added to those photos. Location and minimum file size filters still apply; the profile's date filter applies to the regular sources, not added memories.
+
+Birthday memories require **Immich 3.3 or later**, a birth date set for the person in Immich, and matching photos from previous birthdays. Immich generates the selection and makes it available from three days before the birthday through the birthday itself. The birthday option is off by default and is unavailable if the companion cannot detect a supported server.
+
+Enable **Show birthday captions** to display the person's birthday alongside the photo date in either overlay style. The caption follows the overlay's visibility setting; an overlay style of **None** hides it. Album labels remain separate. Offline playlists keep the photos but omit birthday captions to avoid showing an outdated birthday message.
+
+Choose a **Memories time zone** to control which day's memories are requested. **Companion time zone** preserves the existing host-based date selection; containers often use UTC. The companion checks for a new day every 30 seconds and rebuilds memory playlists even when their normal refresh interval has not elapsed. The Roku picks up the result on its next playlist refresh. This setting does not change the Roku clock or a schedule's time zone.
+
 ### Zoom to fit
 
 In the profile's **Slideshow** settings, enable **Zoom to fit (landscape photos)** to fill the screen with landscape photos. This preserves the photo's proportions and crops the edges as needed. Portrait and square photos still show the whole image.

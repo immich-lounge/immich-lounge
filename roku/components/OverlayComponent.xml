@@ -15,6 +15,7 @@
     <field id="locale"          type="string"     value="en-US" />
     <!-- sourceLabel for this asset (from playlist entry) -->
     <field id="sourceLabel"     type="string"     value="" />
+    <field id="birthdayCaption" type="string"     value="" onChange="OnMetaChanged" />
   </interface>
   <children>
     <!-- Overlay text lines (bottom style) -->
