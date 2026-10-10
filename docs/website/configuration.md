@@ -37,6 +37,8 @@ A profile decides what to show and how to show it. You can create as many as you
 
 After changing a profile's content sources, **Preview Match Count** uses the new selection. Save the profile to apply it to the playlist when the Roku next refreshes it.
 
+Saving a profile or connection settings clears the affected companion playlists. Any build already using the previous settings is discarded; the next playlist request builds from the saved settings.
+
 Profiles with advanced content rules created through the API keep those rules when edited in the companion. Their album, people, and tag selectors are unavailable; edit the rules through the API. Memories and display settings can still be changed in the companion.
 
 ![Immich Lounge companion profiles page](./assets/screenshots/companion-profiles.png){ .doc-screenshot }
