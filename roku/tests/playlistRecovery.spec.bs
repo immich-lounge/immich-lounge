@@ -267,6 +267,38 @@ namespace tests
 
     @describe("Shuffle loops")
 
+    @it("Queued and completed tasks keep their slot until the callback consumes it")
+    function test_queuedBatchCannotBeReplaced()
+      for each control in ["", "STOP", "RUN", "DONE"]
+        ctx = m.makeContext(false)
+        ctx.profile = { id: "profile", slideshow: { shuffle: true } }
+        ctx.playlist = [{ id: "a" }, { id: "b" }]
+        ctx.totalPlaylistCount = 2
+        ctx.playlistIndex = 1
+        task = { control: control }
+        ctx.nextBatchTask = task
+        m.assertFalse(ShouldPrefetchNextPlaylistBatchForScene(ctx))
+        FetchNextPlaylistBatchForScene(ctx, false)
+        m.assertEqual(ctx.nextBatchTask, task)
+      end for
+    end function
+
+    @it("The wrap waits for a queued task even before RUN becomes visible")
+    function test_wrapWaitsForQueuedBatch()
+      ctx = m.makeContext(false)
+      ctx.profile = { id: "profile", slideshow: { shuffle: true } }
+      ctx.playlist = [{ id: "a" }, { id: "b" }]
+      ctx.totalPlaylistCount = 2
+      ctx.playlistIndex = 1
+      ctx.slideAssetCount = 1
+      ctx.nextBatchTask = { control: "STOP" }
+      AdvanceToNextForScene(ctx)
+      m.assertEqual(ctx.playlistIndex, 1)
+      m.assertEqual(ctx.slideLoads, 0)
+      m.assertEqual(ctx.slideTimer.control, "start")
+      m.assertTrue(ctx.waitingForNextBatchSwap)
+    end function
+
     @beforeEach
     private function setupShuffleMocks()
       m.setupPlaybackMocks()

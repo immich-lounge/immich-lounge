@@ -29,7 +29,7 @@ function ShouldPrefetchNextPlaylistBatchForScene(ctx as Object) as Boolean
     if PlaylistBatchRetryPendingForScene(ctx) then return false
     if ctx.waitingForNextBatchSwap then return false
     if ctx.pendingBatchAssets <> invalid then return false
-    if ctx.nextBatchTask <> invalid and ctx.nextBatchTask.control = "RUN" then return false
+    if ctx.nextBatchTask <> invalid then return false
     if ctx.playlist.Count() = 0 then return false
     if not HasNextPlaylistWindowForScene(ctx) then return false
 
@@ -47,7 +47,9 @@ sub FetchNextPlaylistBatchForScene(ctx as Object, isScreensaver as Boolean)
     if ctx.top.companionUrl = "" then return
     if not HasNextPlaylistWindowForScene(ctx) then return
     if ctx.pendingBatchAssets <> invalid then return
-    if ctx.nextBatchTask <> invalid and ctx.nextBatchTask.control = "RUN" then return
+    ' A newly queued Task has not reached RUN yet; a completed one may still
+    ' have a result callback waiting. Keep its slot until that callback clears it.
+    if ctx.nextBatchTask <> invalid then return
     task = CreateObject("roSGNode", "CompanionApiTask")
     task.baseUrl = ctx.top.companionUrl
     task.profileId = PlaybackProfileId(ctx.profile, ctx.top.profileId)

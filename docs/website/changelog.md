@@ -15,6 +15,8 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 - Choose All photos, Selected sources, or Memories only. Optionally show matching memories first without duplicates. Memories refresh and shuffled photos get a fresh order each day; the Roku waits for the current photo to finish and uses your latest saved profile. Existing profiles keep their selection until changed.
 
+- Fix a Roku timing issue that could delay a fresh shuffle after the last photo.
+
 - Add checksums and signed build provenance to Immich Lounge candidate downloads so maintainers can verify their source and integrity.
 
 - Add ARM64 companion images for 64-bit ARM hosts. Docker automatically selects the image for your host.

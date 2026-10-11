@@ -28,7 +28,7 @@ sub AdvanceToNextForScene(ctx as Object)
                 return
             end if
 
-            if ctx.nextBatchTask <> invalid and ctx.nextBatchTask.control = "RUN" then
+            if ctx.nextBatchTask <> invalid then
                 ' Avoid replaying the current batch head while the next window is still loading.
                 ctx.slideTimer.duration = 1
                 ctx.slideTimer.control = "start"
