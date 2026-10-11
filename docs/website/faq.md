@@ -15,6 +15,12 @@ Immich Lounge turns a Roku into a photo display for your immich library. The com
 
 ---
 
+## Which Immich versions are supported?
+
+Immich 3.1 or later is supported. Birthday memories require Immich 3.3 or later. Older versions may work but are not actively tested.
+
+---
+
 ## Do I need the companion service?
 
 Yes. The Roku app depends on the companion for setup, profile selection, and playlist building.

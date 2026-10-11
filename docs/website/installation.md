@@ -5,6 +5,8 @@ icon: material/docker
 
 # Installation
 
+Check the [requirements](./index.md#requirements) before installing. Immich Lounge supports Immich 3.1 or later; birthday memories require Immich 3.3 or later.
+
 ## Companion
 
 If you already run immich with Docker Compose, the simplest setup is to add one service to that existing compose file.

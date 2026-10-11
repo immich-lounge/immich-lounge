@@ -11,6 +11,8 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 ## Unreleased
 
+- Clarify that Immich 3.1 or later is supported. Birthday memories require Immich 3.3 or later; older versions may work but are not actively tested.
+
 - With **Shuffle** enabled, get a fresh photo order after each complete loop in both Roku apps. Each device shuffles independently.
 - Fixed late playlist refreshes moving playback back to an earlier group of photos.
 - Choose **Restart with fresh shuffle** from the channel settings menu to start a new order immediately. Reopening an app still resumes where it left off.
