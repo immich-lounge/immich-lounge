@@ -301,6 +301,98 @@ namespace tests
       end for
     end function
 
+    @it("Failed cycle requests replay cached photos and back off in both modes")
+    function test_offlineLoopRecovery()
+      for each mode in [false, true]
+        for each total in [2, 100]
+          ctx = m.makeContext(mode)
+          ctx.profile = { slideshow: { shuffle: true } }
+          ctx.totalPlaylistCount = total
+          ctx.playlist = [{ id: "a", type: "photo" }, { id: "b", type: "photo" }]
+          ctx.playlistIndex = 1
+          ctx.slideAssetCount = 1
+          ctx.waitingForNextBatchSwap = true
+          ctx.nextPlaylistOffset = 0
+          ctx.nextBatchTask = m.makeTask()
+          ctx.nextBatchTask.playlistResult = { ok: false }
+          OnNextBatchResultForScene(ctx)
+          m.assertTrue(PlaylistBatchRetryPendingForScene(ctx))
+          AdvanceToNextForScene(ctx)
+          m.assertEqual(ctx.playlistIndex, 0)
+          m.assertEqual(ctx.slideLoads, 1)
+          m.assertInvalid(ctx.nextBatchTask)
+          m.assertFalse(ctx.waitingForNextBatchSwap)
+          m.assertFalse(ShouldPrefetchNextPlaylistBatchForScene(ctx))
+          ctx.nextBatchRetryAt = 0
+          m.assertTrue(ShouldPrefetchNextPlaylistBatchForScene(ctx))
+        end for
+      end for
+    end function
+
+    @it("A deferred restart escapes load-failure recovery with the progress timer stopped")
+    function test_deferredRestartAfterFailure()
+      m.stubCall(HideLoadingIndicatorForScene, sub(context as object)
+      end sub)
+      ctx = m.makeContext(false)
+      ctx.playlist = [{ id: "broken-photo", type: "photo" }]
+      ctx.pendingRestartShuffle = true
+      ctx.isTransitioning = true
+      ctx.progressTimer.control = "stop"
+      ctx.consecutiveFails = PlaybackConsecutiveFailureThreshold()
+      ctx.layoutRetryTimer = { control: "stop" }
+      ctx.hasShownFirstFrame = true
+      OnRefreshPlaylistResultForScene(ctx, false)
+      HandleAssetLoadFailureForScene(ctx)
+      m.assertFalse(ctx.pendingRestartShuffle)
+      m.assertEqual(ctx.playlist[0].id, "new-photo")
+      m.assertEqual(ctx.slideLoads, 1)
+      m.assertEqual(ctx.consecutiveFails, 0)
+      m.assertInvalid(ctx.retryTimer)
+    end function
+
+    @it("Transition completion applies deferred restarts without a progress tick")
+    function test_deferredRestartOnTransitionComplete()
+      m.stubCall(BgSwapForScene, sub(context as object)
+        context.isTransitioning = false
+      end sub)
+      m.stubCall(StartActiveSlideMotionForScene, sub(context as object)
+      end sub)
+      ctx = m.makeContext(false)
+      ctx.playlist = [{ id: "old", type: "photo" }]
+      ctx.pendingRestartShuffle = true
+      ctx.isTransitioning = true
+      ctx.progressTimer.control = "stop"
+      ctx.persistentLayer = { visible: false }
+      ctx.pendingBgFromSlot = 0
+      ctx.pendingBgToSlot = 1
+      ctx.nextBgReady = true
+      ctx.bgTransitionStarted = false
+      OnRefreshPlaylistResultForScene(ctx, false)
+      OnTransitionCompleteForScene(ctx)
+      m.assertFalse(ctx.pendingRestartShuffle)
+      m.assertEqual(ctx.playlist[0].id, "new-photo")
+      m.assertEqual(ctx.slideLoads, 1)
+    end function
+
+    @it("Resume consumes a deferred restart and cancels an old recovery timer")
+    function test_deferredRestartOnResume()
+      ctx = m.makeContext(false)
+      ctx.playlist = [{ id: "old", type: "photo" }]
+      ctx.paused = true
+      ctx.pendingRestartShuffle = true
+      ctx.isTransitioning = true
+      oldRetry = m.makeTask()
+      oldRetry.control = "start"
+      ctx.retryTimer = oldRetry
+      OnRefreshPlaylistResultForScene(ctx, false)
+      ctx.isTransitioning = false
+      ResumeSlideshowForScene(ctx)
+      m.assertFalse(ctx.pendingRestartShuffle)
+      m.assertEqual(ctx.playlist[0].id, "new-photo")
+      m.assertEqual(ctx.slideLoads, 1)
+      m.assertEqual(oldRetry.control, "stop")
+      m.assertInvalid(ctx.retryTimer)
+    end function
     private function makeTask() as object
       return {
         playlistResult: { ok: true, assets: [{ id: "new-photo", type: "photo" }], offset: 0, nextOffset: 0, totalCount: 1, playlistVersion: "new" }

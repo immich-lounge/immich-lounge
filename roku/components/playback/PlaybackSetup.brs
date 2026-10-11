@@ -58,6 +58,7 @@ sub InitPlaybackSceneForScene(ctx as Object)
     ctx.pendingBatchPlaylistVersion = ""
     ctx.pendingNextPlaylistOffset = 0
     ctx.waitingForNextBatchSwap = false
+    ctx.nextBatchRetryAt = 0
     ctx.consecutiveFails = 0
     ctx.paused = false
     ctx.resumeNeedsSlideLoad = false
@@ -190,6 +191,7 @@ sub ApplyPlaylistFromTopForScene(ctx as Object)
     ctx.pendingBatchPlaylistVersion = ""
     ctx.pendingNextPlaylistOffset = 0
     ctx.waitingForNextBatchSwap = false
+    ctx.nextBatchRetryAt = 0
     PrepareStartupStatusForScene(ctx)
     ShowCurrentSlideForScene(ctx)
 end sub

@@ -35,6 +35,8 @@ sub AdvanceToNextForScene(ctx as Object)
             end if
         end if
 
+        ' Replaying the cached window is a new local loop, not a pending swap.
+        ctx.waitingForNextBatchSwap = false
         ctx.playlistIndex = 0
     else
         ctx.playlistIndex = NextPortraitSlideIndex(ctx.playlistIndex, ctx.playlist.Count(), ctx.slideAssetCount)

@@ -172,6 +172,7 @@ sub OnTransitionCompleteForScene(ctx as Object)
         BgSwapForScene(ctx)
     end if
     StartActiveSlideMotionForScene(ctx)
+    ApplyDeferredShuffleRestartForScene(ctx)
 end sub
 
 sub BgSwapForScene(ctx as Object)

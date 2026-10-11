@@ -195,6 +195,13 @@ sub OnRefreshPlaylistResultForScene(ctx as Object, isScreensaver as Boolean)
         PersistActivePlaylistCacheForScene(ctx, isScreensaver)
         if (hadNoPhotos or restartShuffle) and ctx.playlist.Count() > 0 then
             if restartShuffle then
+                if ctx.retryTimer <> invalid then
+                    ctx.retryTimer.unobserveField("fire")
+                    ctx.retryTimer.control = "stop"
+                    ctx.retryTimer = invalid
+                end if
+                ctx.consecutiveFails = 0
+                ctx.nextBatchRetryAt = 0
                 ctx.slideTimer.control = "stop"
                 ctx.progressTimer.control = "stop"
                 ctx.progressBar.progress = 0
@@ -214,6 +221,7 @@ function ApplyDeferredShuffleRestartForScene(ctx as Object) as Boolean
     if ctx.isTransitioning = true or ctx.paused then return false
     ctx.refreshPlaylistTask = ctx.deferredRestartShuffleTask
     ctx.deferredRestartShuffleTask = invalid
+    ctx.nextBatchRetryAt = 0
     OnRefreshPlaylistResultForScene(ctx, ctx.top.isScreensaver)
     return true
 end function
@@ -256,6 +264,7 @@ sub RestartShuffleForScene(ctx as Object)
     end for
     ctx.pendingBatchAssets = invalid
     ctx.deferredRestartShuffleTask = invalid
+    ctx.nextBatchRetryAt = 0
     ctx.pendingBatchOffset = 0
     ctx.pendingBatchPlaylistVersion = ""
     ctx.pendingNextPlaylistOffset = 0

@@ -1,5 +1,10 @@
 ' PlaybackBatching.brs - shared slideshow playlist window helpers
 
+function PlaylistBatchRetryPendingForScene(ctx as Object) as Boolean
+    if ctx.nextBatchRetryAt = invalid then return false
+    return UpTime(0) < ctx.nextBatchRetryAt
+end function
+
 function ShufflePlaylistLoopsForScene(ctx as Object) as Boolean
     if ctx.totalPlaylistCount <= 1 then return false
     if ctx.profile = invalid then return false
@@ -21,6 +26,7 @@ end function
 
 function ShouldPrefetchNextPlaylistBatchForScene(ctx as Object) as Boolean
     if ctx.pendingRestartShuffle = true then return false
+    if PlaylistBatchRetryPendingForScene(ctx) then return false
     if ctx.waitingForNextBatchSwap then return false
     if ctx.pendingBatchAssets <> invalid then return false
     if ctx.nextBatchTask <> invalid and ctx.nextBatchTask.control = "RUN" then return false
@@ -37,6 +43,7 @@ end function
 
 sub FetchNextPlaylistBatchForScene(ctx as Object, isScreensaver as Boolean)
     if ctx.pendingRestartShuffle = true then return
+    if PlaylistBatchRetryPendingForScene(ctx) then return
     if ctx.top.companionUrl = "" then return
     if not HasNextPlaylistWindowForScene(ctx) then return
     if ctx.pendingBatchAssets <> invalid then return
@@ -64,11 +71,13 @@ sub OnNextBatchResultForScene(ctx as Object)
     task.unobserveField("playlistResult")
     result = task.playlistResult
     if result = invalid then
+        ctx.nextBatchRetryAt = UpTime(0) + PlaybackRetryDelaySeconds()
         LogDebug(PlaybackLogScope(ctx), "next batch task returned no playlist result")
         return
     end if
 
     if result.ok = true and result.assets.Count() > 0 then
+        ctx.nextBatchRetryAt = 0
         resultPlaylistVersion = NormalizePlaylistVersion(result.playlistVersion)
         currentPlaylistVersion = NormalizePlaylistVersion(ctx.playlistVersion)
         expectedPlaylistVersion = NormalizePlaylistVersion(task.playlistVersion)
@@ -96,6 +105,7 @@ sub OnNextBatchResultForScene(ctx as Object)
         ctx.pendingNextPlaylistOffset = result.nextOffset
         ctx.totalPlaylistCount = result.totalCount
     else
+        ctx.nextBatchRetryAt = UpTime(0) + PlaybackRetryDelaySeconds()
         LogDebug(PlaybackLogScope(ctx), "next batch fetch failed or empty; continuing current batch")
     end if
 end sub
