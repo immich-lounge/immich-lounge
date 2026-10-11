@@ -43,8 +43,6 @@ Saving a profile or connection settings clears the affected companion playlists.
 
 Choose **Any (OR)** to include photos matching any selected album, person, or tag, or **All (AND)** to require every selection. With no sources or memories selected, use the whole library; with only memories enabled, show only those memories. **Exclude people (NOT)** removes photos containing any excluded person from all results, including added memories. For example, select your children with **Any**, then exclude yourself to show either child without you.
 
-**Only photos with people** keeps photos with at least one visible detected face, regardless of who it is or whether they have a name. It applies to all selected sources, shared albums, and memories. Face detection must have processed the photos. This option requires Immich 3.2 or later and is off by default; disable it before using an older server.
-
 Memories are added to the source results; they do not have to match the selected sources. Location restrictions, **Only photos with people**, and people exclusions still apply to memories.
 
 Profiles with nested content rules created through the API keep those rules when edited in the companion. Their source selectors are unavailable; edit the nested rules through the API. Excluded people, memories, and display settings can still be changed in the companion.
@@ -77,9 +75,25 @@ The companion collects all matching result pages and removes duplicates. With **
 
 | Area | What it covers |
 |---|---|
-| Content | Albums, people, tags, memories, and optional date and location filtering |
+| Content | Albums, people, tags, memories, and optional face, date, and location filtering |
 | Playback | Interval, shuffle, transition effect, photo motion, and playlist refresh interval |
 | Display | Overlay style and fields, background effect, date and time formatting, weather, and image quality |
+
+### Only photos with people
+
+To show photos containing anyone, without choosing specific people:
+
+1. Open a profile and choose **Photos → Filters**.
+2. Enable **Only photos with people**. Leave the People selector empty unless you also want to match particular people.
+3. Choose **Preview selection** to check the matching count and sample photos, then save the profile.
+
+This narrows the existing selection to photos with at least one visible detected face. Named and unnamed people count. It applies to the whole library or selected albums, people, and tags, including shared albums and added memories. Date, location, file-size filters, and people exclusions still apply. It works with both the Roku channel and screensaver.
+
+Immich must have processed face detection for each photo. People seen from behind, distant faces, or other missed detections may be skipped. A selection with no detected faces produces an empty playlist.
+
+Requires **Immich 3.2 or later** and is off by default. The companion enables the option after detecting a supported server. If detection is unavailable, use **Save & Test Connection** on the Connection page and reopen the profile. If you change to an older server, turn this filter off; the companion reports an error rather than silently including photos without people.
+
+For API-managed profiles, set the optional top-level field `"onlyPhotosWithPeople": true`. Omitting it or setting it to `false` keeps the existing unfiltered behavior. No specific person IDs or person names are required.
 
 ## Shared albums and people
 
@@ -105,7 +119,7 @@ When weather is enabled for a profile, you can choose whether the Roku shows tem
 
 ### Memories
 
-In **Content Sources**, choose **Include On This Day memories**, **Include birthday memories**, or both. When memories are the only selected source, the playlist contains only those memories. With albums, people, or tags selected, memories are added to those photos. Location and minimum file size filters still apply; the profile's date filter applies to the regular sources, not added memories.
+In **Content Sources**, choose **Include On This Day memories**, **Include birthday memories**, or both. When memories are the only selected source, the playlist contains only those memories. With albums, people, or tags selected, memories are added to those photos. The people-only option, people exclusions, location, and minimum file size filters still apply; the profile's date filter applies to the regular sources, not added memories.
 
 Birthday memories require **Immich 3.3 or later**, a birth date set for the person in Immich, and matching photos from previous birthdays. Immich generates the selection and makes it available from three days before the birthday through the birthday itself. The birthday option is off by default and is unavailable if the companion cannot detect a supported server.
 
