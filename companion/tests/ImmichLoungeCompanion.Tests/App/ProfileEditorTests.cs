@@ -7,6 +7,11 @@ using ImmichLoungeCompanion.Immich.Dtos;
 using ImmichLoungeCompanion.Models;
 using ImmichLoungeCompanion.Tests.Helpers;
 using NSubstitute;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.JSInterop;
 
 namespace ImmichLoungeCompanion.Tests.App;
 
@@ -369,6 +374,99 @@ public sealed class ProfileEditorTests : IDisposable
         typeof(ImmichLoungeCompanion.Components.Shared.LocationFilterPicker).GetProperty("Value")!.SetValue(picker, location);
         await (Task)typeof(ImmichLoungeCompanion.Components.Shared.LocationFilterPicker).GetMethod("NotifyChangedAsync", PrivateInstance)!.Invoke(picker, null)!;
         Assert.IsFalse((bool)typeof(ProfileEditor).GetProperty("IsDirty", PrivateInstance)!.GetValue(editor)!);
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task SuccessfulSave_PreservesNewerEditsAndOnlyClosesWhenUnchanged(bool editDuringSave)
+    {
+        using var client = _factory.CreateClient();
+        var (editor, profile) = await LoadEditorAsync(client, new Profile { Id = "slow-save", Name = "Save" });
+        using var handler = new PendingPreviewHandler();
+        using var pendingClient = new HttpClient(handler) { BaseAddress = new Uri("http://test") };
+        var factory = Substitute.For<IHttpClientFactory>();
+        factory.CreateClient("local").Returns(pendingClient);
+        var navigation = new EditorTestNavigation();
+        typeof(ProfileEditor).GetProperty("HttpFactory", PrivateInstance)!.SetValue(editor, factory);
+        typeof(ProfileEditor).GetProperty("Nav", PrivateInstance)!.SetValue(editor, navigation);
+        profile.Slideshow.IntervalSeconds = 12;
+        var saving = (Task)typeof(ProfileEditor).GetMethod("SaveAsync", PrivateInstance)!.Invoke(editor, null)!;
+        await handler.Started.Task;
+        if (editDuringSave) { profile.Slideshow.IntervalSeconds = 31; }
+        handler.Response.SetResult(new HttpResponseMessage(HttpStatusCode.OK));
+        await saving;
+        Assert.AreEqual(editDuringSave ? 31 : 12, ((Profile)GetField(editor, "_profile")!).Slideshow.IntervalSeconds);
+        Assert.AreEqual(editDuringSave, (bool)typeof(ProfileEditor).GetProperty("IsDirty", PrivateInstance)!.GetValue(editor)!);
+        Assert.AreEqual(!editDuringSave, navigation.Navigated);
+        Assert.IsFalse((bool)GetField(editor, "_saving")!);
+        if (editDuringSave)
+        {
+            Assert.AreSame(profile, GetField(editor, "_profile"));
+            Assert.IsNotNull(GetField(editor, "_saveMessage"));
+            factory.CreateClient("local").Returns(client);
+            await (Task)typeof(ProfileEditor).GetMethod("SaveAsync", PrivateInstance)!.Invoke(editor, null)!;
+            Assert.IsTrue(navigation.Navigated);
+            Assert.IsNull(GetField(editor, "_saveMessage"));
+            Assert.AreEqual(31, (await client.GetFromJsonAsync<Profile>("/api/profiles/slow-save"))!.Slideshow.IntervalSeconds);
+        }
+    }
+
+    [TestMethod]
+    public async Task PreparedPayload_DoesNotShareEditableLocation()
+    {
+        using var client = _factory.CreateClient();
+        var (editor, _) = await LoadEditorAsync(client, new Profile { Id = "location-copy", Name = "Copy" });
+        var location = (LocationFilter)GetField(editor, "_locationFilter")!;
+        location.City = "First city";
+        var payload = BuildPayload(editor);
+        location.City = "Newer city";
+        Assert.AreEqual("First city", payload.LocationFilter!.City);
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task MatchSelector_IsShownOnlyForEditableRules(bool advanced)
+    {
+        using var client = _factory.CreateClient();
+        var profile = new Profile { Id = "render-rules", Name = "Rules" };
+        if (advanced)
+        {
+            profile.AssetFilter = new() { Kind = AssetFilterRuleKind.Group, Operator = AssetFilterGroupOperator.Or,
+                Children = [new() { Kind = AssetFilterRuleKind.Condition, Type = AssetFilterConditionType.Album, Id = "a" },
+                    new() { Kind = AssetFilterRuleKind.Group, Operator = AssetFilterGroupOperator.And,
+                        Children = [new() { Kind = AssetFilterRuleKind.Condition, Type = AssetFilterConditionType.Person, Id = "p" }] }] };
+        }
+        Assert.AreEqual(HttpStatusCode.Created, (await client.PostAsJsonAsync("/api/profiles", profile)).StatusCode);
+        var factory = Substitute.For<IHttpClientFactory>();
+        factory.CreateClient("local").Returns(client);
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton(factory);
+        services.AddSingleton<NavigationManager>(new EditorTestNavigation());
+        services.AddSingleton(Substitute.For<IJSRuntime>());
+        services.AddSingleton(Substitute.For<ImmichLoungeCompanion.Services.IDisplayDateFormattingService>());
+        await using var provider = services.BuildServiceProvider();
+        await using var renderer = new HtmlRenderer(provider, provider.GetRequiredService<ILoggerFactory>());
+        var html = await renderer.Dispatcher.InvokeAsync(async () =>
+        {
+            var output = await renderer.RenderComponentAsync<ProfileEditor>(ParameterView.FromDictionary(new Dictionary<string, object?> { ["Id"] = profile.Id }));
+            return output.ToHtmlString();
+        });
+        Assert.AreEqual(!advanced, html.Contains("Match selected sources:"));
+        if (advanced) { Assert.IsTrue(html.Contains("advanced content rules")); }
+    }
+
+    private sealed class EditorTestNavigation : NavigationManager
+    {
+        public bool Navigated { get; private set; }
+        public EditorTestNavigation() { Initialize("http://test/", "http://test/profiles/slow-save/edit"); }
+        protected override void NavigateToCore(string uri, bool forceLoad)
+        {
+            Navigated = true;
+            Uri = ToAbsoluteUri(uri).ToString();
+        }
     }
 
     private sealed class FailureHandler(string failure) : HttpMessageHandler

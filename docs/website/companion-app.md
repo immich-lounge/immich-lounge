@@ -58,7 +58,9 @@ Memories and less-used settings sit in expandable options within each view. Choo
 
 Choose **Preview selection** to see the matching count and up to six sample photos without saving. Changing photo criteria clears the old preview. If a thumbnail cannot load, the count remains available.
 
-The save bar shows whether changes are pending. Choose **Save changes** to keep them, or **Close** to return to Profiles. Leaving with unsaved changes requires confirmation. If the companion restarts and your session expires, choose **Reload page** in the recovery dialog; unsaved edits may be lost.
+Profiles with advanced API-defined rules keep those rules; source matching controls are available only for editable album, people, and tag selections.
+
+The save bar shows whether changes are pending. Choose **Save changes** to keep them, or **Close** to return to Profiles. If you keep editing while a save is pending, the editor stays open and keeps the newer edits marked as unsaved. Save again to keep those edits. Leaving with unsaved changes requires confirmation. If the companion restarts and your session expires, choose **Reload page** in the recovery dialog; unsaved edits may be lost.
 
 You can edit display settings before connecting Immich. Follow **Configure connection** to enable source selection and match previews. If sources cannot load, check the connection and use the picker’s retry button; the rest of the editor remains usable.
 

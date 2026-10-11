@@ -106,6 +106,8 @@ else
             }
             </div></details>
             <details class="advanced-settings"><summary>Filters</summary><div class="advanced-settings-body">
+                @if (_canEditContentSources)
+                {
                 <label>
                     Match selected sources:
                     <select @bind="_sourceMatchOperator" @bind:after="CriteriaChanged">
@@ -114,6 +116,7 @@ else
                     </select>
                 </label>
                 <p class="section-intro">Any combines selections. Every requires all selections to match.</p>
+                }
             @if (_connectionConfigured)
             {
                 <label>Exclude people (NOT):</label>
@@ -358,6 +361,7 @@ else
     <div class="editor-footer">
         <div><span class="save-state @(IsDirty ? "pending" : "")" role="status">@(IsDirty ? "Unsaved changes" : "All changes saved")</span>
             @if (_saveError != null) { <p class="error" role="alert">@_saveError</p> }
+            @if (_saveMessage != null) { <p class="field-hint" role="status">@_saveMessage</p> }
         </div>
         <div class="btn-row">
             <button @onclick='() => Nav.NavigateTo("/profiles")' class="btn btn-secondary">Close</button>
@@ -427,7 +431,7 @@ else
     private List<PreviewAsset> _previewAssets = [];
     private HashSet<string> _failedPreviewIds = [];
     private bool PreviewIsCurrent => _previewSnapshot == BuildPreviewSnapshot();
-    private string? _saveError;
+    private string? _saveError, _saveMessage;
     private string? _initialSnapshot;
     private string? _loadedProfileId;
     private bool _skipNavigationPrompt;
@@ -461,6 +465,7 @@ else
         _editorView = "Photos";
         _sourcePickerType = "album";
         _saveError = null;
+        _saveMessage = null;
         _locationQuery = "";
         _locationResults = [];
         _locationSearching = false;
@@ -635,14 +640,25 @@ else
     private async Task SaveAsync()
     {
         if (_profile == null || _saving) return;
+        var savingProfile = _profile;
+        var savingSnapshot = BuildSnapshot();
         _saving = true;
         _saveError = null;
+        _saveMessage = null;
         try
         {
             var payload = BuildProfilePayloadForRequest();
             using var response = await Http.PutAsJsonAsync($"/api/profiles/{Id}", payload);
             if (response.IsSuccessStatusCode)
             {
+                // A slow save must not overwrite edits made after its request started.
+                if (!ReferenceEquals(_profile, savingProfile)) return;
+                if (BuildSnapshot() != savingSnapshot)
+                {
+                    _initialSnapshot = savingSnapshot;
+                    _saveMessage = "Saved earlier changes. Save again to keep your latest edits.";
+                    return;
+                }
                 _profile = payload;
                 _initialSnapshot = BuildSnapshot();
                 _skipNavigationPrompt = true;
@@ -723,7 +739,7 @@ else
         var clone = JsonSerializer.Deserialize<ImmichLoungeCompanion.Models.Profile>(
             JsonSerializer.Serialize(_profile)) ?? new();
 
-        clone.LocationFilter = _locationFilter;
+        clone.LocationFilter = new() { Country = _locationFilter.Country, State = _locationFilter.State, City = _locationFilter.City };
         clone.MediaTypes.Videos = false;
         clone.MediaTypes.LivePhotos = false;
         clone.MediaTypes.VideoAudio = false;
