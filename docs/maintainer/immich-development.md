@@ -4,34 +4,38 @@ Run dedicated local Immich servers for Immich Lounge development. This setup doe
 
 | Target | Version | URL | Docker project |
 |---|---|---|---|
-| Development | 3.2.0 | http://127.0.0.1:13283 | immich-lounge-dev-immich |
+| Development | 3.3.1 | http://127.0.0.1:13283 | immich-lounge-dev-immich |
+| Compatibility | 3.2.0 | http://127.0.0.1:14283 | immich-lounge-compat-v32 |
 | Legacy | 3.1.0 | http://127.0.0.1:12283 | immich-lounge-compat-v31 |
 
 Requires Docker Desktop in Linux-container mode, Git, PowerShell 7, and the companion's .NET SDK. Start Docker Desktop, then run from the repository or a worktree:
 
 ```powershell
-# Start both servers and prepare their isolated fixture accounts.
+# Start all three servers and prepare their isolated fixture accounts.
 pwsh -NoProfile -File companion/tests/LiveImmich/Run-LiveImmich.ps1 -Action Start
 
 # Start only the persistent development server.
 pwsh -NoProfile -File companion/tests/LiveImmich/Run-LiveImmich.ps1 -Action Start -Target Development
+
+# Start the separate 3.2 compatibility server.
+pwsh -NoProfile -File companion/tests/LiveImmich/Run-LiveImmich.ps1 -Action Start -Target Compatibility32
 
 # Inspect containers or stop the legacy server without removing data.
 pwsh -NoProfile -File companion/tests/LiveImmich/Run-LiveImmich.ps1 -Action Status
 pwsh -NoProfile -File companion/tests/LiveImmich/Run-LiveImmich.ps1 -Action Stop -Target Legacy
 ```
 
-The first start downloads pinned images. The development server restarts with Docker unless explicitly stopped; the legacy server remains opt-in. Services bind only to loopback, so these URLs are for this computer, not Roku setup. Machine learning and reverse geocoding are disabled for deterministic fixtures.
+The first start downloads pinned images. The development server restarts with Docker unless explicitly stopped; the compatibility servers remain opt-in. Services bind only to loopback, so these URLs are for this computer, not Roku setup. Machine learning and reverse geocoding are disabled for deterministic fixtures.
 
 ## Accounts and local state
 
 Persistent state belongs in **the primary checkout's `.local/immich/`**, even when the script runs in a worktree. This directory is gitignored and survives removal of feature worktrees. It is not disposable build output.
 
 - Open `ACCOUNTS.local.md` for URLs, account roles, and links to credentials. It contains no duplicated passwords or keys.
-- `v32-account.json` and `v31-account.json` contain each server's administrator login, fixture login, restricted fixture API key, and fixture IDs.
-- `v32.env` and `v31.env` contain database passwords, image versions, container prefixes, and volume names.
+- `development-account.json`, `compat-v32-account.json`, and `v31-account.json` contain each server's administrator login, fixture login, restricted fixture API key, and fixture IDs.
+- `development.env`, `compat-v32.env`, and `v31.env` contain database passwords, image versions, container prefixes, and volume names.
 - `compose.yml` and `immich.json` hold the mounted runtime configuration copied from source.
-- `v31-fixtures.sql` and `v32-fixtures.sql` contain generated metadata updates for the four known fixture assets.
+- `development-fixtures.sql`, `compat-v32-fixtures.sql`, and `v31-fixtures.sql` contain generated metadata updates for the four known fixture assets.
 
 Sign in as **development@immich-lounge.test** using `adminEmail` and `adminPassword` from the relevant account JSON. Use this administrator account for manual photos and experiments.
 
@@ -47,10 +51,15 @@ When `.local/immich/` does not exist, the script moves the primary checkout's fo
 
 ## Containers and persistence
 
-Development containers are `immich-lounge-dev-immich`, `immich-lounge-dev-postgres`, and `immich-lounge-dev-redis`. Legacy containers use the prefix `immich-lounge-compat-v31` with the same suffixes.
+Development containers are `immich-lounge-dev-immich`, `immich-lounge-dev-postgres`, and `immich-lounge-dev-redis`. The 3.2 compatibility containers use `immich-lounge-compat-v32`. Legacy containers use the prefix `immich-lounge-compat-v31` with the same suffixes.
 
 Library and database data live in separate named external Docker volumes. `IMMICH_VOLUME_PREFIX` preserves existing volume names, including the original `immich-lounge-search-v31/v32_library/database` names. New setups use the Docker project name as their volume prefix. Container/project renames and worktree removal do not delete data.
 
 Keep `.local/immich/` alongside those volumes: the files hold the credentials and IDs needed to reuse the database. Stopping containers preserves both. Never delete these volumes as routine build-output cleanup, point them at a production library, or downgrade a database across major versions.
 
 There is no automatic reset command. A deliberate reset must remove a stack's generated state and its matching volumes together before reseeding.
+## Updating the development version
+
+Pin the latest stable release explicitly in the runner, review its release notes, and back up the development database, library, and local state before starting the upgraded stack. Start/Test reconciles its image version in the existing environment file while preserving database credentials and volume names. Never downgrade its database for compatibility testing; use the separate 3.2 and 3.1 stacks.
+
+On the first start with the new runner, the historical `v32.env` and `v32-account.json` development files are copied to `development.env` and `development-account.json`. Existing development volumes and fixture IDs stay unchanged. The old files are retained for recovery; new 3.2 compatibility state uses the separate `compat-v32` prefix.

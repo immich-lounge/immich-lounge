@@ -11,20 +11,26 @@ using ImmichLoungeCompanion.Models;
 using ImmichLoungeCompanion.Playlist;
 using Microsoft.Extensions.Logging.Abstractions;
 
-if (args.Length != 3 || args[0] is not ("seed" or "test") || args[1] is not ("v31" or "v32"))
+if (args.Length != 3 || args[0] is not ("seed" or "test") || args[1] is not ("v31" or "compat-v32" or "development"))
 {
-    throw new ArgumentException("Usage: LiveImmich <seed|test> <v31|v32> <output-directory>");
+    throw new ArgumentException("Usage: LiveImmich <seed|test> <v31|compat-v32|development> <output-directory>");
 }
 var stack = args[1];
-var baseUrl = stack == "v31" ? "http://127.0.0.1:12283" : "http://127.0.0.1:13283";
-var expectedMinor = stack == "v31" ? 1 : 2;
+var baseUrl = stack switch
+{
+    "v31" => "http://127.0.0.1:12283",
+    "compat-v32" => "http://127.0.0.1:14283",
+    _ => "http://127.0.0.1:13283"
+};
+var expectedMinor = stack == "v31" ? 1 : stack == "compat-v32" ? 2 : 3;
+var expectedPatch = stack == "development" ? 1 : 0;
 var output = Path.GetFullPath(args[2]);
 Directory.CreateDirectory(output);
 var statePath = Path.Combine(output, $"{stack}-account.json");
 var jsonOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web) { WriteIndented = true };
 using var http = new HttpClient { BaseAddress = new Uri(baseUrl), Timeout = TimeSpan.FromSeconds(30) };
 var version = await http.GetFromJsonAsync<JsonElement>("/api/server/version");
-Require(version.GetProperty("major").GetInt32() == 3 && version.GetProperty("minor").GetInt32() == expectedMinor,
+Require(version.GetProperty("major").GetInt32() == 3 && version.GetProperty("minor").GetInt32() == expectedMinor && version.GetProperty("patch").GetInt32() == expectedPatch,
     "This runner only writes to the dedicated pinned local test servers.");
 var state = File.Exists(statePath)
     ? JsonSerializer.Deserialize<TestState>(await File.ReadAllTextAsync(statePath), jsonOptions)!
@@ -135,11 +141,11 @@ if (args[0] == "seed")
 Require(state.Assets.Count == 4 && state.ApiKey.Length > 0, "Run seed and fixture SQL first.");
 var checks = new List<string>();
 await RunChecks(forceLegacy: false);
-if (stack == "v32")
+if (expectedMinor >= 2)
 {
-    await RunChecks(forceLegacy: true); // real 3.2 legacy API with only version detection unavailable
+    await RunChecks(forceLegacy: true); // Legacy fallback on current servers with only version detection unavailable
 }
-var report = new { server = baseUrl, version = $"3.{expectedMinor}.0", passed = checks.Count, checks, testedAtUtc = DateTime.UtcNow };
+var report = new { server = baseUrl, version = $"3.{expectedMinor}.{expectedPatch}", passed = checks.Count, checks, testedAtUtc = DateTime.UtcNow };
 await File.WriteAllTextAsync(Path.Combine(output, $"{stack}-results.json"), JsonSerializer.Serialize(report, jsonOptions));
 Console.WriteLine($"{stack}: PASS — {checks.Count} live checks.");
 
