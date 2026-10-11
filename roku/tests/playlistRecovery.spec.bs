@@ -1,5 +1,5 @@
 namespace tests
-  @suite("Empty Playlist Recovery")
+  @suite("Playlist Refresh and Shuffle")
   class PlaylistRecoveryTests extends rooibos.BaseTestSuite
 
     @describe("Refresh and resume")
@@ -77,6 +77,42 @@ namespace tests
       m.assertEqual(ctx.slideLoads, 1)
     end function
 
+    @it("A refresh started before a batch swap cannot restore the previous window")
+    function test_lateRefreshAfterBatchSwap()
+      for each mode in [false, true]
+        ctx = m.makeContext(mode)
+        ctx.profile = { id: "profile" }
+        ctx.playlist = [{ id: "next-window-photo", type: "photo" }]
+        ctx.playlistOffset = 50
+        ctx.playlistVersion = "v1"
+        ctx.refreshRetries = 0
+        ctx.refreshPlaylistTask.profileId = "profile"
+        ctx.refreshPlaylistTask.playlistOffset = 0
+        ctx.refreshPlaylistTask.playlistVersion = "v1"
+        ctx.refreshPlaylistTask.playlistResult = { ok: true, assets: [{ id: "old-window-photo", type: "photo" }], offset: 0, nextOffset: 50, totalCount: 100, playlistVersion: "v1" }
+        OnRefreshPlaylistResultForScene(ctx, mode)
+        m.assertEqual(ctx.playlist[0].id, "next-window-photo")
+        m.assertEqual(ctx.playlistOffset, 50)
+        m.assertEqual(ctx.refreshRetries, 1)
+      end for
+    end function
+
+    @it("A refresh from the previous loop cannot restore an old shuffle cycle")
+    function test_lateRefreshAfterLoopSwap()
+      ctx = m.makeContext(false)
+      ctx.profile = { id: "profile" }
+      ctx.playlist = [{ id: "current-cycle-photo", type: "photo" }]
+      ctx.playlistVersion = "v1~222"
+      ctx.refreshRetries = 0
+      ctx.refreshPlaylistTask.profileId = "profile"
+      ctx.refreshPlaylistTask.playlistOffset = 0
+      ctx.refreshPlaylistTask.playlistVersion = "v1~111"
+      OnRefreshPlaylistResultForScene(ctx, false)
+      m.assertEqual(ctx.playlist[0].id, "current-cycle-photo")
+      m.assertEqual(ctx.playlistVersion, "v1~222")
+      m.assertEqual(ctx.refreshRetries, 1)
+    end function
+
     @beforeEach
     private function setupPlaybackMocks()
       m.stubCall(ShowCurrentSlideForScene, sub(context as object)
@@ -84,8 +120,279 @@ namespace tests
       end sub)
       m.stubCall(PersistActivePlaylistCacheForScene, sub(context as object, mode as boolean)
       end sub)
+      m.stubCall(PersistActivePlaylistCacheForMode, sub(playlist as object, mode as boolean, url as string, profileId as string)
+      end sub)
+      m.stubCall(TriggerPlaylistRefreshForScene, sub(context as object, mode as boolean)
+        context.refreshRetries++
+      end sub)
     end function
 
+    @describe("Shuffle loops")
+
+    @beforeEach
+    private function setupShuffleMocks()
+      m.setupPlaybackMocks()
+      m.stubCall(StopMotionAnimationForScene, sub(context as object)
+      end sub)
+    end function
+
+    @it("An explicit shuffle restart starts at the new head instead of preserving the old photo")
+    function test_explicitRestart()
+      ctx = m.makeContext(false)
+      ctx.playlist = [{ id: "new-photo" }, { id: "old" }]
+      ctx.playlistIndex = 1
+      ctx.playlistOffset = 50
+      ctx.pendingRestartShuffle = true
+      ctx.refreshPlaylistTask.playlistResult.assets = [{ id: "new-head" }, { id: "old" }]
+      OnRefreshPlaylistResultForScene(ctx, false)
+      m.assertEqual(ctx.playlistIndex, 0)
+      m.assertEqual(ctx.playlistOffset, 0)
+      m.assertEqual(ctx.playlist[0].id, "new-head")
+      m.assertEqual(ctx.slideLoads, 1)
+      m.assertFalse(ctx.pendingRestartShuffle)
+      m.assertEqual(ctx.slideTimer.control, "stop")
+      m.assertEqual(ctx.progressTimer.control, "stop")
+    end function
+
+    @it("A failed shuffle restart preserves playback and reports the failure")
+    function test_failedRestart()
+      ctx = m.makeContext(false)
+      ctx.playlist = [{ id: "old" }]
+      ctx.playlistOffset = 50
+      ctx.playlistVersion = "v1~111"
+      ctx.pendingRestartShuffle = true
+      ctx.toast = { message: "" }
+      ctx.refreshPlaylistTask.playlistResult = { ok: false }
+      OnRefreshPlaylistResultForScene(ctx, false)
+      m.assertEqual(ctx.playlist[0].id, "old")
+      m.assertEqual(ctx.playlistOffset, 50)
+      m.assertEqual(ctx.playlistVersion, "v1~111")
+      m.assertEqual(ctx.slideLoads, 0)
+      m.assertTrue(ctx.toast.message <> "")
+    end function
+
+    @it("Shuffle restart waits for an active transition to finish")
+    function test_restartDuringTransition()
+      ctx = m.makeContext(false)
+      ctx.playlist = [{ id: "old" }]
+      ctx.pendingRestartShuffle = true
+      ctx.isTransitioning = true
+      OnRefreshPlaylistResultForScene(ctx, false)
+      m.assertEqual(ctx.playlist[0].id, "old")
+      m.assertTrue(ctx.pendingRestartShuffle)
+      m.assertFalse(ApplyDeferredShuffleRestartForScene(ctx))
+      ctx.isTransitioning = false
+      m.assertTrue(ApplyDeferredShuffleRestartForScene(ctx))
+      m.assertEqual(ctx.playlist[0].id, "new-photo")
+      m.assertEqual(ctx.slideLoads, 1)
+    end function
+
+    @it("Settings shows the explicit restart only for shuffled playlists with multiple photos")
+    function test_restartMenu()
+      ctx = m.makeContext(false)
+      ctx.profile = { slideshow: { shuffle: true } }
+      ctx.totalPlaylistCount = 2
+      buttons = SettingsDialogButtonsForScene(ctx)
+      m.assertEqual(buttons[1], "Restart with fresh shuffle")
+      ctx.profile.slideshow.shuffle = false
+      buttons = SettingsDialogButtonsForScene(ctx)
+      m.assertEqual(buttons[1], "Choose Profile or Schedule")
+      ctx.profile.slideshow.shuffle = true
+      ctx.totalPlaylistCount = 1
+      buttons = SettingsDialogButtonsForScene(ctx)
+      m.assertEqual(buttons.Count(), 6)
+    end function
+
+    @it("Adding the restart action does not change the other menu commands")
+    function test_menuRouting()
+      m.stubCall(ResumeAfterDialogForScene, sub(context as object)
+      end sub)
+      for each shuffle in [false, true]
+        ctx = m.makeContext(false)
+        ctx.profile = { slideshow: { shuffle: shuffle } }
+        ctx.totalPlaylistCount = 2
+        buttons = SettingsDialogButtonsForScene(ctx)
+        index = 1
+        if shuffle then index = 2
+        ctx.top.dialog = { buttons: buttons, buttonSelected: index }
+        OnSettingsButtonForScene(ctx)
+        m.assertTrue(ctx.top.requestChangeProfile)
+      end for
+    end function
+
+    @it("Restart cancels old requests without clearing the current playlist")
+    function test_restartCancelsRequests()
+      m.stubCall(BeginProfilePlaylistRefreshForScene, sub(context as object, profile as object, mode as boolean, restart as boolean)
+        context.restartRequested = restart
+      end sub)
+      ctx = m.makeContext(false)
+      ctx.profile = { slideshow: { shuffle: true } }
+      ctx.totalPlaylistCount = 100
+      ctx.playlist = [{ id: "current" }]
+      ctx.playlistOffset = 50
+      ctx.nextPlaylistOffset = 100
+      oldTask = ctx.refreshPlaylistTask
+      ctx.nextBatchTask = m.makeTask()
+      oldBatch = ctx.nextBatchTask
+      ctx.pendingBatchAssets = [{ id: "obsolete" }]
+      RestartShuffleForScene(ctx)
+      m.assertEqual(oldTask.control, "STOP")
+      m.assertEqual(oldBatch.control, "STOP")
+      m.assertInvalid(ctx.pendingBatchAssets)
+      m.assertEqual(ctx.playlist[0].id, "current")
+      m.assertEqual(ctx.playlistOffset, 50)
+      m.assertEqual(ctx.nextPlaylistOffset, 100)
+      m.assertTrue(ctx.restartRequested)
+    end function
+
+    @it("Small shuffled playlists fetch another loop while ordered and single-photo lists stay local")
+    function test_smallPlaylistLoops()
+      ctx = m.makeContext(false)
+      ctx.profile = { slideshow: { shuffle: true } }
+      ctx.playlist = [{ id: "a" }, { id: "b" }]
+      ctx.totalPlaylistCount = 2
+      m.assertTrue(HasNextPlaylistWindowForScene(ctx))
+      ctx.profile.slideshow.shuffle = false
+      m.assertFalse(HasNextPlaylistWindowForScene(ctx))
+      ctx.profile.slideshow.shuffle = true
+      ctx.playlist = [{ id: "a" }]
+      ctx.totalPlaylistCount = 1
+      m.assertFalse(HasNextPlaylistWindowForScene(ctx))
+    end function
+
+    @it("Only the wrap to offset zero starts a fresh shuffle cycle")
+    function test_loopVersion()
+      ctx = m.makeContext(false)
+      ctx.profile = { slideshow: { shuffle: true } }
+      ctx.totalPlaylistCount = 123
+      ctx.playlistVersion = "v1~12345"
+      ctx.nextPlaylistOffset = 50
+      m.assertEqual(NextPlaylistVersionForScene(ctx), "v1~12345")
+      ctx.nextPlaylistOffset = 0
+      version = NextPlaylistVersionForScene(ctx)
+      m.assertEqual(PlaylistContentVersion(version), "v1")
+      m.assertTrue(version <> "v1~12345")
+      parts = version.Split("~")
+      m.assertEqual(parts.Count(), 2)
+      m.assertTrue(Val(parts[1]) > 0)
+      ctx.profile.slideshow.shuffle = false
+      m.assertEqual(NextPlaylistVersionForScene(ctx), "v1~12345")
+    end function
+
+    @it("The next loop's version is accepted and swapped only after the current window ends")
+    function test_acceptNewLoop()
+      for each mode in [false, true]
+        ctx = m.makeContext(mode)
+        ctx.playlist = [{ id: "old-cycle-photo" }]
+        ctx.playlistVersion = "v1~111"
+        ctx.waitingForNextBatchSwap = false
+        ctx.nextBatchTask = m.makeTask()
+        ctx.nextBatchTask.playlistVersion = "v1~222"
+        ctx.nextBatchTask.playlistResult = { ok: true, assets: [{ id: "new-cycle-photo" }], offset: 0, nextOffset: 50, totalCount: 100, playlistVersion: "v1~222" }
+        OnNextBatchResultForScene(ctx)
+        m.assertEqual(ctx.playlist[0].id, "old-cycle-photo")
+        m.assertFalse(ApplyPendingBatchSwapState(ctx, mode))
+        ctx.waitingForNextBatchSwap = true
+        m.assertTrue(ApplyPendingBatchSwapState(ctx, mode))
+        m.assertEqual(ctx.playlist[0].id, "new-cycle-photo")
+        m.assertEqual(ctx.playlistVersion, "v1~222")
+        m.assertEqual(ctx.playlistIndex, 0)
+        m.assertEqual(ctx.nextPlaylistOffset, 50)
+      end for
+    end function
+
+    @it("Failed cycle requests replay cached photos and back off in both modes")
+    function test_offlineLoopRecovery()
+      for each mode in [false, true]
+        for each total in [2, 100]
+          ctx = m.makeContext(mode)
+          ctx.profile = { slideshow: { shuffle: true } }
+          ctx.totalPlaylistCount = total
+          ctx.playlist = [{ id: "a", type: "photo" }, { id: "b", type: "photo" }]
+          ctx.playlistIndex = 1
+          ctx.slideAssetCount = 1
+          ctx.waitingForNextBatchSwap = true
+          ctx.nextPlaylistOffset = 0
+          ctx.nextBatchTask = m.makeTask()
+          ctx.nextBatchTask.playlistResult = { ok: false }
+          OnNextBatchResultForScene(ctx)
+          m.assertTrue(PlaylistBatchRetryPendingForScene(ctx))
+          AdvanceToNextForScene(ctx)
+          m.assertEqual(ctx.playlistIndex, 0)
+          m.assertEqual(ctx.slideLoads, 1)
+          m.assertInvalid(ctx.nextBatchTask)
+          m.assertFalse(ctx.waitingForNextBatchSwap)
+          m.assertFalse(ShouldPrefetchNextPlaylistBatchForScene(ctx))
+          ctx.nextBatchRetryAt = 0
+          m.assertTrue(ShouldPrefetchNextPlaylistBatchForScene(ctx))
+        end for
+      end for
+    end function
+
+    @it("A deferred restart escapes load-failure recovery with the progress timer stopped")
+    function test_deferredRestartAfterFailure()
+      m.stubCall(HideLoadingIndicatorForScene, sub(context as object)
+      end sub)
+      ctx = m.makeContext(false)
+      ctx.playlist = [{ id: "broken-photo", type: "photo" }]
+      ctx.pendingRestartShuffle = true
+      ctx.isTransitioning = true
+      ctx.progressTimer.control = "stop"
+      ctx.consecutiveFails = PlaybackConsecutiveFailureThreshold()
+      ctx.layoutRetryTimer = { control: "stop" }
+      ctx.hasShownFirstFrame = true
+      OnRefreshPlaylistResultForScene(ctx, false)
+      HandleAssetLoadFailureForScene(ctx)
+      m.assertFalse(ctx.pendingRestartShuffle)
+      m.assertEqual(ctx.playlist[0].id, "new-photo")
+      m.assertEqual(ctx.slideLoads, 1)
+      m.assertEqual(ctx.consecutiveFails, 0)
+      m.assertInvalid(ctx.retryTimer)
+    end function
+
+    @it("Transition completion applies deferred restarts without a progress tick")
+    function test_deferredRestartOnTransitionComplete()
+      m.stubCall(BgSwapForScene, sub(context as object)
+        context.isTransitioning = false
+      end sub)
+      m.stubCall(StartActiveSlideMotionForScene, sub(context as object)
+      end sub)
+      ctx = m.makeContext(false)
+      ctx.playlist = [{ id: "old", type: "photo" }]
+      ctx.pendingRestartShuffle = true
+      ctx.isTransitioning = true
+      ctx.progressTimer.control = "stop"
+      ctx.persistentLayer = { visible: false }
+      ctx.pendingBgFromSlot = 0
+      ctx.pendingBgToSlot = 1
+      ctx.nextBgReady = true
+      ctx.bgTransitionStarted = false
+      OnRefreshPlaylistResultForScene(ctx, false)
+      OnTransitionCompleteForScene(ctx)
+      m.assertFalse(ctx.pendingRestartShuffle)
+      m.assertEqual(ctx.playlist[0].id, "new-photo")
+      m.assertEqual(ctx.slideLoads, 1)
+    end function
+
+    @it("Resume consumes a deferred restart and cancels an old recovery timer")
+    function test_deferredRestartOnResume()
+      ctx = m.makeContext(false)
+      ctx.playlist = [{ id: "old", type: "photo" }]
+      ctx.paused = true
+      ctx.pendingRestartShuffle = true
+      ctx.isTransitioning = true
+      oldRetry = m.makeTask()
+      oldRetry.control = "start"
+      ctx.retryTimer = oldRetry
+      OnRefreshPlaylistResultForScene(ctx, false)
+      ctx.isTransitioning = false
+      ResumeSlideshowForScene(ctx)
+      m.assertFalse(ctx.pendingRestartShuffle)
+      m.assertEqual(ctx.playlist[0].id, "new-photo")
+      m.assertEqual(ctx.slideLoads, 1)
+      m.assertEqual(oldRetry.control, "stop")
+      m.assertInvalid(ctx.retryTimer)
+    end function
     private function makeTask() as object
       return {
         playlistResult: { ok: true, assets: [{ id: "new-photo", type: "photo" }], offset: 0, nextOffset: 0, totalCount: 1, playlistVersion: "new" }
@@ -99,6 +406,7 @@ namespace tests
         top: {
           isScreensaver: mode
           profileId: "profile"
+          companionUrl: "http://companion:4383"
           emptyGroup: { visible: true }
           findNode: function(id as string) as dynamic
             return m.emptyGroup
@@ -115,6 +423,9 @@ namespace tests
         paused: false
         resumeNeedsSlideLoad: false
         slideLoads: 0
+        slideTimer: { control: "start" }
+        progressTimer: { control: "start" }
+        progressBar: { progress: 0.5 }
       }
     end function
   end class

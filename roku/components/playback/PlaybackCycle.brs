@@ -70,6 +70,7 @@ end sub
 
 sub OnProgressTickForScene(ctx as Object)
     if ctx.paused then return
+    if ApplyDeferredShuffleRestartForScene(ctx) then return
     elapsed = UpTime(0) - ctx.slideStartTime
     progress = elapsed / ctx.slideDuration
     if progress > 1.0 then progress = 1.0

@@ -12,6 +12,8 @@ sub InitPlaybackSceneForScene(ctx as Object)
     ctx.portraitPairs = {}
     ctx.currentPairAssetId = ""
     ctx.pendingRefreshProfile = invalid
+    ctx.pendingRestartShuffle = false
+    ctx.deferredRestartShuffleTask = invalid
     ctx.pendingScheduledProfile = invalid
     ctx.pendingScheduledPlaylist = invalid
     ctx.pendingScheduledAt = 0
@@ -56,6 +58,7 @@ sub InitPlaybackSceneForScene(ctx as Object)
     ctx.pendingBatchPlaylistVersion = ""
     ctx.pendingNextPlaylistOffset = 0
     ctx.waitingForNextBatchSwap = false
+    ctx.nextBatchRetryAt = 0
     ctx.consecutiveFails = 0
     ctx.paused = false
     ctx.resumeNeedsSlideLoad = false
@@ -188,6 +191,7 @@ sub ApplyPlaylistFromTopForScene(ctx as Object)
     ctx.pendingBatchPlaylistVersion = ""
     ctx.pendingNextPlaylistOffset = 0
     ctx.waitingForNextBatchSwap = false
+    ctx.nextBatchRetryAt = 0
     PrepareStartupStatusForScene(ctx)
     ShowCurrentSlideForScene(ctx)
 end sub

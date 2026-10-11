@@ -74,6 +74,7 @@ Press `*` during playback in the channel to open the settings dialog.
 | Action | What it does |
 |---|---|
 | `Refresh Now` | Re-fetches the current profile and playlist immediately. |
+| `Restart with fresh shuffle` | Starts a new randomized loop from the beginning. Shown when **Shuffle** is enabled and there is more than one photo. Requires the companion to be reachable. |
 | `Choose Profile or Schedule` | Keeps the companion URL and lets you pick a fixed profile or a named schedule for channel mode. Selecting a fixed profile stops following a schedule. |
 | `Change Companion` | Switches the Roku to a different companion host. |
 | `Clear Cache` | Removes cached profile and playlist data for the current mode. |
@@ -82,6 +83,8 @@ Press `*` during playback in the channel to open the settings dialog.
 <p class="doc-caption">The Roku settings dialog is available from the <code>*</code> button during channel playback.</p>
 
 The Roku also checks the active profile configuration about every 5 minutes and applies display, clock, and weather changes without replacing the current playlist. Use **Refresh Now** when you intentionally want to re-fetch both the profile and playlist immediately.
+
+Closing and reopening a Roku app resumes its saved photo and shuffle loop. Each mode saves its position separately. Use **Restart with fresh shuffle** in the channel when you want a new order immediately; it does not restart another device or the screensaver's saved loop. If the request fails, the current playlist and saved position are kept.
 
 If an empty playlist gains photos, playback starts when the next playlist refresh finds them. A paused channel waits until you resume. This also works when a previously playing playlist becomes empty and later gains photos again.
 

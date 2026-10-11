@@ -238,6 +238,7 @@ end sub
 
 sub ResumeSlideshowForScene(ctx as Object)
     ctx.paused = false
+    if ApplyDeferredShuffleRestartForScene(ctx) then return
     if ctx.playlist.Count() > 0 then
         if ctx.resumeNeedsSlideLoad = true then
             ctx.resumeNeedsSlideLoad = false
