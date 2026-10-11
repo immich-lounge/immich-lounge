@@ -275,6 +275,7 @@ namespace tests
         ctx.playlist = [{ id: "a" }, { id: "b" }]
         ctx.totalPlaylistCount = 2
         ctx.playlistIndex = 1
+        ctx.waitingForNextBatchSwap = false
         task = { control: control }
         ctx.nextBatchTask = task
         m.assertFalse(ShouldPrefetchNextPlaylistBatchForScene(ctx))
@@ -291,6 +292,7 @@ namespace tests
       ctx.totalPlaylistCount = 2
       ctx.playlistIndex = 1
       ctx.slideAssetCount = 1
+      ctx.waitingForNextBatchSwap = false
       ctx.nextBatchTask = { control: "STOP" }
       AdvanceToNextForScene(ctx)
       m.assertEqual(ctx.playlistIndex, 1)
