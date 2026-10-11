@@ -2,8 +2,8 @@
 param(
     [ValidateSet('Start', 'Test', 'Stop', 'Status')]
     [string] $Action = 'Test',
-    [ValidateSet('Both', 'Development', 'Legacy')]
-    [string] $Target = 'Both'
+    [ValidateSet('All', 'Both', 'Development', 'Compatibility32', 'Legacy')]
+    [string] $Target = 'All'
 )
 $ErrorActionPreference = 'Stop'
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
@@ -16,8 +16,9 @@ $compose = Join-Path $output 'compose.yml'
 $project = Join-Path $PSScriptRoot 'LiveImmich.csproj'
 $stacks = @(
     @{ Name = 'v31'; Project = 'immich-lounge-compat-v31'; ContainerPrefix = 'immich-lounge-compat-v31'; Version = 'v3.1.0'; Port = 12283; Restart = 'no' },
-    @{ Name = 'v32'; Project = 'immich-lounge-dev-immich'; ContainerPrefix = 'immich-lounge-dev'; Version = 'v3.2.0'; Port = 13283; Restart = 'unless-stopped' }
-) | Where-Object { $Target -eq 'Both' -or ($Target -eq 'Development' -and $_.Name -eq 'v32') -or ($Target -eq 'Legacy' -and $_.Name -eq 'v31') }
+    @{ Name = 'compat-v32'; Project = 'immich-lounge-compat-v32'; ContainerPrefix = 'immich-lounge-compat-v32'; Version = 'v3.2.0'; Port = 14283; Restart = 'no' },
+    @{ Name = 'development'; Project = 'immich-lounge-dev-immich'; ContainerPrefix = 'immich-lounge-dev'; Version = 'v3.3.1'; Port = 13283; Restart = 'unless-stopped' }
+) | Where-Object { $Target -in 'All', 'Both' -or ($Target -eq 'Development' -and $_.Name -eq 'development') -or ($Target -eq 'Compatibility32' -and $_.Name -eq 'compat-v32') -or ($Target -eq 'Legacy' -and $_.Name -eq 'v31') }
 
 docker info --format '{{.ServerVersion}}' | Out-Null
 if ($LASTEXITCODE -ne 0) { throw 'Start Docker Desktop, then rerun this script.' }
@@ -33,6 +34,14 @@ if (!(Test-Path -LiteralPath $output) -and (Test-Path -LiteralPath $legacyOutput
     Move-Item -LiteralPath $legacyOutput -Destination $output
 }
 New-Item -ItemType Directory -Force -Path $output | Out-Null
+# Keep the development volume and credential identities stable across version upgrades.
+if (!(Test-Path -LiteralPath (Join-Path $output 'development.env')) -and
+    (Test-Path -LiteralPath (Join-Path $output 'v32.env'))) {
+    Copy-Item -LiteralPath (Join-Path $output 'v32.env') -Destination (Join-Path $output 'development.env')
+    if (Test-Path -LiteralPath (Join-Path $output 'v32-account.json')) {
+        Copy-Item -LiteralPath (Join-Path $output 'v32-account.json') -Destination (Join-Path $output 'development-account.json')
+    }
+}
 # Also ignore state while this setup branch has not yet merged into the primary checkout.
 [IO.File]::WriteAllText((Join-Path $output '.gitignore'), "*`n")
 if ($Action -in 'Start', 'Test') {
@@ -48,7 +57,8 @@ Generated local guide. Account passwords and API keys stay in the JSON files bel
 
 | Instance | URL | Docker project | Account file |
 |---|---|---|---|
-| Development (3.2) | http://127.0.0.1:13283 | immich-lounge-dev-immich | [v32-account.json](v32-account.json) |
+| Development (3.3.1) | http://127.0.0.1:13283 | immich-lounge-dev-immich | [development-account.json](development-account.json) |
+| Compatibility (3.2) | http://127.0.0.1:14283 | immich-lounge-compat-v32 | [compat-v32-account.json](compat-v32-account.json) |
 | Legacy compatibility (3.1) | http://127.0.0.1:12283 | immich-lounge-compat-v31 | [v31-account.json](v31-account.json) |
 
 ## Which account to use
@@ -60,6 +70,8 @@ Generated local guide. Account passwords and API keys stay in the JSON files bel
 ## Container names
 
 Development: immich-lounge-dev-immich, immich-lounge-dev-postgres, immich-lounge-dev-redis.
+
+Compatibility 3.2: immich-lounge-compat-v32-immich, immich-lounge-compat-v32-postgres, immich-lounge-compat-v32-redis.
 
 Legacy: immich-lounge-compat-v31-immich, immich-lounge-compat-v31-postgres, immich-lounge-compat-v31-redis.
 
@@ -83,6 +95,7 @@ foreach ($stack in $stacks) {
         $configPath = (Join-Path $output 'immich.json').Replace('\', '/')
         $environment = [IO.File]::ReadAllText($envFile)
         $environment = [regex]::Replace($environment, '(?m)^IMMICH_CONFIG_PATH=.*$', "IMMICH_CONFIG_PATH=$configPath")
+        $environment = [regex]::Replace($environment, '(?m)^IMMICH_VERSION=.*$', "IMMICH_VERSION=$($stack.Version)")
         [IO.File]::WriteAllText($envFile, $environment)
     }
     $composeArgs = @('compose', '-p', $stack.Project, '--env-file', $envFile, '-f', $compose)
@@ -116,7 +129,7 @@ foreach ($stack in $stacks) {
         if ([DateTime]::UtcNow -ge $deadline) { throw "Timed out waiting for $($stack.Name). Inspect docker compose logs." }
         Start-Sleep -Seconds 2
     }
-    # Fixed project names, ports, and new volumes: no real-library connection settings are accepted.
+    # Dedicated project names, ports, and pinned versions: no real-library connection settings are accepted.
     dotnet run --project $project --configuration Release --no-build -- seed $stack.Name $output
     if ($LASTEXITCODE -ne 0) { throw "Could not seed $($stack.Name)." }
     $sqlPath = Join-Path $output "$($stack.Name)-fixtures.sql"
