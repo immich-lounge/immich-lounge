@@ -1,12 +1,23 @@
 # Release Checklist
 
+## Prepare the candidate
+
+- Create a release branch from current `master`; keep unrelated checkout changes separate.
+- Update both Roku manifests and the companion project version together. For 1.1.0, Roku uses `major_version=1`, `minor_version=1`, and `build_version=0000`.
+- Move released entries into dated sections in both changelogs and keep their links intact.
+- Run companion Release tests, Roku script tests, both builds/lints/static analyses, the physical-device suite, and the docs build.
+- Run the Release workflow on the candidate branch with `release_name=v1.1.0` to build reviewable artifacts. This workflow does not publish a GitHub release or update the stable Docker tag.
+- Prepare a draft GitHub release with notes, artifact checksums, and the exact candidate commit. Roku build ZIPs are unsigned; Store packaging/signing is a separate step.
+
 ## GitHub
 
-- Push `master`
+- Merge the reviewed release PR into `master` and verify its exact commit.
 - Confirm CI passes
 - Confirm Pages deploy passes
 - Confirm the docs site renders correctly
-- Confirm the GHCR image publishes and can be pulled
+- Confirm the GHCR `edge` and commit-tagged image publishes and can be pulled.
+- Run the Release workflow on the merged commit and replace draft assets if its source commit changed.
+- Publish the draft release only after validation. Promote the companion to `latest` using Publish Docker Image with `publish_latest=true` on the verified commit.
 
 ## Companion
 

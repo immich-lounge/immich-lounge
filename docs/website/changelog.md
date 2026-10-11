@@ -11,6 +11,11 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 ## Unreleased
 
+## 1.1.0 — 2026-10-11
+
+- Companion and Roku apps version 1.1.0.
+- A simpler companion editor groups Photos, Playback, and Appearance settings, with sample photos when previewing your selection.
+
 - Clarify that Immich 3.1 or later is supported. Birthday memories require Immich 3.3 or later; older versions may work but are not actively tested.
 
 - With **Shuffle** enabled, get a fresh photo order after each complete loop in both Roku apps. Each device shuffles independently.

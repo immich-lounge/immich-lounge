@@ -6,6 +6,11 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+## 1.1.0 — 2026-10-11
+
+- Set companion assembly/package version to `1.1.0` and both Roku manifests to `1.1.0000`.
+- Reorganize the companion editor into Photos, Playback, and Appearance, add bounded thumbnail samples to selection previews, and preserve pending-save edits and advanced matching rules.
+
 - Document Immich 3.1 as the minimum supported version, with Immich 3.3 required for birthday memories. Retain legacy API compatibility; older versions may work but are not actively tested.
 
 - Reshuffle at each Roku playlist loop using a device-selected seed carried in the playlist version. Keep windows and resume deterministic within a cycle without mutating the shared companion cache, including playlists shorter than 50 entries.
