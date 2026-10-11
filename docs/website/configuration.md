@@ -121,6 +121,8 @@ When weather is enabled for a profile, you can choose whether the Roku shows tem
 
 ### Memories
 
+If a playlist has regular photos and its memory request temporarily fails, the companion logs a warning and continues with the regular photos until the next refresh. Memory-only profiles retain their existing cache on failure. Permission errors and people-exclusion failures remain errors.
+
 Under **Memories**, enable **Include On This Day memories**, **Include birthday memories**, or both. **Memories only** shows just those memories. With **All photos** or **Selected sources**, matching memories stay within your selection. Enable **Prioritize memories** to show them first, followed by the remaining photos without duplicates. If there are no matching memories today, the regular selection still plays.
 
 The **Only photos with people** option, people exclusions, location, and minimum file size filters apply to memories too. Explicit photo sources also apply the date filter to memories; older profiles retain the behavior described above.

@@ -6,6 +6,8 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+- Allow playlists with regular sources to rebuild when optional memory retrieval times out or returns a transient network/server error. Log a warning; retain errors for memory-only profiles, permission failures, exclusions, and caller cancellation.
+
 - Add `slideshow.dateOrder` (`newestFirst` or `oldestFirst`) for unshuffled playlists. Expose Photo order when Shuffle is off and retain newest-first ordering for existing profiles.
 - Add opt-in `onlyPhotosWithPeople` profile filtering using Immich 3.2+ `hasPeople`, including shared album scopes and memories. Gate the editor by detected capability, preserve existing profiles, and reject unsupported filtering instead of dropping the predicate.
 
