@@ -84,7 +84,7 @@ end function
 
 function FetchStartupPlaylist(companionUrl as String, profileId as String, isScreensaver as Boolean, port as Object, logScope as String, loadingScene = invalid as Dynamic, profile = invalid as Dynamic) as Object
     resumeState = LoadResumeState(isScreensaver, profileId, companionUrl)
-    resumeOffset = ResolveResumePlaylistOffset(resumeState)
+    resumeOffset = ResolveStartupPlaylistOffset(profile, resumeState)
     resumePlaylistVersion = ResolveResumePlaylistVersion(resumeState)
     cachedPlaylist = LoadCachedPlaylistForMode(isScreensaver, companionUrl, profileId)
     playbackId = PlaybackProfileId(profile, profileId)
@@ -135,6 +135,11 @@ function FetchStartupPlaylist(companionUrl as String, profileId as String, isScr
                 if result.playlistVersion <> "" and resumePlaylistVersion <> "" and result.playlistVersion <> resumePlaylistVersion then
                     startPlaylistIndex = ResolvePlaylistIndexAfterRefresh(playlist, ValueOrDefault(resumeState.assetId, ""), 0)
                 end if
+                if NormalizePlaylistVersion(result.memoryDay) <> "" then
+                    previousMemoryDay = ""
+                    if resumeState <> invalid then previousMemoryDay = NormalizePlaylistVersion(resumeState.memoryDay)
+                    if result.memoryDay <> previousMemoryDay then startPlaylistIndex = 0
+                end if
                 return {
                     status: "live"
                     playlist: playlist
@@ -175,4 +180,14 @@ function FetchStartupPlaylist(companionUrl as String, profileId as String, isScr
             return { status: "unavailable" }
         end if
     end while
+end function
+
+function ResolveStartupPlaylistOffset(profile as Dynamic, resumeState as Dynamic) as Integer
+    offset = ResolveResumePlaylistOffset(resumeState)
+    if not UsesDailyMemories(profile) then return offset
+    if resumeState = invalid then return 0
+    ' Older packages saved an offset but no memory day. Fetch the whole playlist
+    ' head on the first live startup; cached offline fallback retains its window.
+    if NormalizePlaylistVersion(resumeState.memoryDay) = "" then return 0
+    return offset
 end function

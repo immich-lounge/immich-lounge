@@ -154,6 +154,7 @@ else if (_profiles.Count == 0 && _actionError == null)
                 id = _newId,
                 name = _newName,
                 contentSources = Array.Empty<object>(),
+                photoSource = "all",
                 mediaTypes = new { photos = true, videos = false, videoAudio = false, livePhotos = false },
                 slideshow = new { intervalSeconds = 10, shuffle = true, transitionEffect = "fade", photoMotion = "none", refreshIntervalMinutes = 60 },
                 display = new { formatSource = "roku", overlayStyle = "bottom", backgroundEffect = "blur", overlayFields = new[] { "date", "location", "album", "people" }, overlayBehavior = "always", overlayFadeSeconds = 5, clockAlwaysVisible = true, clockFormat = "HH:mm", weatherUnit = "celsius", showTimer = false, showDate = true, dateFormat = "d MMMM yyyy", locale = "en-US" },

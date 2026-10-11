@@ -20,21 +20,25 @@ public class PeoplePresenceFilterTests
     private static AssetFilterRule Condition(AssetFilterConditionType type, string id) => new() { Kind = AssetFilterRuleKind.Condition, Type = type, Id = id, Label = id };
 
     [TestMethod]
-    public async Task WholeLibraryFiltersByAnyFaceWithoutSelectingPersonIds()
+    [DataRow(null)]
+    [DataRow("all")]
+    public async Task WholeLibraryFiltersByAnyFaceWithoutSelectingPersonIds(string? source)
     {
         var client = SupportedClient();
         client.SearchAssetsAllPagesAsync(Settings, Arg.Any<SearchAssetsRequest>()).Returns(call =>
             call.Arg<SearchAssetsRequest>().HasPeople ? Photos("unnamed-face") : Photos("unnamed-face", "landscape"));
-        var result = await new PlaylistAssetCollector(client).CollectAsync(new() { OnlyPhotosWithPeople = true }, Settings);
+        var result = await new PlaylistAssetCollector(client).CollectAsync(new() { PhotoSource = source, OnlyPhotosWithPeople = true }, Settings);
         CollectionAssert.AreEquivalent(new[] { "unnamed-face" }, result.Keys.ToArray());
         await client.Received(1).SearchAssetsAllPagesAsync(Settings, Arg.Is<SearchAssetsRequest>(r =>
             r.HasPeople && r.Type == "IMAGE" && r.PersonIds == null && r.AlbumIds == null));
     }
 
     [TestMethod]
-    [DataRow(AssetFilterGroupOperator.And)]
-    [DataRow(AssetFilterGroupOperator.Or)]
-    public async Task NestedSourcesPreserveFacePredicateAndSharedAlbumScopes(AssetFilterGroupOperator op)
+    [DataRow(AssetFilterGroupOperator.And, null)]
+    [DataRow(AssetFilterGroupOperator.Or, null)]
+    [DataRow(AssetFilterGroupOperator.And, "selected")]
+    [DataRow(AssetFilterGroupOperator.Or, "selected")]
+    public async Task NestedSourcesPreserveFacePredicateAndSharedAlbumScopes(AssetFilterGroupOperator op, string? source)
     {
         var client = SupportedClient();
         var requests = new List<SearchAssetsRequest>();
@@ -49,6 +53,7 @@ public class PeoplePresenceFilterTests
         });
         var result = await new PlaylistAssetCollector(client).CollectAsync(new()
         {
+            PhotoSource = source,
             OnlyPhotosWithPeople = true,
             DateFilter = new() { Type = "range", From = "2026-01-01" },
             LocationFilter = new() { Country = " Canada " },
@@ -98,17 +103,41 @@ public class PeoplePresenceFilterTests
     }
 
     [TestMethod]
-    public async Task MemoriesOnlyNeverAddsOtherFaceMatchesFromLibrary()
+    [DataRow(null)]
+    [DataRow("memories")]
+    public async Task MemoriesOnlyNeverAddsOtherFaceMatchesFromLibrary(string? source)
     {
         var client = SupportedClient();
         client.GetMemoriesAsync(Settings, Arg.Any<DateOnly>()).Returns([new() { Assets = Photos("memory-face", "landscape") }]);
         client.SearchAssetsAllPagesAsync(Settings, Arg.Any<SearchAssetsRequest>()).Returns(Photos("memory-face", "unrelated-face"));
         var result = await new PlaylistAssetCollector(client).CollectAsync(new()
         {
-            OnlyPhotosWithPeople = true, ContentSources = [new() { Type = "memories" }]
+            PhotoSource = source, OnlyPhotosWithPeople = true, ContentSources = [new() { Type = "memories" }]
         }, Settings);
         CollectionAssert.AreEquivalent(new[] { "memory-face" }, result.Keys.ToArray());
         await client.Received(1).SearchAssetsAllPagesAsync(Settings, Arg.Is<SearchAssetsRequest>(r => r.HasPeople && r.TakenAfter == null));
+    }
+
+    [TestMethod]
+    public async Task ExplicitMemoriesIntersectDateAndFacesWithoutUsingInactiveAlbumScopes()
+    {
+        var client = SupportedClient();
+        client.GetMemoriesAsync(Settings, Arg.Any<DateOnly>()).Returns([new() { Assets = Photos("matching", "outside-date", "landscape") }]);
+        client.SearchAssetsAllPagesAsync(Settings, Arg.Any<SearchAssetsRequest>()).Returns(call =>
+        {
+            var request = call.Arg<SearchAssetsRequest>();
+            Assert.IsTrue(request.HasPeople);
+            Assert.IsNull(request.AlbumIds, "Saved albums are inactive for explicit memories-only profiles.");
+            return request.TakenAfter == null ? Photos("matching", "outside-date") : Photos("matching", "unrelated");
+        });
+        var result = await new PlaylistAssetCollector(client).CollectAsync(new()
+        {
+            PhotoSource = "memories", OnlyPhotosWithPeople = true,
+            ContentSources = [new() { Type = "album", Id = "inactive" }, new() { Type = "memories" }],
+            DateFilter = new() { Type = "range", From = "2026-01-01" }
+        }, Settings);
+        CollectionAssert.AreEquivalent(new[] { "matching" }, result.Keys.ToArray());
+        Assert.IsTrue(result["matching"].IsMemory);
     }
 
     [TestMethod]

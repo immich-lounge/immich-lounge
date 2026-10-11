@@ -24,18 +24,23 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
             throw new NotSupportedException("Only photos with people requires Immich 3.2 or later. Disable this filter or upgrade Immich.");
         }
 
-        var albumIds = profile.AssetFilter == null
+        var source = profile.EffectivePhotoSource();
+        var albumIds = source != "selected" || profile.AssetFilter == null
             ? new List<string>()
             : FindAlbumIds(profile.AssetFilter).Distinct(StringComparer.Ordinal).ToList();
 
-        Dictionary<string, CollectedAsset> allAssets = profile.AssetFilter != null
+        Dictionary<string, CollectedAsset> allAssets = source == "selected" && profile.AssetFilter != null
             ? await EvaluateRuleAsync(profile.AssetFilter, immichSettings, profile.DateFilter, profile.LocationFilter, albumIds, profile.OnlyPhotosWithPeople, ct)
-            : profile.HasMemoriesSource()
-                ? new(StringComparer.Ordinal)
-                : await FetchAllAssetsAsync(immichSettings, profile.DateFilter, profile.LocationFilter, profile.OnlyPhotosWithPeople, ct);
+            : source == "all"
+                ? await FetchAllAssetsAsync(immichSettings, profile.DateFilter, profile.LocationFilter, profile.OnlyPhotosWithPeople, ct)
+                : new(StringComparer.Ordinal);
 
         if (profile.HasMemoriesSource())
         {
+            // Explicit sources constrain memories too. Legacy profiles retain their additive behavior.
+            var dateMatches = profile.PhotoSource != null && source == "memories" && profile.DateFilter != null
+                ? await FetchAllAssetsAsync(immichSettings, profile.DateFilter, profile.LocationFilter, profile.OnlyPhotosWithPeople, ct)
+                : null;
             var memoryAssets = await FetchMemoriesAssetsAsync(profile, immichSettings, ct);
             if (profile.OnlyPhotosWithPeople && memoryAssets.Count > 0)
             {
@@ -57,6 +62,14 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
             {
                 ct.ThrowIfCancellationRequested();
                 allAssets.TryGetValue(id, out var existing);
+                if (profile.PhotoSource != null && source != "memories" && existing == null)
+                {
+                    continue;
+                }
+                if (dateMatches != null && !dateMatches.ContainsKey(id))
+                {
+                    continue;
+                }
                 var candidate = existing?.Asset ?? asset.Asset;
                 // Memory responses may omit EXIF. Reuse search metadata or hydrate only
                 // when a filter needs it; never interpret an abbreviated response as no match.
@@ -69,11 +82,11 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
                     if (existing != null)
                     {
                         // Keep album context while attaching the birthday context once.
-                        allAssets[id] = existing with { Asset = candidate, BirthdayCaption = asset.BirthdayCaption ?? existing.BirthdayCaption };
+                        allAssets[id] = existing with { Asset = candidate, BirthdayCaption = asset.BirthdayCaption ?? existing.BirthdayCaption, IsMemory = true };
                     }
                     else
                     {
-                        allAssets.Add(id, asset with { Asset = candidate });
+                        allAssets.Add(id, asset with { Asset = candidate, IsMemory = true });
                     }
                 }
             }

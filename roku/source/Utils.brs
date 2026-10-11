@@ -126,6 +126,20 @@ function PlaybackProfileId(profile as Dynamic, selectedId as String) as String
     return selectedId
 end function
 
+function UsesDailyMemories(profile as Dynamic) as Boolean
+    if profile = invalid then return false
+    if profile.photoSource = invalid then return false
+    if profile.memories <> invalid then
+        if profile.memories.includeBirthdays = true then return true
+    end if
+    if profile.contentSources <> invalid then
+        for each source in profile.contentSources
+            if source.type = "memories" then return true
+        end for
+    end if
+    return false
+end function
+
 function IsScheduleSelectionId(selectionId as String) as Boolean
     return Left(selectionId, 9) = "schedule:"
 end function

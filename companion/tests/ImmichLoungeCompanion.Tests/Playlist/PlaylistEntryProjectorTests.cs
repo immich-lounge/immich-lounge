@@ -11,6 +11,30 @@ namespace ImmichLoungeCompanion.Tests.Playlist;
 public class PlaylistEntryProjectorTests
 {
     [TestMethod]
+    [DataRow("newestFirst", "memory-new", "memory-old", "regular-new", "regular-old")]
+    [DataRow("oldestFirst", "memory-old", "memory-new", "regular-old", "regular-new")]
+    public void MemoryPriority_PreservesChosenDateOrderWithinBothGroups(string order, string first, string second, string third, string fourth)
+    {
+        var profile = new Profile
+        {
+            Slideshow = new() { Shuffle = false, DateOrder = order },
+            Memories = new() { Prioritize = true }
+        };
+        var assets = new Dictionary<string, CollectedAsset>();
+        foreach (var (id, date, memory) in new[] {
+            ("regular-new", "2025-01-01T00:00:00Z", false),
+            ("memory-old", "2023-01-01T00:00:00Z", true),
+            ("regular-old", "2022-01-01T00:00:00Z", false),
+            ("memory-new", "2024-01-01T00:00:00Z", true) })
+        {
+            assets[id] = new(new ImmichAsset { Id = id, Type = "IMAGE",
+                ExifInfo = new() { DateTimeOriginal = date } }, null, IsMemory: memory);
+        }
+        var entries = PlaylistEntryProjector.CreateEntries(assets, profile);
+        CollectionAssert.AreEqual(new[] { first, second, third, fourth }, entries.Select(entry => entry.Id).ToArray());
+    }
+
+    [TestMethod]
     [DataRow("newestFirst", "newer", "same-a", "same-b", "older", "undated")]
     [DataRow("oldestFirst", "undated", "older", "same-a", "same-b", "newer")]
     public void DateOrder_SortsDatesAndUsesStableIdTieBreaks(string order, string first, string second, string third, string fourth, string fifth)

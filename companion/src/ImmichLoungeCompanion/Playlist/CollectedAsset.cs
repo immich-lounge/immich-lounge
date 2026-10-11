@@ -2,4 +2,4 @@ using ImmichLoungeCompanion.Immich.Dtos;
 
 namespace ImmichLoungeCompanion.Playlist;
 
-public record CollectedAsset(ImmichAsset Asset, string? SourceLabel, string? BirthdayCaption = null);
+public record CollectedAsset(ImmichAsset Asset, string? SourceLabel, string? BirthdayCaption = null, bool IsMemory = false);

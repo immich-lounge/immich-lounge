@@ -21,20 +21,23 @@ public static class PlaylistEntryProjector
         if (profile.Slideshow.Shuffle)
         {
             Shuffle(entries);
-            return entries;
+            return Prioritize(entries, profile);
         }
 
         var orderedAssets = profile.Slideshow.DateOrder == "oldestFirst"
             ? allAssets.OrderBy(kvp => kvp.Value.Asset.ExifInfo?.DateTimeOriginal ?? "")
             : allAssets.OrderByDescending(kvp => kvp.Value.Asset.ExifInfo?.DateTimeOriginal ?? "");
 
-        return orderedAssets
+        return Prioritize(orderedAssets
             .ThenBy(kvp => kvp.Key, StringComparer.Ordinal)
             .Select(kvp => MapToEntry(kvp.Key, kvp.Value, profile.MediaTypes))
             .Where(entry => entry != null)
             .Cast<PlaylistEntry>()
-            .ToList();
+            .ToList(), profile);
     }
+
+    public static List<PlaylistEntry> Prioritize(List<PlaylistEntry> entries, Profile profile) =>
+        profile.Memories.Prioritize ? entries.OrderByDescending(entry => entry.IsMemory).ToList() : entries;
 
     private static void Shuffle(List<PlaylistEntry> entries)
     {
@@ -54,22 +57,22 @@ public static class PlaylistEntryProjector
 
         if (isLivePhoto && filter.LivePhotos)
         {
-            return new PlaylistEntry(id, "livePhoto", sourceLabel, asset.LivePhotoVideoId, collected.BirthdayCaption);
+            return new PlaylistEntry(id, "livePhoto", sourceLabel, asset.LivePhotoVideoId, collected.BirthdayCaption, collected.IsMemory);
         }
 
         if (isLivePhoto && !filter.LivePhotos && filter.Photos)
         {
-            return new PlaylistEntry(id, "photo", sourceLabel, null, collected.BirthdayCaption);
+            return new PlaylistEntry(id, "photo", sourceLabel, null, collected.BirthdayCaption, collected.IsMemory);
         }
 
         if (isVideo && filter.Videos)
         {
-            return new PlaylistEntry(id, "video", sourceLabel, null, collected.BirthdayCaption);
+            return new PlaylistEntry(id, "video", sourceLabel, null, collected.BirthdayCaption, collected.IsMemory);
         }
 
         if (!isVideo && !isLivePhoto && filter.Photos)
         {
-            return new PlaylistEntry(id, "photo", sourceLabel, null, collected.BirthdayCaption);
+            return new PlaylistEntry(id, "photo", sourceLabel, null, collected.BirthdayCaption, collected.IsMemory);
         }
 
         return null;

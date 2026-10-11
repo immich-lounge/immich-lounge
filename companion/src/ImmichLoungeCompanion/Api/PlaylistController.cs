@@ -77,6 +77,8 @@ public class PlaylistController(
                 {
                     Assets = [],
                     GeneratedAt = cached.GeneratedAt,
+                    MemoryDay = profile.PhotoSource != null && profile.HasMemoriesSource()
+                        ? MemoryDate.For(profile, cached.GeneratedAt).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : null,
                     PlaylistVersion = effectivePlaylistVersion,
                     Cached = true,
                     Building = false,
@@ -96,6 +98,7 @@ public class PlaylistController(
             var orderedAssets = cycleSeed > 0
                 ? PlaylistShuffleOrder.ForCycle(cached.Assets, cycleSeed)
                 : cached.Assets;
+            orderedAssets = PlaylistEntryProjector.Prioritize(orderedAssets, profile);
             if (cycleSeed > 0)
             {
                 effectivePlaylistVersion += "~" + cycleSeed.ToString(CultureInfo.InvariantCulture);
@@ -110,6 +113,8 @@ public class PlaylistController(
             {
                 Assets = assets,
                 GeneratedAt = cached.GeneratedAt,
+                MemoryDay = profile.PhotoSource != null && profile.HasMemoriesSource()
+                    ? MemoryDate.For(profile, cached.GeneratedAt).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : null,
                 PlaylistVersion = effectivePlaylistVersion,
                 Cached = true,
                 Building = false,

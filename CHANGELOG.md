@@ -11,6 +11,10 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 - Support shared Immich albums as playlist sources and preserve selected album scope when matching or excluding people, including nested filter rules. Retain owned/partner searches, deduplicate matches, and propagate scoped search failures. Add legacy/cursor pagination boundary regressions and shared-people setup guidance in the editor and docs.
 
+- Add explicit photo sources (`all`, `selected`, `memories`) and optional memory priority. Preserve omitted-source profile behavior; constrain memories to explicit selections and filters, retain priority through paged shuffle cycles, and renew shuffle/version on the profile's next memory day. Roku polls daily-memory profiles each minute and applies the new day at a slide boundary, preserving same-day order and offline fallback. Discard queued daily results on later profile edits; fetch the playlist head for unknown-day live resumes while retaining cached offline windows.
+
+- Keep a Roku playlist fetch reserved until its result callback consumes it. Prevent the shuffle boundary from replacing a queued task before its RUN state becomes visible, which could read an empty result and delay reshuffling until the retry.
+
 - Add signed GitHub build provenance and downloadable inner-ZIP SHA256 checksums to candidate companion, Roku channel/screensaver, and docs artifacts; enforce aligned source versions, required files, and strict docs validation.
 
 - Publish companion images for Linux AMD64 and ARM64 using native SDK cross-compilation. Build and smoke-test both architectures in CI, including the health endpoint and writable data volume.

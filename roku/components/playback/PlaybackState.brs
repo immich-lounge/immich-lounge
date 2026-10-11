@@ -107,7 +107,7 @@ function ApplyPendingBatchSwapForScene(ctx as Object, isScreensaver as Boolean) 
 end function
 
 sub PersistResumeStateForScene(ctx as Object, entry as Object, isScreensaver as Boolean)
-    PersistResumeStateForMode(entry, { profileId: ctx.top.profileId, companionUrl: ctx.top.companionUrl, profile: ctx.profile }, ctx.playlistIndex, ctx.playlistOffset, ctx.nextPlaylistOffset, ctx.totalPlaylistCount, ctx.playlistVersion, isScreensaver)
+    PersistResumeStateForMode(entry, { profileId: ctx.top.profileId, companionUrl: ctx.top.companionUrl, profile: ctx.profile, memoryDay: ctx.memoryDay }, ctx.playlistIndex, ctx.playlistOffset, ctx.nextPlaylistOffset, ctx.totalPlaylistCount, ctx.playlistVersion, isScreensaver)
 end sub
 
 sub PersistActivePlaylistCacheForScene(ctx as Object, isScreensaver as Boolean)

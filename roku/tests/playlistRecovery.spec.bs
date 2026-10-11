@@ -4,6 +4,144 @@ namespace tests
 
     @describe("Refresh and resume")
 
+    @it("A new memory day waits for the current slide in both modes")
+    function test_dailyMemoryQueue()
+      for each mode in [false, true]
+        ctx = m.makeContext(mode)
+        ctx.playlist = [{ id: "current" }]
+        ctx.memoryDay = "2026-10-10"
+        ctx.profile = { id: "profile", photoSource: "all" }
+        ctx.refreshPlaylistTask.playlistResult.memoryDay = "2026-10-11"
+        OnRefreshPlaylistResultForScene(ctx, mode)
+        m.assertEqual(ctx.playlist[0].id, "current")
+        m.assertEqual(ctx.memoryDay, "2026-10-10")
+        m.assertEqual(ctx.pendingDailyPlaylist.assets[0].id, "new-photo")
+        m.assertEqual(ctx.slideLoads, 0)
+      end for
+    end function
+
+    @it("A daily result remains pending during pause and transitions")
+    function test_dailyMemoryDeferral()
+      ctx = m.makeContext(false)
+      ctx.pendingDailyPlaylist = { assets: [{ id: "memory" }] }
+      ctx.pendingDailyProfile = { id: "profile" }
+      ctx.paused = true
+      m.assertFalse(ApplyDailyPlaylistForScene(ctx))
+      ctx.paused = false
+      ctx.isTransitioning = true
+      m.assertFalse(ApplyDailyPlaylistForScene(ctx))
+      m.assertEqual(ctx.pendingDailyPlaylist.assets[0].id, "memory")
+    end function
+
+    @it("New days replace a queued result while paused and failures keep it")
+    function test_dailyMemoryLongPause()
+      ctx = m.makeContext(false)
+      ctx.profile = { id: "profile", photoSource: "all" }
+      ctx.playlist = [{ id: "current" }]
+      ctx.paused = true
+      ctx.memoryDay = "2026-10-10"
+      ctx.refreshPlaylistTask.playlistResult.memoryDay = "2026-10-11"
+      OnRefreshPlaylistResultForScene(ctx, false)
+      ctx.refreshPlaylistTask = m.makeTask()
+      ctx.refreshPlaylistTask.playlistResult.memoryDay = "2026-10-12"
+      OnRefreshPlaylistResultForScene(ctx, false)
+      m.assertEqual(ctx.pendingDailyPlaylist.memoryDay, "2026-10-12")
+      ctx.refreshPlaylistTask = m.makeTask()
+      ctx.refreshPlaylistTask.playlistResult.ok = false
+      OnRefreshPlaylistResultForScene(ctx, false)
+      m.assertEqual(ctx.pendingDailyPlaylist.memoryDay, "2026-10-12")
+      m.assertEqual(ctx.playlist[0].id, "current")
+    end function
+
+    @it("The daily playlist starts at the head at the next slide boundary")
+    function test_dailyMemoryApply()
+      m.stubCall(ApplyProfile, sub()
+      end sub)
+      m.stubCall(PersistProfileCacheForMode, sub(profile as object, url as string, id as string, mode as boolean)
+      end sub)
+      m.stubCall(PersistResumeStateForScene, sub(context as object, entry as object, mode as boolean)
+      end sub)
+      for each mode in [false, true]
+        ctx = m.makeContext(mode)
+        ctx.playlist = [{ id: "current" }]
+        ctx.profile = { id: "profile" }
+        ctx.isTransitioning = false
+        ctx.pendingDailyProfile = ctx.profile
+        ctx.pendingDailyPlaylist = { assets: [{ id: "memory" }], offset: 0, nextOffset: 0, totalCount: 1, playlistVersion: "daily", memoryDay: "2026-10-11" }
+        ctx.refreshPlaylistTask = invalid
+        oldRetry = CreateObject("roSGNode", "Timer")
+        ctx.retryTimer = oldRetry
+        ctx.consecutiveFails = 25
+        AdvanceToNextForScene(ctx)
+        m.assertEqual(ctx.playlist[0].id, "memory")
+        m.assertEqual(ctx.playlistIndex, 0)
+        m.assertEqual(ctx.memoryDay, "2026-10-11")
+        m.assertEqual(ctx.slideLoads, 1)
+        m.assertInvalid(ctx.pendingDailyPlaylist)
+        m.assertInvalid(ctx.retryTimer)
+        m.assertEqual(oldRetry.control, "stop")
+        m.assertEqual(ctx.consecutiveFails, 0)
+      end for
+    end function
+
+    @it("A changed profile discards a queued day's old selection")
+    function test_dailyMemoryProfileEdit()
+      for each mode in [false, true]
+        ctx = m.makeContext(mode)
+        oldProfile = { id: "profile", photoSource: "all", contentSources: [{ type: "memories" }] }
+        newProfile = { id: "profile", photoSource: "all", contentSources: [] }
+        ctx.pendingDailyProfile = oldProfile
+        ctx.pendingDailyPlaylist = { memoryDay: "2026-10-12", assets: [{ id: "old-memory" }] }
+        m.assertFalse(DiscardDailyPlaylistForChangedProfile(ctx, oldProfile))
+        m.assertEqual(ctx.pendingDailyPlaylist.assets[0].id, "old-memory")
+        m.assertTrue(DiscardDailyPlaylistForChangedProfile(ctx, newProfile))
+        m.assertInvalid(ctx.pendingDailyPlaylist)
+        m.assertInvalid(ctx.pendingDailyProfile)
+      end for
+    end function
+
+    @it("Disabling memories refreshes the playlist after discarding the queued day")
+    function test_dailyMemoryDisabledRefresh()
+      m.stubCall(ApplyProfile, sub()
+      end sub)
+      m.stubCall(PersistProfileCacheForMode, sub(profile as object, url as string, id as string, mode as boolean)
+      end sub)
+      m.stubCall(BeginProfilePlaylistRefreshForScene, sub(context as object, profile as object, mode as boolean, restart = false as boolean)
+        context.requestedProfile = profile
+      end sub)
+      ctx = m.makeContext(false)
+      ctx.profile = { id: "profile", photoSource: "all", contentSources: [{ type: "memories" }] }
+      ctx.pendingDailyProfile = ctx.profile
+      ctx.pendingDailyPlaylist = { memoryDay: "2026-10-12", assets: [{ id: "old-memory" }] }
+      updated = { id: "profile", photoSource: "all", contentSources: [] }
+      task = m.makeTask()
+      task.profileResult = { ok: true, profile: updated }
+      ctx.profileConfigTask = task
+      OnProfileConfigResultForScene(ctx, false)
+      m.assertInvalid(ctx.pendingDailyPlaylist)
+      m.assertEqual(ctx.requestedProfile, updated)
+    end function
+
+    @it("Same-day refreshes preserve the current photo and do not queue a restart")
+    function test_sameMemoryDayRefresh()
+      ctx = m.makeContext(false)
+      ctx.playlist = [{ id: "new-photo" }]
+      ctx.memoryDay = "2026-10-11"
+      ctx.refreshPlaylistTask.playlistResult.memoryDay = ctx.memoryDay
+      OnRefreshPlaylistResultForScene(ctx, false)
+      m.assertEqual(ctx.playlistIndex, 0)
+      m.assertEqual(ctx.slideLoads, 0)
+      m.assertInvalid(ctx.pendingDailyPlaylist)
+    end function
+
+    @it("Older profiles do not enable daily polling")
+    function test_dailyMemoryCapability()
+      m.assertFalse(UsesDailyMemories({ contentSources: [{ type: "memories" }] }))
+      m.assertFalse(UsesDailyMemories({ photoSource: "all", contentSources: [] }))
+      m.assertTrue(UsesDailyMemories({ photoSource: "all", contentSources: [{ type: "memories" }] }))
+      m.assertTrue(UsesDailyMemories({ photoSource: "memories", memories: { includeBirthdays: true } }))
+    end function
+
     @it("Photos added to an empty playlist load immediately in both modes")
     function test_emptyToPhotos()
       for each mode in [false, true]
@@ -128,6 +266,40 @@ namespace tests
     end function
 
     @describe("Shuffle loops")
+
+    @it("Queued and completed tasks keep their slot until the callback consumes it")
+    function test_queuedBatchCannotBeReplaced()
+      for each control in ["", "STOP", "RUN", "DONE"]
+        ctx = m.makeContext(false)
+        ctx.profile = { id: "profile", slideshow: { shuffle: true } }
+        ctx.playlist = [{ id: "a" }, { id: "b" }]
+        ctx.totalPlaylistCount = 2
+        ctx.playlistIndex = 1
+        ctx.waitingForNextBatchSwap = false
+        task = { control: control }
+        ctx.nextBatchTask = task
+        m.assertFalse(ShouldPrefetchNextPlaylistBatchForScene(ctx))
+        FetchNextPlaylistBatchForScene(ctx, false)
+        m.assertEqual(ctx.nextBatchTask, task)
+      end for
+    end function
+
+    @it("The wrap waits for a queued task even before RUN becomes visible")
+    function test_wrapWaitsForQueuedBatch()
+      ctx = m.makeContext(false)
+      ctx.profile = { id: "profile", slideshow: { shuffle: true } }
+      ctx.playlist = [{ id: "a" }, { id: "b" }]
+      ctx.totalPlaylistCount = 2
+      ctx.playlistIndex = 1
+      ctx.slideAssetCount = 1
+      ctx.waitingForNextBatchSwap = false
+      ctx.nextBatchTask = { control: "STOP" }
+      AdvanceToNextForScene(ctx)
+      m.assertEqual(ctx.playlistIndex, 1)
+      m.assertEqual(ctx.slideLoads, 0)
+      m.assertEqual(ctx.slideTimer.control, "start")
+      m.assertTrue(ctx.waitingForNextBatchSwap)
+    end function
 
     @beforeEach
     private function setupShuffleMocks()

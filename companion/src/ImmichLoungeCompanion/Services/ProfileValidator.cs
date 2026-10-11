@@ -7,6 +7,20 @@ public class ProfileValidator : IProfileValidator
 {
     public string? Validate(Profile profile)
     {
+        if (profile.PhotoSource is not (null or "all" or "selected" or "memories"))
+        {
+            return "Invalid photoSource. Choose all, selected, or memories.";
+        }
+        if (profile.PhotoSource == "selected" && profile.AssetFilter == null &&
+            ProfileAssetFilterExtensions.BuildAssetFilterFromContentSources(profile.ContentSources) == null)
+        {
+            return "Choose at least one album, person, or tag for Selected sources.";
+        }
+        if (profile.PhotoSource == "memories" && !profile.HasMemoriesSource())
+        {
+            return "Enable On This Day or birthday memories for Memories only.";
+        }
+
         if (!string.IsNullOrWhiteSpace(profile.Memories.TimeZoneId) &&
             !TimeZoneInfo.TryFindSystemTimeZoneById(profile.Memories.TimeZoneId, out _))
         {

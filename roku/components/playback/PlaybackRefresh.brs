@@ -50,6 +50,7 @@ sub OnProfileConfigResultForScene(ctx as Object, isScreensaver as Boolean)
             BeginProfilePlaylistRefreshForScene(ctx, result.profile, isScreensaver)
             return
         end if
+        discardedDaily = DiscardDailyPlaylistForChangedProfile(ctx, result.profile)
         ctx.pendingScheduledProfile = invalid
         ctx.pendingScheduledPlaylist = invalid
         ctx.profile = result.profile
@@ -57,12 +58,16 @@ sub OnProfileConfigResultForScene(ctx as Object, isScreensaver as Boolean)
         ctx.skipFullRefreshTimerRestart = true
         ApplyProfile()
         ctx.skipFullRefreshTimerRestart = false
+        ' The companion knows the profile's time zone. Poll its playlist with the
+        ' existing config timer so long refresh intervals cannot delay daily memories.
+        if UsesDailyMemories(ctx.profile) or discardedDaily then BeginProfilePlaylistRefreshForScene(ctx, ctx.profile, isScreensaver)
     else
         LogDebug(PlaybackLogScope(ctx), "profile config refresh unavailable, continuing with existing profile")
     end if
 end sub
 
 sub TriggerPlaylistRefreshForScene(ctx as Object, isScreensaver as Boolean)
+    if ctx.pendingDailyPlaylist <> invalid then return
     if ctx.pendingRestartShuffle = true then return
     if ctx.profile = invalid then return
     if ctx.refreshProfileTask <> invalid or ctx.refreshPlaylistTask <> invalid then return
@@ -150,12 +155,27 @@ sub OnRefreshPlaylistResultForScene(ctx as Object, isScreensaver as Boolean)
             end if
             return
         end if
+        resultMemoryDay = NormalizePlaylistVersion(result.memoryDay)
+        if not restartShuffle and resultMemoryDay <> "" and resultMemoryDay <> ctx.memoryDay then
+            ctx.pendingDailyPlaylist = result
+            ctx.pendingDailyProfile = refreshedProfile
+            if ctx.pendingDailyProfile = invalid then ctx.pendingDailyProfile = ctx.profile
+            if ctx.playlist = invalid then
+                ApplyDailyPlaylistForScene(ctx)
+            else if ctx.playlist.Count() = 0 then
+                ApplyDailyPlaylistForScene(ctx)
+            end if
+            return
+        end if
         if refreshedProfile <> invalid then
             ctx.profile = refreshedProfile
             PersistProfileCacheForMode(ctx.profile, ctx.top.companionUrl, ctx.top.profileId, isScreensaver)
             ApplyProfile()
         end if
         resultPlaylistVersion = NormalizePlaylistVersion(result.playlistVersion)
+        ctx.pendingDailyPlaylist = invalid
+        ctx.pendingDailyProfile = invalid
+        ctx.memoryDay = resultMemoryDay
         hadNoPhotos = true
         if ctx.playlist <> invalid then hadNoPhotos = ctx.playlist.Count() = 0
         currentAssetId = invalid
@@ -228,6 +248,10 @@ end function
 
 sub BeginProfilePlaylistRefreshForScene(ctx as Object, profile as Object, isScreensaver as Boolean, restartShuffle = false as Boolean)
     if ctx.refreshPlaylistTask <> invalid then return
+    if PlaybackProfileId(profile, ctx.top.profileId) <> PlaybackProfileId(ctx.profile, ctx.top.profileId) then
+        ctx.pendingDailyPlaylist = invalid
+        ctx.pendingDailyProfile = invalid
+    end if
     ctx.pendingScheduledProfile = invalid
     ctx.pendingScheduledPlaylist = invalid
     ctx.pendingRefreshProfile = profile
@@ -263,6 +287,8 @@ sub RestartShuffleForScene(ctx as Object)
         end if
     end for
     ctx.pendingBatchAssets = invalid
+    ctx.pendingDailyPlaylist = invalid
+    ctx.pendingDailyProfile = invalid
     ctx.deferredRestartShuffleTask = invalid
     ctx.nextBatchRetryAt = 0
     ctx.pendingBatchOffset = 0
@@ -298,6 +324,7 @@ function ApplyScheduledProfileForScene(ctx as Object) as Boolean
     ctx.nextPlaylistOffset = result.nextOffset
     ctx.totalPlaylistCount = result.totalCount
     ctx.playlistVersion = NormalizePlaylistVersion(result.playlistVersion)
+    ctx.memoryDay = NormalizePlaylistVersion(result.memoryDay)
     ctx.pendingBatchAssets = invalid
     ctx.pendingBatchOffset = 0
     ctx.pendingBatchPlaylistVersion = ""
@@ -309,10 +336,41 @@ function ApplyScheduledProfileForScene(ctx as Object) as Boolean
     ctx.top.useLocalDateFormatting = false
     PersistProfileCacheForMode(ctx.profile, ctx.top.companionUrl, ctx.top.profileId, ctx.top.isScreensaver)
     PersistActivePlaylistCacheForScene(ctx, ctx.top.isScreensaver)
-    PersistResumeStateForScene(ctx, ctx.playlist[0], ctx.top.isScreensaver)
+    if ctx.playlist.Count() > 0 then PersistResumeStateForScene(ctx, ctx.playlist[0], ctx.top.isScreensaver)
     ApplyProfile()
     emptyGroup = ctx.top.findNode("emptyPlaylistGroup")
-    if emptyGroup <> invalid then emptyGroup.visible = false
+    if emptyGroup <> invalid then emptyGroup.visible = ctx.playlist.Count() = 0
     ShowCurrentSlideForScene(ctx)
+    return true
+end function
+
+function DiscardDailyPlaylistForChangedProfile(ctx as Object, profile as Object) as Boolean
+    if ctx.pendingDailyPlaylist = invalid then return false
+    if FormatJson(ctx.pendingDailyProfile) = FormatJson(profile) then return false
+    ' A queued day's selection belongs to its profile snapshot. It must not
+    ' restore old sources, filters, or connection settings after a later edit.
+    ctx.pendingDailyPlaylist = invalid
+    ctx.pendingDailyProfile = invalid
+    return true
+end function
+
+function ApplyDailyPlaylistForScene(ctx as Object) as Boolean
+    if ctx.pendingDailyPlaylist = invalid then return false
+    if ctx.isTransitioning = true or ctx.paused then return false
+    if ctx.profileConfigTask <> invalid or ctx.refreshProfileTask <> invalid or ctx.refreshPlaylistTask <> invalid then return false
+    if ctx.retryTimer <> invalid then
+        ctx.retryTimer.unobserveField("fire")
+        ctx.retryTimer.control = "stop"
+        ctx.retryTimer = invalid
+    end if
+    ctx.consecutiveFails = 0
+    if ctx.errorGroup <> invalid then ctx.errorGroup.visible = false
+    ' Apply only at a slide boundary; keep the result while paused or recovering.
+    ctx.pendingScheduledPlaylist = ctx.pendingDailyPlaylist
+    ctx.pendingScheduledProfile = ctx.pendingDailyProfile
+    ctx.pendingScheduledAt = UpTime(0)
+    if not ApplyScheduledProfileForScene(ctx) then return false
+    ctx.pendingDailyPlaylist = invalid
+    ctx.pendingDailyProfile = invalid
     return true
 end function

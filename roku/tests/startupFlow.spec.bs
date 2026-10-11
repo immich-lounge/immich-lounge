@@ -32,6 +32,20 @@ namespace tests
 
     @describe("Unavailable companion")
 
+    @it("Unknown memory days restart the live window without changing offline resume")
+    function test_legacyMemoryDayOffset()
+      profile = { photoSource: "all", contentSources: [{ type: "memories" }] }
+      resume = { playlistOffset: 100, playlistVersion: "known-content", playlistIndex: 4 }
+      m.assertEqual(ResolveStartupPlaylistOffset(profile, resume), 0)
+      m.assertEqual(ResolveResumePlaylistOffset(resume), 100)
+      m.assertEqual(BuildLaunchPlaylistResultFromResume([{ id: "cached" }], resume).offset, 100)
+      resume.memoryDay = "2026-10-11"
+      m.assertEqual(ResolveStartupPlaylistOffset(profile, resume), 100)
+      m.assertEqual(ResolveStartupPlaylistOffset(profile, invalid), 0)
+      m.assertEqual(ResolveStartupPlaylistOffset({ contentSources: [{ type: "memories" }] }, resume), 100)
+      m.assertEqual(ResolveStartupPlaylistOffset({ photoSource: "all", contentSources: [] }, { playlistOffset: 100 }), 100)
+    end function
+
     @it("Matching cached profiles return promptly in both modes")
     function test_profileDeadline()
       for each mode in [false, true]

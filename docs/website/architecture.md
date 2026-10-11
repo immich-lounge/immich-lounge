@@ -63,6 +63,8 @@ The companion maintains one shuffled asset-ID list per profile. The cache lifecy
 3. **Proactive rebuild** — triggered before expiry (20% of interval, clamped to 1–10 minutes early)
 4. **Invalidation** — immediately on profile update, profile delete, or global settings change
 
+Profiles can set `photoSource` to `all`, `selected`, or `memories`; omitted values retain the existing source behavior. `memories.prioritize` promotes matching memory entries before the remaining entries, including within device shuffle cycles. Explicit memory-enabled profiles get a fresh playlist version and shuffle when their configured date changes. Playlist responses include `memoryDay` so Roku can apply the new day at a slide boundary and resume at its head after an overnight stop.
+
 ---
 
 ## Component 2: Roku Channel + Screensaver

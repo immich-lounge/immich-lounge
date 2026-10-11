@@ -41,13 +41,15 @@ After changing a profile's content sources, **Preview Match Count** uses the new
 
 Saving a profile or connection settings clears the affected companion playlists. Any build already using the previous settings is discarded; the next playlist request builds from the saved settings.
 
-Choose **Any (OR)** to include photos matching any selected album, person, or tag, or **All (AND)** to require every selection. With no sources or memories selected, use the whole library; with only memories enabled, show only those memories. **Exclude people (NOT)** removes photos containing any excluded person from all results, including added memories. For example, select your children with **Any**, then exclude yourself to show either child without you.
+Choose a **Photo source**: **All photos**, **Selected sources**, or **Memories only**. New profiles use All photos. Selected sources requires at least one album, person, or tag; choose **Any selection** to match any of them or **Every selection** to require all of them. Location, date, file size, and **Exclude people (NOT)** narrow the results, including memories.
 
-Memories are added to the source results; they do not have to match the selected sources. Location restrictions, **Only photos with people**, and people exclusions still apply to memories.
+For example, choose **All photos** and set **Country → Maldives** to show your Maldives photos without selecting albums or people. Enable memories and **Prioritize memories** to put matching memories first.
 
-Profiles with nested content rules created through the API keep those rules when edited in the companion. Their source selectors are unavailable; edit the nested rules through the API. Excluded people, memories, and display settings can still be changed in the companion.
+Older profiles show **Keep current selection** and retain their saved behavior until you choose a photo source. For those profiles, memories alone remain the only source; memories combined with selected albums, people, or tags are added even when they do not match those sources or the date filter.
 
-The companion collects all matching result pages and removes duplicates. With **Shuffle** enabled, every matching photo is included, and each Roku gets a fresh randomized order after completing a loop. The Roku fetches photos in windows and keeps the same order during refreshes and resume within that loop. Each device's loop is independent. With **Shuffle** off, choose **Photo order**: **Newest first** (the default) or **Oldest first**. Photos are ordered by their original date. The choice is remembered while Shuffle is on, but only applies when Shuffle is off. Offline playback repeats the cached window until the companion is reachable, with a 60-second pause between failed playlist requests.
+Profiles with nested content rules created through the API keep those rules when edited in the companion. Their album, people, and tag selectors are unavailable; edit the nested rules through the API. Selecting All photos or Memories only leaves those saved rules inactive. Excluded people, memories, and display settings can still be changed in the companion.
+
+The companion collects all matching result pages and removes duplicates. With **Shuffle** enabled, every matching photo is included, and each Roku gets a fresh randomized order after completing a loop. The Roku fetches photos in windows and keeps the same order during refreshes and resume within that loop. Each device's loop is independent. With **Shuffle** off, choose **Photo order**: **Newest first** (the default) or **Oldest first**. Photos are ordered by their original date. With **Prioritize memories** enabled, this order applies separately to the memories and the remaining photos. The choice is remembered while Shuffle is on, but only applies when Shuffle is off. Offline playback repeats the cached window until the companion is reachable, with a 60-second pause between failed playlist requests.
 
 ![Immich Lounge companion profiles page](./assets/screenshots/companion-profiles.png){ .doc-screenshot .on-glb }
 <p class="doc-caption">Each profile can target a different room, use case, or screensaver setup.</p>
@@ -119,13 +121,19 @@ When weather is enabled for a profile, you can choose whether the Roku shows tem
 
 ### Memories
 
-In **Content Sources**, choose **Include On This Day memories**, **Include birthday memories**, or both. When memories are the only selected source, the playlist contains only those memories. With albums, people, or tags selected, memories are added to those photos. The people-only option, people exclusions, location, and minimum file size filters still apply; the profile's date filter applies to the regular sources, not added memories.
+Under **Memories**, enable **Include On This Day memories**, **Include birthday memories**, or both. **Memories only** shows just those memories. With **All photos** or **Selected sources**, matching memories stay within your selection. Enable **Prioritize memories** to show them first, followed by the remaining photos without duplicates. If there are no matching memories today, the regular selection still plays.
+
+The **Only photos with people** option, people exclusions, location, and minimum file size filters apply to memories too. Explicit photo sources also apply the date filter to memories; older profiles retain the behavior described above.
 
 Birthday memories require **Immich 3.3 or later**, a birth date set for the person in Immich, and matching photos from previous birthdays. Immich generates the selection and makes it available from three days before the birthday through the birthday itself. The birthday option is off by default and is unavailable if the companion cannot detect a supported server.
 
 Enable **Show birthday captions** to display the person's birthday alongside the photo date in either overlay style. The caption follows the overlay's visibility setting; an overlay style of **None** hides it. Album labels remain separate. Offline playlists keep the photos but omit birthday captions to avoid showing an outdated birthday message.
 
-Choose a **Memories time zone** to control which day's memories are requested. **Companion time zone** preserves the existing host-based date selection; containers often use UTC. The companion checks for a new day every 30 seconds and rebuilds memory playlists even when their normal refresh interval has not elapsed. The Roku picks up the result on its next playlist refresh. This setting does not change the Roku clock or a schedule's time zone.
+Choose a **Memories time zone** to control which day's memories are requested. **Companion time zone** uses the host's time zone; containers often use UTC. The companion checks for a new day every 30 seconds and rebuilds memory playlists even when their normal refresh interval has not elapsed. Profiles using an explicit Photo source also start a fresh shuffle each day when shuffle is enabled. The Roku checks these profiles every minute and adopts a new day's playlist after the current photo finishes, or on resume if paused. Same-day refreshes preserve the current order. Offline playback continues with cached photos until the companion is reachable. This setting does not change the Roku clock or a schedule's time zone.
+
+Saved profile changes replace any waiting daily selection. After upgrading an older Roku package, memory-enabled profiles may start at the beginning of the playlist once; offline startup keeps the cached window.
+
+You can upgrade the companion and Roku separately. An older Roku plays the new companion's selection, including memory priority, using its existing refresh timing. A newer Roku works with an older companion using the companion's existing source behavior. The daily minute checks and changes at photo boundaries require both updated components.
 
 ### Zoom to fit
 
