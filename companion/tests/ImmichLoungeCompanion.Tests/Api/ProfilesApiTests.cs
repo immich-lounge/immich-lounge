@@ -20,6 +20,42 @@ public class ProfilesApiTests : IDisposable
     public void Dispose() => _factory.Dispose();
 
     [TestMethod]
+    [DataRow("newestFirst")]
+    [DataRow("oldestFirst")]
+    public async Task DateOrder_IsSavedServedAndCanBeChanged(string order)
+    {
+        var profile = new Profile { Id = "date-order", Name = "Date order",
+            Slideshow = new() { Shuffle = false, DateOrder = order } };
+        Assert.AreEqual(HttpStatusCode.Created, (await _client.PostAsJsonAsync("/api/profiles", profile)).StatusCode);
+        var saved = await _client.GetFromJsonAsync<Profile>("/api/profiles/date-order");
+        Assert.AreEqual(order, saved!.Slideshow.DateOrder);
+        saved.Slideshow.DateOrder = order == "oldestFirst" ? "newestFirst" : "oldestFirst";
+        saved.Slideshow.Shuffle = true;
+        Assert.AreEqual(HttpStatusCode.OK, (await _client.PutAsJsonAsync("/api/profiles/date-order", saved)).StatusCode);
+        Assert.AreEqual(saved.Slideshow.DateOrder, (await _client.GetFromJsonAsync<Profile>("/api/profiles/date-order"))!.Slideshow.DateOrder);
+    }
+
+    [TestMethod]
+    public async Task LegacyProfileWithoutDateOrder_DefaultsToNewestFirst()
+    {
+        Assert.AreEqual(HttpStatusCode.Created, (await _client.PostAsJsonAsync("/api/profiles",
+            new { id = "legacy-date-order", name = "Legacy", slideshow = new { shuffle = false } })).StatusCode);
+        Assert.AreEqual("newestFirst", (await _client.GetFromJsonAsync<Profile>("/api/profiles/legacy-date-order"))!.Slideshow.DateOrder);
+    }
+
+    [TestMethod]
+    [DataRow("unknown")]
+    [DataRow("")]
+    [DataRow(null)]
+    public async Task InvalidDateOrder_IsRejected(string? order)
+    {
+        var profile = new Profile { Id = "invalid-date-order", Name = "Invalid",
+            Slideshow = new() { DateOrder = order! } };
+        Assert.AreEqual(HttpStatusCode.BadRequest, (await _client.PostAsJsonAsync("/api/profiles", profile)).StatusCode);
+        Assert.AreEqual(HttpStatusCode.BadRequest, (await _client.PostAsJsonAsync("/api/profiles/preview-count", profile)).StatusCode);
+    }
+
+    [TestMethod]
     [DataRow("cityCountry")]
     [DataRow("cityStateCountry")]
     [DataRow("city")]

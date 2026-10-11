@@ -23,6 +23,11 @@ public class ProfileValidator : IProfileValidator
             return "Invalid transitionEffect. Must be fade, none, slide, zoom, or random.";
         }
 
+        if (profile.Slideshow.DateOrder is not ("newestFirst" or "oldestFirst"))
+        {
+            return "Invalid dateOrder. Must be newestFirst or oldestFirst.";
+        }
+
         if (!IsPhotoMotionValid(profile.Slideshow.PhotoMotion))
         {
             return "Invalid photoMotion. Must be none or kenBurns.";
