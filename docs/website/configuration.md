@@ -121,6 +121,8 @@ When weather is enabled for a profile, you can choose whether the Roku shows tem
 
 ### Memories
 
+Enable **Include saved memories** to include past memories saved in Immich throughout the year. This requires Immich 3.2 or later and is off by default. Upcoming memories are excluded. Saved birthday photos do not show a birthday caption outside their active daily birthday window. Saved memories follow the same photo source, location, date, people, size, and priority rules as other memories.
+
 Under **Memories**, enable **Include On This Day memories**, **Include birthday memories**, or both. **Memories only** shows just those memories. With **All photos** or **Selected sources**, matching memories stay within your selection. Enable **Prioritize memories** to show them first, followed by the remaining photos without duplicates. If there are no matching memories today, the regular selection still plays.
 
 The **Only photos with people** option, people exclusions, location, and minimum file size filters apply to memories too. Explicit photo sources also apply the date filter to memories; older profiles retain the behavior described above.

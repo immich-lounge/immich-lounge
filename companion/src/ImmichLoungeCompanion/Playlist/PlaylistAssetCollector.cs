@@ -255,25 +255,36 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
         ct.ThrowIfCancellationRequested();
 
         var today = MemoryDate.For(profile, _time.GetUtcNow());
-        var includeBirthdays = profile.Memories.IncludeBirthdays &&
-            (await immich.GetSearchApiCapabilitiesAsync(immichSettings))?.BirthdayMemories == true;
-        if (!profile.HasOnThisDaySource() && !includeBirthdays)
+        var capabilities = profile.Memories.IncludeBirthdays || profile.Memories.IncludeSaved
+            ? await immich.GetSearchApiCapabilitiesAsync(immichSettings) : null;
+        var includeBirthdays = profile.Memories.IncludeBirthdays && capabilities?.BirthdayMemories == true;
+        var includeSaved = profile.Memories.IncludeSaved && capabilities?.SavedMemories == true;
+        if (!profile.HasOnThisDaySource() && !includeBirthdays && !includeSaved)
         {
             return new(StringComparer.Ordinal);
         }
-        var memories = await immich.GetMemoriesAsync(immichSettings, today);
+        var memories = profile.HasOnThisDaySource() || includeBirthdays
+            ? await immich.GetMemoriesAsync(immichSettings, today) : new List<ImmichMemory>();
+        var dailyIds = memories.Select(memory => memory.Id).ToHashSet(StringComparer.Ordinal);
+        if (includeSaved)
+        {
+            memories.AddRange(await immich.GetSavedMemoriesAsync(immichSettings));
+        }
         var results = new Dictionary<string, CollectedAsset>(StringComparer.Ordinal);
+        var seen = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var memory in memories)
         {
             var birthday = string.Equals(memory.Type, "birthday", StringComparison.Ordinal);
+            var daily = dailyIds.Contains(memory.Id) && (birthday ? includeBirthdays : profile.HasOnThisDaySource() &&
+                (memory.Type == "on_this_day" || string.IsNullOrEmpty(memory.Type)));
             // Empty types are tolerated for older servers; unknown future types stay opt-in.
-            if (birthday ? !includeBirthdays : !profile.HasOnThisDaySource() ||
-                (memory.Type != "on_this_day" && !string.IsNullOrEmpty(memory.Type)))
+            if ((!daily && !(includeSaved && memory.IsSaved)) ||
+                (!string.IsNullOrEmpty(memory.Id) && !seen.Add(memory.Id)))
             {
                 continue;
             }
-            var caption = birthday && profile.Memories.ShowBirthdayCaptions
+            var caption = birthday && daily && profile.Memories.ShowBirthdayCaptions
                 ? (string.IsNullOrWhiteSpace(memory.Data?.PersonName) ? "Birthday memories" : $"{memory.Data.PersonName.Trim()}'s birthday")
                 : null;
             foreach (var asset in memory.Assets)
