@@ -75,7 +75,7 @@ else
             <section class="criteria-summary" aria-label="Active photo criteria">
                 <h3>Showing</h3>
                 <p>@CriteriaDescription</p>
-                @if (_profile.Memories.Prioritize && (_memoriesEnabled || _profile.Memories.IncludeBirthdays))
+                @if (_profile.Memories.Prioritize && (_memoriesEnabled || _profile.Memories.IncludeBirthdays || _profile.Memories.IncludeSaved))
                 {
                     <p class="criteria-detail">Matching memories play first.</p>
                 }
@@ -106,12 +106,16 @@ else
             {
                 <p class="section-intro">Birthday memories require Immich 3.3 or later. They are unavailable until the companion detects a supported server.</p>
             }
+            <label>
+                <input type="checkbox" @bind="_profile.Memories.IncludeSaved" @bind:after="CriteriaChanged" disabled="@(!_savedMemoriesAvailable && !_profile.Memories.IncludeSaved)" /> Include saved memories
+            </label>
+            <p class="section-intro">Include past memories saved in Immich. Available with Immich 3.2 or later; future memories are excluded.</p>
             @if (_profile.Memories.IncludeBirthdays)
             {
                 <label><input type="checkbox" @bind="_profile.Memories.ShowBirthdayCaptions" /> Show birthday captions</label>
                 <p class="section-intro">Set birth dates in Immich. Birthday photos appear from three days before the birthday through the day itself.</p>
             }
-            @if (_memoriesEnabled || _profile.Memories.IncludeBirthdays)
+            @if (_memoriesEnabled || _profile.Memories.IncludeBirthdays || _profile.Memories.IncludeSaved)
             {
             <label>
                 Memories time zone:
@@ -428,6 +432,7 @@ else
     private ImmichLoungeCompanion.Models.LocationFilter _locationFilter = new();
     private bool _memoriesEnabled;
     private bool _birthdayMemoriesAvailable;
+    private bool _savedMemoriesAvailable;
     private bool _peopleFilterAvailable;
     private List<MemoryTimeZone> _memoryTimeZones = [];
     private bool _canEditContentSources;
@@ -445,7 +450,7 @@ else
     private void OnPhotoSourceChanged(ChangeEventArgs args)
     {
         _profile!.PhotoSource = string.IsNullOrWhiteSpace(args.Value?.ToString()) ? null : args.Value.ToString();
-        if (_profile.PhotoSource == "memories" && !_memoriesEnabled && !_profile.Memories.IncludeBirthdays)
+        if (_profile.PhotoSource == "memories" && !_memoriesEnabled && !_profile.Memories.IncludeBirthdays && !_profile.Memories.IncludeSaved)
         {
             _memoriesEnabled = true;
         }
@@ -467,7 +472,7 @@ else
             if (_profile.PhotoSource == "memories") { return "Enabled memories only, narrowed by the filters below."; }
             if (!_canEditContentSources) { return "Photos matching this profile's advanced content rules."; }
             var hasSources = _profile.ContentSources.Any(source => source.Type != "memories");
-            var hasMemories = _memoriesEnabled || _profile.Memories.IncludeBirthdays;
+            var hasMemories = _memoriesEnabled || _profile.Memories.IncludeBirthdays || _profile.Memories.IncludeSaved;
             if (!hasSources) { return _profile.PhotoSource == "selected" ? "Choose at least one album, person, or tag." : hasMemories ? "Enabled memories only." : "Photos from the whole library."; }
             var description = _sourceMatchOperator == AssetFilterGroupOperator.And
                 ? "Photos matching every selected source"
@@ -480,8 +485,8 @@ else
         : !_canEditContentSources ? "Advanced content rules"
         : _profile.PhotoSource == "selected" || _profile.ContentSources.Any(source => source.Type != "memories")
             ? $"{_profile.ContentSources.Count(source => source.Type != "memories")} selected sources ({(_sourceMatchOperator == AssetFilterGroupOperator.And ? "all must match" : "any can match")})"
-                + (_profile.PhotoSource == null && (_memoriesEnabled || _profile.Memories.IncludeBirthdays) ? " + memories" : "")
-            : _memoriesEnabled || _profile.Memories.IncludeBirthdays ? "Memories" : "Whole library";
+                + (_profile.PhotoSource == null && (_memoriesEnabled || _profile.Memories.IncludeBirthdays || _profile.Memories.IncludeSaved) ? " + memories" : "")
+            : _memoriesEnabled || _profile.Memories.IncludeBirthdays || _profile.Memories.IncludeSaved ? "Memories" : "Whole library";
     private AssetFilterGroupOperator _sourceMatchOperator = AssetFilterGroupOperator.Or;
     private AssetFilterGroupOperator _initialSourceMatchOperator;
     private string? _initialContentSourcesSnapshot;
@@ -561,12 +566,14 @@ else
         _initialContentSourcesSnapshot = _profile == null ? null : BuildContentSourcesSnapshot(_profile);
         _memoriesEnabled = _profile?.HasOnThisDaySource() ?? false;
         _birthdayMemoriesAvailable = false;
+        _savedMemoriesAvailable = false;
         _peopleFilterAvailable = false;
         _memoryTimeZones = [];
         try
         {
             var capabilities = await Http.GetFromJsonAsync<SearchApiCapabilities>("/api/immich/capabilities");
             _birthdayMemoriesAvailable = capabilities?.BirthdayMemories ?? false;
+            _savedMemoriesAvailable = capabilities?.SavedMemories ?? false;
             _peopleFilterAvailable = capabilities?.StructuredSearch ?? false;
             _memoryTimeZones = await Http.GetFromJsonAsync<List<MemoryTimeZone>>("/api/schedule-time-zones") ?? [];
         }

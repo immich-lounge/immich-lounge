@@ -88,6 +88,31 @@ public class OptionalMemoryFailureTests
     }
 
     private static Profile Profile() => new() { PhotoSource = "all", ContentSources = [new() { Type = "memories" }] };
+    [TestMethod]
+    [DataRow(false, 503, true)]
+    [DataRow(true, 503, false)]
+    [DataRow(false, 403, false)]
+    public async Task SavedMemoryFailuresFollowTheSameRecoveryRules(bool memoryOnly, int status, bool recovers)
+    {
+        var client = Mock(new HttpRequestException("daily memory should not be requested"));
+        client.GetSearchApiCapabilitiesAsync(Arg.Any<ImmichSettings>(), Arg.Any<bool>())
+            .Returns(new SearchApiCapabilities("3.3.1", true));
+        client.GetSavedMemoriesAsync(Arg.Any<ImmichSettings>())
+            .Returns(Task.FromException<List<ImmichMemory>>(new HttpRequestException("saved memory unavailable", null, (HttpStatusCode)status)));
+        var profile = new Profile { PhotoSource = memoryOnly ? "memories" : "all", Memories = new() { IncludeSaved = true } };
+        var collector = new PlaylistAssetCollector(client);
+        if (recovers)
+        {
+            var assets = await collector.CollectAsync(profile, new());
+            CollectionAssert.AreEqual(new[] { "regular-photo" }, assets.Keys.ToArray());
+        }
+        else
+        {
+            await Assert.ThrowsAsync<HttpRequestException>(() => collector.CollectAsync(profile, new()));
+        }
+        await client.DidNotReceive().GetMemoriesAsync(Arg.Any<ImmichSettings>(), Arg.Any<DateOnly>());
+    }
+
     private static IImmichClient Mock(Exception failure)
     {
         var client = Substitute.For<IImmichClient>();

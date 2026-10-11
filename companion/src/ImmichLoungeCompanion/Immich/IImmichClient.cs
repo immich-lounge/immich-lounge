@@ -19,5 +19,6 @@ public interface IImmichClient
     /// <summary>Fetches ALL pages for a search using the server-compatible format. Preserves date and location filters.</summary>
     Task<List<ImmichAsset>> SearchAssetsAllPagesAsync(ImmichSettings settings, SearchAssetsRequest request);
     Task<List<ImmichMemory>> GetMemoriesAsync(ImmichSettings settings, DateOnly date);
+    Task<List<ImmichMemory>> GetSavedMemoriesAsync(ImmichSettings settings);
     Task<ImmichAsset?> GetAssetAsync(ImmichSettings settings, string assetId, CancellationToken ct = default);
 }

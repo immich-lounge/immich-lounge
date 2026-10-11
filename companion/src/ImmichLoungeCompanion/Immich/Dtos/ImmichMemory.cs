@@ -6,6 +6,7 @@ public class ImmichMemory
 {
     public string Id { get; set; } = "";
     public string Type { get; set; } = "";
+    public bool IsSaved { get; set; }
     public ImmichMemoryData? Data { get; set; }
     public List<ImmichAsset> Assets { get; set; } = [];
 }
