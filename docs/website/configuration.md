@@ -77,9 +77,25 @@ The companion collects all matching result pages and removes duplicates. With **
 
 | Area | What it covers |
 |---|---|
-| Content | Albums, people, tags, memories, and optional date and location filtering |
+| Content | Albums, people, tags, memories, and optional face, date, and location filtering |
 | Playback | Interval, shuffle, transition effect, photo motion, and playlist refresh interval |
 | Display | Overlay style and fields, background effect, date and time formatting, weather, and image quality |
+
+### Only photos with people
+
+To show photos containing anyone, without choosing specific people:
+
+1. Open a profile and choose **Photos → Filters**.
+2. Enable **Only photos with people**. Leave the People selector empty unless you also want to match particular people.
+3. Choose **Preview selection** to check the matching count and sample photos, then save the profile.
+
+This narrows the existing selection to photos with at least one visible detected face. Named and unnamed people count. It applies to the whole library or selected albums, people, and tags, including shared albums and added memories. Date, location, file-size filters, and people exclusions still apply. It works with both the Roku channel and screensaver.
+
+Immich must have processed face detection for each photo. People seen from behind, distant faces, or other missed detections may be skipped. A selection with no detected faces produces an empty playlist.
+
+Requires **Immich 3.2 or later** and is off by default. The companion enables the option after detecting a supported server. If detection is unavailable, use **Save & Test Connection** on the Connection page and reopen the profile. If you change to an older server, turn this filter off; the companion reports an error rather than silently including photos without people.
+
+For API-managed profiles, set the optional top-level field `"onlyPhotosWithPeople": true`. Omitting it or setting it to `false` keeps the existing unfiltered behavior. No specific person IDs or person names are required.
 
 ## Shared albums and people
 
@@ -106,6 +122,8 @@ When weather is enabled for a profile, you can choose whether the Roku shows tem
 ### Memories
 
 Under **Memories**, enable **Include On This Day memories**, **Include birthday memories**, or both. **Memories only** shows just those memories. With **All photos** or **Selected sources**, matching memories stay within your selection. Enable **Prioritize memories** to show them first, followed by the remaining photos without duplicates. If there are no matching memories today, the regular selection still plays.
+
+The **Only photos with people** option, people exclusions, location, and minimum file size filters apply to memories too. Explicit photo sources also apply the date filter to memories; older profiles retain the behavior described above.
 
 Birthday memories require **Immich 3.3 or later**, a birth date set for the person in Immich, and matching photos from previous birthdays. Immich generates the selection and makes it available from three days before the birthday through the birthday itself. The birthday option is off by default and is unavailable if the companion cannot detect a supported server.
 

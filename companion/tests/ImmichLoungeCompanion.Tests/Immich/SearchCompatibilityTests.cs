@@ -63,7 +63,7 @@ public class SearchCompatibilityTests
         {
             AlbumIds = ["album1", "album2"], PersonIds = ["person"], TagIds = ["tag"],
             Country = "Switzerland", State = "Zürich", City = "Zürich", Type = "IMAGE",
-            TakenAfter = "2020-01-01", TakenBefore = "2021-01-01", Page = 7, Size = 12
+            TakenAfter = "2020-01-01", TakenBefore = "2021-01-01", HasPeople = true, Page = 7, Size = 12
         };
         var assets = await client.SearchAssetsAllPagesAsync(Settings(), request);
         CollectionAssert.AreEqual(new[] { "first", "second" }, assets.Select(a => a.Id).ToArray());
@@ -83,6 +83,11 @@ public class SearchCompatibilityTests
         Assert.AreEqual("2021-01-01T00:00:00.000Z", filter.GetProperty("takenAt").GetProperty("lte").GetString());
         Assert.AreEqual(12, bodies[0].GetProperty("size").GetInt32());
         Assert.IsTrue(bodies[0].GetProperty("withExif").GetBoolean());
+        foreach (var body in bodies)
+        {
+            Assert.IsTrue(body.GetProperty("filter").GetProperty("hasPeople").GetProperty("eq").GetBoolean());
+            Assert.IsFalse(body.TryGetProperty("withPeople", out _));
+        }
         foreach (var name in new[] { "page", "takenAfter", "takenBefore", "country", "state", "city", "albumIds", "personIds", "tagIds", "type" })
         {
             Assert.IsFalse(bodies[0].TryGetProperty(name, out _), name);
@@ -339,6 +344,40 @@ public class SearchCompatibilityTests
             : new HttpResponseMessage(HttpStatusCode.Forbidden)));
         await Assert.ThrowsAsync<HttpRequestException>(() => client.SearchAssetsAllPagesAsync(Settings(), new() { AlbumIds = ["album"], PersonIds = ["person"], Size = 1 }));
         Assert.AreEqual(2, calls);
+    }
+
+    [TestMethod]
+    [DataRow(1)]
+    [DataRow(-1)]
+    public async Task PeoplePresenceNeverDropsFilterOnLegacyOrUnknownServers(int minor)
+    {
+        var searches = 0;
+        var client = Client(req =>
+        {
+            if (req.Method == HttpMethod.Get)
+            {
+                return Task.FromResult(minor < 0 ? new HttpResponseMessage(HttpStatusCode.NotFound) : Version(minor));
+            }
+            searches++;
+            return Task.FromResult(EmptyPage());
+        });
+        var error = await Assert.ThrowsExactlyAsync<NotSupportedException>(() =>
+            client.SearchAssetsAllPagesAsync(Settings(), new() { HasPeople = true }));
+        StringAssert.Contains(error.Message, "Immich 3.2");
+        Assert.AreEqual(0, searches);
+    }
+
+    [TestMethod]
+    public async Task DefaultStructuredSearchDoesNotFilterByPeoplePresence()
+    {
+        var client = Client(async req =>
+        {
+            if (req.Method == HttpMethod.Get) { return Version(2); }
+            var body = JsonDocument.Parse(await req.Content!.ReadAsStringAsync()).RootElement;
+            Assert.IsFalse(body.GetProperty("filter").TryGetProperty("hasPeople", out _));
+            return EmptyPage();
+        });
+        await client.SearchAssetsAllPagesAsync(Settings(), new());
     }
 
     private static ImmichClient Client(Func<HttpRequestMessage, Task<HttpResponseMessage>> respond, TimeProvider? time = null) =>

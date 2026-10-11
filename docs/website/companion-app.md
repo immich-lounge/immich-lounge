@@ -56,7 +56,7 @@ Use **Photos** to choose your library content, **Playback** to set the pace and 
 
 Choose a **Photo source**: **All photos**, **Selected sources**, or **Memories only**. Within Selected sources, the **Albums**, **People**, and **Tags** tabs keep your selections active when you switch categories. **Any selection** combines them; **Every selection** requires all of them to match. **Location** narrows your selection and memories; filled country, state, and city fields must all match. The **Showing** summary lists the selection, memory priority, and restrictions.
 
-Source matching, exclusions, and file size are under **Filters**. Memory types, **Prioritize memories**, and the time zone are under **Memories**. Priority shows matching memories first without duplicates. Refresh timing and transition duration are under **More playback options**. Weather and custom date formats are under **Appearance**.
+Source matching, **Only photos with people** (Immich 3.2+), exclusions, and file size are under **Filters**. The people-only option includes unnamed detected faces and applies to memories and shared albums too. See [Only photos with people](configuration.md#only-photos-with-people) for setup and detection limits. Memory types, **Prioritize memories**, and the time zone are under **Memories**. Priority shows matching memories first without duplicates. Refresh timing and transition duration are under **More playback options**. Weather and custom date formats are under **Appearance**.
 
 Choose **Preview selection** to see the matching count and up to six sample photos without saving. Changing photo criteria clears the old preview. If a thumbnail cannot load, the count remains available.
 

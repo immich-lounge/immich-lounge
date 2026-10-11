@@ -11,6 +11,8 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 ## Unreleased
 
+- Choose **Only photos with people** to show photos with any detected face, including unnamed people, shared albums, and memories. Requires Immich 3.2 or later.
+
 - Use shared Immich albums in slideshow profiles, including filters that match or exclude people. For another user's people and names, share the people separately in Immich 3.3 or later. New editor hints explain how to select the album and person and use **Every selection** to show only matching photos.
 
 - Choose All photos, Selected sources, or Memories only. Optionally show matching memories first without duplicates. Memories refresh and shuffled photos get a fresh order each day; the Roku waits for the current photo to finish and uses your latest saved profile. Existing profiles keep their selection until changed.

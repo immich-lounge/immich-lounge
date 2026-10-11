@@ -14,6 +14,7 @@ public class Profile
     // Null retains the source semantics of profiles saved before explicit selection.
     public string? PhotoSource { get; set; }
     public List<ContentSource> ExcludedPeople { get; set; } = [];
+    public bool OnlyPhotosWithPeople { get; set; }
     public MediaTypes MediaTypes { get; set; } = new();
     public DateFilter? DateFilter { get; set; }
     public LocationFilter? LocationFilter { get; set; }

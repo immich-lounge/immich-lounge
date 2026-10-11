@@ -44,6 +44,7 @@ public class ProfileDocumentService(ISettingsRepository settings) : IProfileDocu
             profile.AssetFilter,
             profile.PhotoSource,
             profile.ExcludedPeople,
+            profile.OnlyPhotosWithPeople,
             profile.MediaTypes,
             profile.DateFilter,
             profile.LocationFilter,
