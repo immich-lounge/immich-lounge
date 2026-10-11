@@ -11,6 +11,8 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 ## Unreleased
 
+- Include memories saved in Immich throughout the year, with Immich 3.2 or later.
+
 - With Shuffle off, choose Newest first or Oldest first to play photos by their original date. Existing profiles keep Newest first.
 - Choose **Only photos with people** to show photos with any detected face, including unnamed people, shared albums, and memories. Requires Immich 3.2 or later.
 

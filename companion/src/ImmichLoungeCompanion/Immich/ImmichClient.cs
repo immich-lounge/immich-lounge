@@ -271,6 +271,40 @@ public class ImmichClient(IHttpClientFactory httpClientFactory, ILogger<ImmichCl
         return await response.Content.ReadFromJsonAsync<ImmichAsset>(JsonOptions, ct);
     }
 
+    public async Task<List<ImmichMemory>> GetSavedMemoriesAsync(ImmichSettings settings)
+    {
+        var (client, baseUrl) = BuildClient(settings);
+        const int size = 100;
+        var memories = new List<ImmichMemory>();
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        for (var page = 1; ; page++)
+        {
+            using var req = ApiRequest(HttpMethod.Get, baseUrl,
+                $"api/memories?isSaved=true&isUpcoming=false&page={page}&size={size}", settings.ApiKey);
+            using var response = await client.SendAsync(req);
+            await EnsureSuccessAsync(response, $"GET /api/memories saved page={page}");
+            var batch = await response.Content.ReadFromJsonAsync<List<ImmichMemory>>(JsonOptions)
+                ?? throw new JsonException("Immich returned an invalid saved memories response.");
+            var added = 0;
+            foreach (var memory in batch)
+            {
+                if (ids.Add(memory.Id))
+                {
+                    memories.Add(memory);
+                    added++;
+                }
+            }
+            if (batch.Count < size)
+            {
+                return memories;
+            }
+            if (added == 0)
+            {
+                throw new JsonException("Immich saved memories pagination did not make progress.");
+            }
+        }
+    }
+
     public async Task<List<ImmichMemory>> GetMemoriesAsync(ImmichSettings settings, DateOnly date)
     {
         var (client, baseUrl) = BuildClient(settings);

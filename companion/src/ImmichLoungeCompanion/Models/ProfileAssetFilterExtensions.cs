@@ -34,7 +34,7 @@ public static class ProfileAssetFilterExtensions
     }
 
     public static bool HasMemoriesSource(this Profile profile) =>
-        profile.HasOnThisDaySource() || profile.Memories.IncludeBirthdays;
+        profile.HasOnThisDaySource() || profile.Memories.IncludeBirthdays || profile.Memories.IncludeSaved;
 
     public static bool HasOnThisDaySource(this Profile profile) =>
         profile.ContentSources.Any(source => string.Equals(source.Type, "memories", StringComparison.OrdinalIgnoreCase));
