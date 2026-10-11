@@ -12,6 +12,7 @@ public class Profile
     public List<ContentSource> ContentSources { get; set; } = [];
     public AssetFilterRule? AssetFilter { get; set; }
     public List<ContentSource> ExcludedPeople { get; set; } = [];
+    public bool OnlyPhotosWithPeople { get; set; }
     public MediaTypes MediaTypes { get; set; } = new();
     public DateFilter? DateFilter { get; set; }
     public LocationFilter? LocationFilter { get; set; }

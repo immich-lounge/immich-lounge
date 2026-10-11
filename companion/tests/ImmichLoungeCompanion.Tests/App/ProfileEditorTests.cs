@@ -24,6 +24,37 @@ public sealed class ProfileEditorTests : IDisposable
     public void Dispose() => _factory.Dispose();
 
     [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public async Task PeoplePresenceSettingSurvivesSaveReloadAndChangesPreview(bool supported)
+    {
+        _factory.ImmichClient.GetSearchApiCapabilitiesAsync(Arg.Any<ImmichSettings>(), Arg.Any<bool>())
+            .Returns(new SearchApiCapabilities(supported ? "3.2.0" : "3.1.0", supported));
+        using var client = _factory.CreateClient();
+        var (editor, profile) = await LoadEditorAsync(client, new Profile { Id = "people-presence", Name = "People" });
+        Assert.IsFalse(profile.OnlyPhotosWithPeople, "Existing profiles remain unfiltered.");
+        Assert.AreEqual(supported, (bool)GetField(editor, "_peopleFilterAvailable")!);
+        var snapshotMethod = typeof(ProfileEditor).GetMethod("BuildPreviewSnapshot", PrivateInstance)!;
+        var before = (string)snapshotMethod.Invoke(editor, null)!;
+        profile.OnlyPhotosWithPeople = true;
+        Assert.AreNotEqual(before, (string)snapshotMethod.Invoke(editor, null)!);
+        var payload = BuildPayload(editor);
+        Assert.IsTrue(payload.OnlyPhotosWithPeople);
+        Assert.AreEqual(HttpStatusCode.OK, (await client.PutAsJsonAsync("/api/profiles/people-presence", payload)).StatusCode);
+        var (reloadedEditor, reloaded) = await ReloadEditorAsync(client, "people-presence");
+        Assert.IsTrue(reloaded.OnlyPhotosWithPeople, "An unavailable filter must remain saved until explicitly disabled.");
+        if (!supported)
+        {
+            var preview = await client.PostAsJsonAsync("/api/profiles/preview-count", BuildPayload(reloadedEditor));
+            Assert.AreEqual(HttpStatusCode.BadRequest, preview.StatusCode);
+            StringAssert.Contains(await preview.Content.ReadAsStringAsync(), "Immich 3.2");
+        }
+        reloaded.OnlyPhotosWithPeople = false;
+        Assert.AreEqual(HttpStatusCode.OK, (await client.PutAsJsonAsync("/api/profiles/people-presence", BuildPayload(reloadedEditor))).StatusCode);
+        Assert.IsFalse((await client.GetFromJsonAsync<Profile>("/api/profiles/people-presence"))!.OnlyPhotosWithPeople);
+    }
+
+    [TestMethod]
     public async Task BirthdaySettings_SurviveEditorSaveAndReloadWithoutEnablingOnThisDay()
     {
         _factory.ImmichClient.GetSearchApiCapabilitiesAsync(Arg.Any<ImmichSettings>(), Arg.Any<bool>())
@@ -456,6 +487,39 @@ public sealed class ProfileEditorTests : IDisposable
         });
         Assert.AreEqual(!advanced, html.Contains("Match selected sources:"));
         if (advanced) { Assert.IsTrue(html.Contains("advanced content rules")); }
+    }
+
+    [TestMethod]
+    [DataRow(true, false)]
+    [DataRow(false, false)]
+    [DataRow(false, true)]
+    public async Task PeoplePresenceCheckboxGatesNewSelectionsAndAllowsDisablingExistingFilter(bool supported, bool enabled)
+    {
+        _factory.ImmichClient.GetSearchApiCapabilitiesAsync(Arg.Any<ImmichSettings>(), Arg.Any<bool>())
+            .Returns(new SearchApiCapabilities(supported ? "3.2.0" : "3.1.0", supported));
+        using var client = _factory.CreateClient();
+        var profile = new Profile { Id = "render-people", Name = "People", OnlyPhotosWithPeople = enabled };
+        Assert.AreEqual(HttpStatusCode.Created, (await client.PostAsJsonAsync("/api/profiles", profile)).StatusCode);
+        var factory = Substitute.For<IHttpClientFactory>();
+        factory.CreateClient("local").Returns(client);
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton(factory);
+        services.AddSingleton<NavigationManager>(new EditorTestNavigation());
+        services.AddSingleton(Substitute.For<IJSRuntime>());
+        services.AddSingleton(Substitute.For<ImmichLoungeCompanion.Services.IDisplayDateFormattingService>());
+        await using var provider = services.BuildServiceProvider();
+        await using var renderer = new HtmlRenderer(provider, provider.GetRequiredService<ILoggerFactory>());
+        var html = await renderer.Dispatcher.InvokeAsync(async () =>
+        {
+            var output = await renderer.RenderComponentAsync<ProfileEditor>(ParameterView.FromDictionary(new Dictionary<string, object?> { ["Id"] = profile.Id }));
+            return output.ToHtmlString();
+        });
+        var input = System.Text.RegularExpressions.Regex.Match(html, "<input[^>]*id=\"only-photos-with-people\"[^>]*>");
+        Assert.IsTrue(input.Success);
+        Assert.AreEqual(!supported && !enabled, input.Value.Contains("disabled"));
+        Assert.AreEqual(enabled, input.Value.Contains("checked"));
+        Assert.AreEqual(!supported, html.Contains("Requires Immich 3.2 or later"));
     }
 
     private sealed class EditorTestNavigation : NavigationManager

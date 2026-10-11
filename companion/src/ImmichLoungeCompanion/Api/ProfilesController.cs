@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading;
@@ -130,7 +131,15 @@ public class ProfilesController(
             return BadRequest(new { error = validationError });
         }
 
-        var entries = await playlistBuilder.BuildAsync(profile);
+        List<PlaylistEntry> entries;
+        try
+        {
+            entries = await playlistBuilder.BuildAsync(profile);
+        }
+        catch (NotSupportedException ex) when (profile.OnlyPhotosWithPeople)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
         var connection = (await settings.LoadAsync()).Immich;
         var samples = await Task.WhenAll(entries.Where(entry => entry.Type is "photo" or "livePhoto")
             .Where(entry => Guid.TryParse(entry.Id, out _))

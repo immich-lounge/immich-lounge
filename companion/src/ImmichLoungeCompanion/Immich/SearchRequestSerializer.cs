@@ -16,6 +16,10 @@ internal static class SearchRequestSerializer
         var before = NormalizeDate(request.TakenBefore);
         if (!structured)
         {
+            if (request.HasPeople)
+            {
+                throw new NotSupportedException("Only photos with people requires Immich 3.2 or later. Disable this filter or upgrade Immich.");
+            }
             return JsonSerializer.Serialize(new
             {
                 request.AlbumIds, request.PersonIds, request.TagIds,
@@ -26,6 +30,10 @@ internal static class SearchRequestSerializer
         }
 
         var filter = new Dictionary<string, object>();
+        if (request.HasPeople)
+        {
+            filter["hasPeople"] = new { Eq = true };
+        }
         // Legacy ID lists require membership in ALL entries, not ANY.
         AddIds(filter, "albumIds", request.AlbumIds);
         AddIds(filter, "personIds", request.PersonIds);

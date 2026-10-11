@@ -76,6 +76,7 @@ else
                     </div>
                 }
                 @if (LocationSummary.Length > 0) { <p class="criteria-detail">Limited to: @LocationSummary</p> }
+                @if (_profile.OnlyPhotosWithPeople) { <p class="criteria-detail">Only photos with people</p> }
                 @if (_profile.ExcludedPeople.Count > 0) { <p class="criteria-detail">Excluding: @string.Join(", ", _profile.ExcludedPeople.Select(person => person.Label))</p> }
                 @if (_profile.Quality.MinFileSizeKb > 0) { <p class="criteria-detail">Minimum file size: @_profile.Quality.MinFileSizeKb KB</p> }
             </section>
@@ -121,6 +122,14 @@ else
                 </label>
                 <p class="section-intro">Any combines selections. Every requires all selections to match.</p>
                 }
+            <label>
+                <input id="only-photos-with-people" type="checkbox" @bind="_profile.OnlyPhotosWithPeople" @bind:after="CriteriaChanged" disabled="@(!_peopleFilterAvailable && !_profile.OnlyPhotosWithPeople)" /> Only photos with people
+            </label>
+            <p class="section-intro">Include photos with any detected face, including unnamed people and memories. Photos with no detected faces are skipped.</p>
+            @if (!_peopleFilterAvailable)
+            {
+                <p class="section-intro">Requires Immich 3.2 or later. Unavailable until the companion detects a supported server. An enabled filter must be turned off to use an older server.</p>
+            }
             @if (_connectionConfigured)
             {
                 <label>Exclude people (NOT):</label>
@@ -404,6 +413,7 @@ else
     private ImmichLoungeCompanion.Models.LocationFilter _locationFilter = new();
     private bool _memoriesEnabled;
     private bool _birthdayMemoriesAvailable;
+    private bool _peopleFilterAvailable;
     private List<MemoryTimeZone> _memoryTimeZones = [];
     private bool _canEditContentSources;
     private bool _connectionConfigured;
@@ -521,11 +531,13 @@ else
         _initialContentSourcesSnapshot = _profile == null ? null : BuildContentSourcesSnapshot(_profile);
         _memoriesEnabled = _profile?.HasOnThisDaySource() ?? false;
         _birthdayMemoriesAvailable = false;
+        _peopleFilterAvailable = false;
         _memoryTimeZones = [];
         try
         {
             var capabilities = await Http.GetFromJsonAsync<SearchApiCapabilities>("/api/immich/capabilities");
             _birthdayMemoriesAvailable = capabilities?.BirthdayMemories ?? false;
+            _peopleFilterAvailable = capabilities?.StructuredSearch ?? false;
             _memoryTimeZones = await Http.GetFromJsonAsync<List<MemoryTimeZone>>("/api/schedule-time-zones") ?? [];
         }
         catch (Exception ex) when (ex is HttpRequestException or JsonException)
@@ -738,7 +750,7 @@ else
     {
         if (_profile == null) return "";
         var payload = BuildProfilePayloadForRequest();
-        return JsonSerializer.Serialize(new { payload.AssetFilter, payload.ContentSources, payload.ExcludedPeople,
+        return JsonSerializer.Serialize(new { payload.AssetFilter, payload.ContentSources, payload.ExcludedPeople, payload.OnlyPhotosWithPeople,
             payload.LocationFilter, payload.DateFilter, payload.Quality, payload.MediaTypes, payload.Memories });
     }
 
