@@ -1,6 +1,7 @@
 ' PlaybackAdvance.brs - shared slideshow advance and safety helpers
 
 sub AdvanceToNextForScene(ctx as Object)
+    if ApplyDailyPlaylistForScene(ctx) then return
     if ctx.playlist.Count() = 0 then return
     ctx.slideTimer.control = "stop"
     ctx.progressTimer.control = "stop"

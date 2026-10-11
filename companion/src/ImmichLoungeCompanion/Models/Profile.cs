@@ -11,6 +11,8 @@ public class Profile
     public string? Description { get; set; }
     public List<ContentSource> ContentSources { get; set; } = [];
     public AssetFilterRule? AssetFilter { get; set; }
+    // Null retains the source semantics of profiles saved before explicit selection.
+    public string? PhotoSource { get; set; }
     public List<ContentSource> ExcludedPeople { get; set; } = [];
     public MediaTypes MediaTypes { get; set; } = new();
     public DateFilter? DateFilter { get; set; }
@@ -32,6 +34,7 @@ public class ContentSource
 
 public class MemorySettings
 {
+    public bool Prioritize { get; set; }
     public bool IncludeBirthdays { get; set; }
     public bool ShowBirthdayCaptions { get; set; } = true;
     // Empty uses the companion's local time zone, preserving existing profiles.

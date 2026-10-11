@@ -24,6 +24,27 @@ public sealed class ProfileEditorTests : IDisposable
     public void Dispose() => _factory.Dispose();
 
     [TestMethod]
+    public async Task ExplicitPhotoSource_SurvivesEditorPreviewAndSave()
+    {
+        using var client = _factory.CreateClient();
+        var (editor, profile) = await LoadEditorAsync(client, new Profile
+        {
+            Id = "source-mode", Name = "Source mode", PhotoSource = "all",
+            ContentSources = [new() { Type = "memories" }], Memories = new() { Prioritize = true }
+        });
+        Assert.AreEqual("all", profile.PhotoSource);
+        var initialPreview = (string)typeof(ProfileEditor).GetMethod("BuildPreviewSnapshot", PrivateInstance)!.Invoke(editor, null)!;
+        typeof(ProfileEditor).GetMethod("OnPhotoSourceChanged", PrivateInstance)!.Invoke(editor,
+            [new ChangeEventArgs { Value = "memories" }]);
+        Assert.AreEqual("memories", BuildPayload(editor).PhotoSource);
+        Assert.AreNotEqual(initialPreview, (string)typeof(ProfileEditor).GetMethod("BuildPreviewSnapshot", PrivateInstance)!.Invoke(editor, null)!);
+        (await client.PutAsJsonAsync("/api/profiles/source-mode", BuildPayload(editor))).EnsureSuccessStatusCode();
+        var reloaded = (await client.GetFromJsonAsync<Profile>("/api/profiles/source-mode"))!;
+        Assert.AreEqual("memories", reloaded.PhotoSource);
+        Assert.IsTrue(reloaded.Memories.Prioritize);
+    }
+
+    [TestMethod]
     public async Task BirthdaySettings_SurviveEditorSaveAndReloadWithoutEnablingOnThisDay()
     {
         _factory.ImmichClient.GetSearchApiCapabilitiesAsync(Arg.Any<ImmichSettings>(), Arg.Any<bool>())

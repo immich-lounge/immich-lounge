@@ -50,14 +50,17 @@ public class PlaylistCacheWorker(
             // Stamp the build's day before fetching, so a build crossing midnight is refreshed.
             var startedAt = _time.GetUtcNow();
             var assets = await builder.BuildAsync(profile, ct);
-            if (profile.Slideshow.Shuffle && existing?.Assets.Count > 0)
+            var memoryDayChanged = profile.PhotoSource != null && profile.HasMemoriesSource() && existing != null &&
+                MemoryDate.For(profile, existing.GeneratedAt) != MemoryDate.For(profile, startedAt);
+            if (profile.Slideshow.Shuffle && existing?.Assets.Count > 0 && !memoryDayChanged)
             {
                 assets = PlaylistShuffleOrder.PreserveExistingOrder(existing.Assets, assets);
             }
+            assets = PlaylistEntryProjector.Prioritize(assets, profile);
 
             var playlistVersion = existing?.PlaylistVersion;
             if (string.IsNullOrWhiteSpace(playlistVersion) ||
-                existing == null ||
+                existing == null || memoryDayChanged ||
                 !existing.Assets.SequenceEqual(assets))
             {
                 playlistVersion = Guid.NewGuid().ToString("N");

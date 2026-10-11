@@ -11,6 +11,7 @@
     <field id="nextPlaylistOffset" type="integer" value="0" />
     <field id="totalPlaylistCount" type="integer" value="0" />
     <field id="playlistVersion" type="string"    value="" />
+    <field id="memoryDay" type="string" value="" />
     <field id="startPlaylistIndex" type="integer" value="0" />
     <field id="openSettingsOnStart" type="boolean" value="false" />
     <field id="paused"         type="boolean"    value="false" onChange="OnPausedChanged" />

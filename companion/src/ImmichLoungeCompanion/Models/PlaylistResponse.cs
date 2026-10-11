@@ -8,6 +8,7 @@ public class PlaylistResponse
     public List<PlaylistEntry> Assets { get; set; } = [];
     public DateTimeOffset? GeneratedAt { get; set; }
     public string? PlaylistVersion { get; set; }
+    public string? MemoryDay { get; set; }
     public bool Cached { get; set; }
     public bool Building { get; set; }
     public int Offset { get; set; }

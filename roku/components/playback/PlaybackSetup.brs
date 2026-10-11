@@ -53,6 +53,9 @@ sub InitPlaybackSceneForScene(ctx as Object)
     ctx.nextPlaylistOffset = 0
     ctx.totalPlaylistCount = 0
     ctx.playlistVersion = ""
+    ctx.memoryDay = ""
+    ctx.pendingDailyPlaylist = invalid
+    ctx.pendingDailyProfile = invalid
     ctx.pendingBatchAssets = invalid
     ctx.pendingBatchOffset = 0
     ctx.pendingBatchPlaylistVersion = ""
@@ -186,6 +189,7 @@ sub ApplyPlaylistFromTopForScene(ctx as Object)
     ctx.nextPlaylistOffset = ctx.top.nextPlaylistOffset
     ctx.totalPlaylistCount = ctx.top.totalPlaylistCount
     ctx.playlistVersion = NormalizePlaylistVersion(ctx.top.playlistVersion)
+    ctx.memoryDay = NormalizePlaylistVersion(ctx.top.memoryDay)
     ctx.pendingBatchAssets = invalid
     ctx.pendingBatchOffset = 0
     ctx.pendingBatchPlaylistVersion = ""

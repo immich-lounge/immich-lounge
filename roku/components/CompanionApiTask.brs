@@ -94,6 +94,7 @@ sub FetchPlaylist()
                 result.nextOffset = data.nextOffset
                 result.totalCount = data.totalCount
                 result.playlistVersion = data.playlistVersion
+                result.memoryDay = data.memoryDay
                 exit while
             end if
         else

@@ -5,5 +5,6 @@ public record PlaylistEntry(
     string Type,                      // "photo" | "video" | "livePhoto"
     string? SourceLabel,
     string? LivePhotoVideoId,
-    string? BirthdayCaption = null
+    string? BirthdayCaption = null,
+    bool IsMemory = false
 );

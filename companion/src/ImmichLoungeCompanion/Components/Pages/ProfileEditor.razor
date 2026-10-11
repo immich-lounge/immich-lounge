@@ -33,17 +33,26 @@ else
         <section class="settings-card editor-card">
             <h2>Choose your photos</h2>
             <p class="section-intro">Combine selections across categories, then narrow them by location.</p>
+            <label>Photo source:
+                <select value="@(_profile.PhotoSource ?? "")" @onchange="OnPhotoSourceChanged">
+                    @if (_profile.PhotoSource == null) { <option value="">Keep current selection</option> }
+                    <option value="all">All photos</option>
+                    <option value="selected">Selected sources</option>
+                    <option value="memories">Memories only</option>
+                </select>
+            </label>
+            <p class="field-hint">All photos uses the whole library. Selected sources uses your albums, people, and tags. Location and file filters narrow either choice.</p>
             @if (!_connectionConfigured)
             {
                 <div class="connection-notice" role="status"><strong>Connect your Immich library first</strong><p>You can set up playback and appearance while you wait.</p><a class="btn btn-secondary" href="/connection">Set up connection →</a></div>
             }
             <h3 class="criteria-heading">Add criteria</h3>
-            <p class="field-hint criteria-hint">Selections stay active when you switch categories.</p>
+            <p class="field-hint criteria-hint">Within Selected sources, selections stay active when you switch categories.</p>
             <div class="source-browser-navigation" aria-label="Choose photo sources and location">
                 @foreach (var sourceType in new[] { "album", "person", "tag", "location" })
                 {
                     var sourceLabel = sourceType == "album" ? "Albums" : sourceType == "person" ? "People" : sourceType == "tag" ? "Tags" : "Location";
-                    <button type="button" class="@(sourceType == _sourcePickerType ? "active" : "")" aria-pressed="@(sourceType == _sourcePickerType)" disabled="@(sourceType != "location" && (!_canEditContentSources || !_connectionConfigured))" @onclick="() => _sourcePickerType = sourceType">@sourceLabel</button>
+                    <button type="button" class="@(sourceType == _sourcePickerType ? "active" : "")" aria-pressed="@(sourceType == _sourcePickerType)" disabled="@(sourceType != "location" && (!_canEditContentSources || !_connectionConfigured || _profile.PhotoSource is "all" or "memories"))" @onclick="() => _sourcePickerType = sourceType">@sourceLabel</button>
                 }
             </div>
             @if (_sourcePickerType == "location")
@@ -51,7 +60,7 @@ else
                 <LocationFilterPicker Value="_locationFilter" OnChanged="CriteriaChanged" />
                 <p class="field-hint">Limits all selected sources and memories. Filled fields must all match; leave blank for any location.</p>
             }
-            else if (_canEditContentSources && _connectionConfigured)
+            else if (_canEditContentSources && _connectionConfigured && _profile.PhotoSource is not ("all" or "memories"))
             {
                 @if (_sourcePickerType == "person")
                 {
@@ -66,7 +75,11 @@ else
             <section class="criteria-summary" aria-label="Active photo criteria">
                 <h3>Showing</h3>
                 <p>@CriteriaDescription</p>
-                @if (_canEditContentSources && _profile.ContentSources.Any(source => source.Type != "memories"))
+                @if (_profile.Memories.Prioritize && (_memoriesEnabled || _profile.Memories.IncludeBirthdays))
+                {
+                    <p class="criteria-detail">Matching memories play first.</p>
+                }
+                @if (_canEditContentSources && _profile.PhotoSource is not ("all" or "memories") && _profile.ContentSources.Any(source => source.Type != "memories"))
                 {
                     <div class="selected-sources" aria-label="Selected photo sources">
                         @foreach (var selected in _profile.ContentSources.Where(source => source.Type != "memories"))
@@ -80,6 +93,8 @@ else
                 @if (_profile.Quality.MinFileSizeKb > 0) { <p class="criteria-detail">Minimum file size: @_profile.Quality.MinFileSizeKb KB</p> }
             </section>
             <details class="advanced-settings"><summary>Memories</summary><div class="advanced-settings-body">
+            <label><input type="checkbox" @bind="_profile.Memories.Prioritize" @bind:after="CriteriaChanged" /> Prioritize memories</label>
+            <p class="section-intro">Show the memories enabled below first, then the remaining photos without duplicates. Choose a Photo source to refresh memories and start a fresh shuffle each day in the time zone below.</p>
             <label>
                 <input type="checkbox" @bind="_memoriesEnabled" @bind:after="CriteriaChanged" /> Include On This Day memories
             </label>
@@ -406,6 +421,16 @@ else
         _failedPreviewIds.Clear();
         _previewError = null;
     }
+    private void OnPhotoSourceChanged(ChangeEventArgs args)
+    {
+        _profile!.PhotoSource = string.IsNullOrWhiteSpace(args.Value?.ToString()) ? null : args.Value.ToString();
+        if (_profile.PhotoSource == "memories" && !_memoriesEnabled && !_profile.Memories.IncludeBirthdays)
+        {
+            _memoriesEnabled = true;
+        }
+        _sourcePickerType = _profile.PhotoSource == "selected" ? "album" : "location";
+        CriteriaChanged();
+    }
     private void RemoveSource(ContentSource source)
     {
         _profile!.ContentSources.Remove(source);
@@ -417,20 +442,24 @@ else
         get
         {
             if (!_profile!.MediaTypes.Photos) { return "Photos are disabled for this profile."; }
+            if (_profile.PhotoSource == "all") { return "All photos from the library, narrowed by the filters below."; }
+            if (_profile.PhotoSource == "memories") { return "Enabled memories only, narrowed by the filters below."; }
             if (!_canEditContentSources) { return "Photos matching this profile's advanced content rules."; }
             var hasSources = _profile.ContentSources.Any(source => source.Type != "memories");
             var hasMemories = _memoriesEnabled || _profile.Memories.IncludeBirthdays;
-            if (!hasSources) { return hasMemories ? "Enabled memories only." : "Photos from the whole library."; }
+            if (!hasSources) { return _profile.PhotoSource == "selected" ? "Choose at least one album, person, or tag." : hasMemories ? "Enabled memories only." : "Photos from the whole library."; }
             var description = _sourceMatchOperator == AssetFilterGroupOperator.And
                 ? "Photos matching every selected source"
                 : "Photos matching any selected source";
-            return description + (hasMemories ? ", plus enabled memories." : ".");
+            return description + (hasMemories && _profile.PhotoSource == null ? ", plus enabled memories." : ".");
         }
     }
-    private string SourceSummary => !_canEditContentSources ? "Advanced content rules"
-        : _profile!.ContentSources.Any(source => source.Type != "memories")
+    private string SourceSummary => _profile!.PhotoSource == "all" ? "All photos"
+        : _profile.PhotoSource == "memories" ? "Memories only"
+        : !_canEditContentSources ? "Advanced content rules"
+        : _profile.PhotoSource == "selected" || _profile.ContentSources.Any(source => source.Type != "memories")
             ? $"{_profile.ContentSources.Count(source => source.Type != "memories")} selected sources ({(_sourceMatchOperator == AssetFilterGroupOperator.And ? "all must match" : "any can match")})"
-                + (_memoriesEnabled || _profile.Memories.IncludeBirthdays ? " + memories" : "")
+                + (_profile.PhotoSource == null && (_memoriesEnabled || _profile.Memories.IncludeBirthdays) ? " + memories" : "")
             : _memoriesEnabled || _profile.Memories.IncludeBirthdays ? "Memories" : "Whole library";
     private AssetFilterGroupOperator _sourceMatchOperator = AssetFilterGroupOperator.Or;
     private AssetFilterGroupOperator _initialSourceMatchOperator;
@@ -493,6 +522,7 @@ else
 
         var response = await Http.GetFromJsonAsync<ImmichLoungeCompanion.Models.Profile>($"/api/profiles/{Id}");
         _profile = response;
+        _sourcePickerType = _profile?.PhotoSource is "all" or "memories" ? "location" : "album";
         _locationFilter = _profile?.LocationFilter ?? new();
         _canEditContentSources = _profile?.CanEditContentSources() ?? true;
         _sourceMatchOperator = _profile?.AssetFilter?.Operator ?? AssetFilterGroupOperator.Or;
@@ -727,7 +757,7 @@ else
     {
         if (_profile == null) return "";
         var payload = BuildProfilePayloadForRequest();
-        return JsonSerializer.Serialize(new { payload.AssetFilter, payload.ContentSources, payload.ExcludedPeople,
+        return JsonSerializer.Serialize(new { payload.PhotoSource, payload.AssetFilter, payload.ContentSources, payload.ExcludedPeople,
             payload.LocationFilter, payload.DateFilter, payload.Quality, payload.MediaTypes, payload.Memories });
     }
 

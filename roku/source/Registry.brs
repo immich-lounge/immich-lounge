@@ -292,6 +292,7 @@ function BuildLaunchPlaylistResultFromResume(playlist as Object, resumeState as 
     if resumeState.nextPlaylistOffset <> invalid and resumeState.nextPlaylistOffset >= 0 then result.nextOffset = resumeState.nextPlaylistOffset
     if resumeState.totalPlaylistCount <> invalid and resumeState.totalPlaylistCount > 0 then result.totalCount = resumeState.totalPlaylistCount
     result.playlistVersion = ResolveResumePlaylistVersion(resumeState)
+    result.memoryDay = NormalizePlaylistVersion(resumeState.memoryDay)
 
     return result
 end function
@@ -327,6 +328,7 @@ sub PersistResumeStateForMode(entry as Object, top as Object, playlistIndex as I
         nextPlaylistOffset: nextPlaylistOffset
         totalPlaylistCount: totalPlaylistCount
         playlistVersion: NormalizePlaylistVersion(playlistVersion)
+        memoryDay: NormalizePlaylistVersion(top.memoryDay)
     }
     RegistryWriteJson(ResumeStateRegistryKey(isScreensaver), state)
 end sub

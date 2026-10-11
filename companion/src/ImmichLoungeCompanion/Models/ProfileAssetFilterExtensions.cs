@@ -6,6 +6,11 @@ namespace ImmichLoungeCompanion.Models;
 
 public static class ProfileAssetFilterExtensions
 {
+    public static string EffectivePhotoSource(this Profile profile) =>
+        profile.PhotoSource ?? (profile.AssetFilter != null ||
+            profile.ContentSources.Any(source => source.Type is "album" or "person" or "tag")
+                ? "selected" : profile.HasMemoriesSource() ? "memories" : "all");
+
     public static void NormalizeAssetFilter(this Profile profile)
     {
         profile.AssetFilter ??= BuildAssetFilterFromContentSources(profile.ContentSources);

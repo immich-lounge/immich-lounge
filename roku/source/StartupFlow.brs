@@ -135,6 +135,11 @@ function FetchStartupPlaylist(companionUrl as String, profileId as String, isScr
                 if result.playlistVersion <> "" and resumePlaylistVersion <> "" and result.playlistVersion <> resumePlaylistVersion then
                     startPlaylistIndex = ResolvePlaylistIndexAfterRefresh(playlist, ValueOrDefault(resumeState.assetId, ""), 0)
                 end if
+                if NormalizePlaylistVersion(result.memoryDay) <> "" then
+                    previousMemoryDay = ""
+                    if resumeState <> invalid then previousMemoryDay = NormalizePlaylistVersion(resumeState.memoryDay)
+                    if result.memoryDay <> previousMemoryDay then startPlaylistIndex = 0
+                end if
                 return {
                     status: "live"
                     playlist: playlist
