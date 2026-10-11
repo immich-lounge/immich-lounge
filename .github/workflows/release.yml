@@ -52,7 +52,7 @@ jobs:
           if ($LASTEXITCODE -ne 0 -or $version -notmatch '^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$') { throw 'Could not read a three-part project Version.' }
           $expected = @([int]$Matches[1], [int]$Matches[2], [int]$Matches[3]) -join '.'
           foreach ($manifest in @('roku/manifest', 'roku/manifest_screensaver')) {
-            $fields = Get-Content -LiteralPath $manifest | ConvertFrom-StringData
+            $fields = Get-Content -Raw -LiteralPath $manifest | ConvertFrom-StringData
             $parts = foreach ($key in @('major_version', 'minor_version', 'build_version')) {
               if ($fields[$key] -notmatch '^\d+$') { throw "Missing or invalid $key in $manifest" }
               [int]$fields[$key]
