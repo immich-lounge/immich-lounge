@@ -6,6 +6,8 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+- Document Immich 3.1 as the minimum supported version, with Immich 3.3 required for birthday memories. Retain legacy API compatibility; older versions may work but are not actively tested.
+
 - Reshuffle at each Roku playlist loop using a device-selected seed carried in the playlist version. Keep windows and resume deterministic within a cycle without mutating the shared companion cache, including playlists shorter than 50 entries.
 - Reject playlist refreshes whose requested window or shuffle cycle was superseded during playback; retry at the current position and stop obsolete batch fetches when applying a refresh.
 - Add a channel settings action to restart with a fresh shuffle, canceling obsolete requests and retaining current playback and resume state if the companion request fails.

@@ -101,9 +101,11 @@ See [Architecture](./architecture.md) for the technical details.
 
 | Component | Minimum Version |
 |-----------|----------------|
-| immich | v2.0 |
+| Immich | 3.1 |
 | Roku OS | 15.0 |
 | Docker | 24.0 (for companion) |
+
+Immich 3.1 or later is supported. Birthday memories require Immich 3.3 or later. Older versions may work but are not actively tested.
 
 ## Quick Links
 

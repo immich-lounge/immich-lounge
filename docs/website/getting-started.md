@@ -11,7 +11,7 @@ For a fuller Docker setup reference, Roku install links, and network notes, see 
 
 You need:
 
-- an **immich** server on your LAN
+- an **Immich 3.1 or later** server on your LAN
 - an **immich API key**
 - **Docker** on a machine that stays on
 - a **Roku** on the same network
