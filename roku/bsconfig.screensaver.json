@@ -8,6 +8,7 @@
     "source/AppControllerScreensaver.brs",
     "source/AppControllerFlow.brs",
     "source/DateTimeFormatting.brs",
+    "source/LocationFormatting.brs",
     "source/HttpClient.brs",
     "source/MediaUrls.brs",
     "source/PortraitPairs.brs",

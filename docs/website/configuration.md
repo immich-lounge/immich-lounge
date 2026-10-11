@@ -100,6 +100,10 @@ In the profile's **Slideshow** settings, enable **Zoom to fit (landscape photos)
 
 The setting is off by default and works in both the channel and screensaver. After the Roku refreshes the profile, it applies to the next photo displayed.
 
+### Location label format
+
+Under **Appearance → Text and overlays**, choose **Location format**: city and country (the default), city/state/province/country, city only, state/province and country, or country only. Both Roku modes use the selected fields from the photo's Immich metadata in bottom and corner overlays. Missing, blank, and repeated values are omitted; if none of the selected fields is available, the location label is hidden. This changes the label text, not which photos match the profile's location filter. Existing profiles keep city and country.
+
 ### Transition duration
 
 Set **Transition duration (seconds)** to 0.1–5 seconds, shorter than the photo interval. It controls fade, slide, and zoom transitions in both the channel and screensaver, including portrait-pair fades and background crossfades. **None** changes photos immediately. Existing profiles keep the 0.5-second default; changes apply on the next transition after the Roku refreshes its profile.

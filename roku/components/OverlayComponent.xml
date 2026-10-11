@@ -4,6 +4,7 @@
     <!-- "bottom" | "corner" | "none" -->
     <field id="overlayStyle"    type="string"     value="none" />
     <field id="overlayFields"   type="array"      value="[]" />
+    <field id="locationFormat"  type="string" value="cityCountry" onChange="OnMetaChanged" />
     <!-- "always" | "fade" | "manual" -->
     <field id="overlayBehavior" type="string"     value="manual" />
     <field id="fadeSeconds"     type="float"      value="5.0" />
@@ -48,5 +49,6 @@
   </children>
   <script type="text/brightscript" uri="pkg:/source/Utils.brs" />
   <script type="text/brightscript" uri="pkg:/source/DateTimeFormatting.brs" />
+  <script type="text/brightscript" uri="pkg:/source/LocationFormatting.brs" />
   <script type="text/brightscript" uri="pkg:/components/OverlayComponent.brs" />
 </component>

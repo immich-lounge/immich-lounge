@@ -2,6 +2,55 @@ namespace tests
   @suite("OverlayComponent Helpers")
   class OverlayComponentTests extends rooibos.BaseTestSuite
 
+    @describe("Location format")
+
+    @it("Supports all five formats with the original default")
+    function test_locationFormats()
+      meta = { exifInfo: { city: "Springfield", state: "Illinois", country: "USA" } }
+      m.assertEqual(FormatAssetLocation(meta, "cityCountry"), "Springfield, USA")
+      m.assertEqual(FormatAssetLocation(meta, "cityStateCountry"), "Springfield, Illinois, USA")
+      m.assertEqual(FormatAssetLocation(meta, "city"), "Springfield")
+      m.assertEqual(FormatAssetLocation(meta, "stateCountry"), "Illinois, USA")
+      m.assertEqual(FormatAssetLocation(meta, "country"), "USA")
+      for each format in [invalid, "unknown", {}, 3]
+        m.assertEqual(FormatAssetLocation(meta, format), "Springfield, USA")
+      end for
+    end function
+
+    @it("Skips missing and blank fields and repeated place names")
+    function test_locationMissingAndRepeated()
+      m.assertEqual(FormatAssetLocation({ exifInfo: { city: " Zürich ", state: "zürich", country: " Switzerland " } }, "cityStateCountry"), "Zürich, Switzerland")
+      m.assertEqual(FormatAssetLocation({ exifInfo: { city: " ", state: "Illinois", country: "" } }, "cityStateCountry"), "Illinois")
+      m.assertEqual(FormatAssetLocation({ exifInfo: { country: "USA" } }, "city"), "")
+      m.assertEqual(FormatAssetLocation({ exifInfo: { country: "USA" } }, "cityCountry"), "USA")
+      for each meta in [invalid, {}, { exifInfo: invalid }, { exifInfo: "bad" }, { exifInfo: { city: 3, country: [] } }]
+        m.assertEqual(FormatAssetLocation(meta, "cityCountry"), "")
+      end for
+    end function
+
+    @it("Updating the format redraws current labels in both overlay styles")
+    function test_locationFormatRefresh()
+      for each style in ["bottom", "corner"]
+        overlay = CreateObject("roSGNode", "OverlayComponent")
+        overlay.overlayStyle = style
+        overlay.overlayFields = ["location"]
+        overlay.overlayBehavior = "always"
+        overlay.assetMeta = { exifInfo: { city: "Springfield", state: "Illinois", country: "USA" } }
+        labelId = "locationLine"
+        if style = "corner" then labelId = "cornerLocation"
+        label = overlay.findNode(labelId)
+        m.assertEqual(label.text, "Springfield, USA")
+        overlay.locationFormat = "cityStateCountry"
+        m.assertEqual(label.text, "Springfield, Illinois, USA")
+        m.assertTrue(label.visible)
+        overlay.locationFormat = "country"
+        m.assertEqual(label.text, "USA")
+        overlay.assetMeta = { exifInfo: { city: "Springfield" } }
+        m.assertEqual(label.text, "")
+        m.assertFalse(label.visible)
+      end for
+    end function
+
     @describe("Birthday captions")
 
     @it("Shows a caption in both overlay styles even without an asset date")

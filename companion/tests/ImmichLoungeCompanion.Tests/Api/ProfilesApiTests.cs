@@ -20,6 +20,44 @@ public class ProfilesApiTests : IDisposable
     public void Dispose() => _factory.Dispose();
 
     [TestMethod]
+    [DataRow("cityCountry")]
+    [DataRow("cityStateCountry")]
+    [DataRow("city")]
+    [DataRow("stateCountry")]
+    [DataRow("country")]
+    public async Task LocationFormat_RoundTripsAndLeavesLocationFilterUnchanged(string format)
+    {
+        var profile = new Profile { Id = "location-label", Name = "Location label",
+            Display = new() { LocationFormat = format }, LocationFilter = new() { Country = "Switzerland" } };
+        Assert.AreEqual(HttpStatusCode.Created, (await _client.PostAsJsonAsync("/api/profiles", profile)).StatusCode);
+        var saved = await _client.GetFromJsonAsync<Profile>("/api/profiles/location-label");
+        Assert.AreEqual(format, saved!.Display.LocationFormat);
+        Assert.AreEqual("Switzerland", saved.LocationFilter!.Country);
+        saved.Display.LocationFormat = "country";
+        Assert.AreEqual(HttpStatusCode.OK, (await _client.PutAsJsonAsync("/api/profiles/location-label", saved)).StatusCode);
+        Assert.AreEqual("country", (await _client.GetFromJsonAsync<Profile>("/api/profiles/location-label"))!.Display.LocationFormat);
+    }
+
+    [TestMethod]
+    [DataRow("unknown")]
+    [DataRow("")]
+    [DataRow(null)]
+    public async Task InvalidLocationFormat_IsRejected(string? format)
+    {
+        var profile = new Profile { Id = "invalid-location-label", Name = "Invalid", Display = new() { LocationFormat = format! } };
+        Assert.AreEqual(HttpStatusCode.BadRequest, (await _client.PostAsJsonAsync("/api/profiles", profile)).StatusCode);
+        Assert.AreEqual(HttpStatusCode.BadRequest, (await _client.PostAsJsonAsync("/api/profiles/preview-count", profile)).StatusCode);
+    }
+
+    [TestMethod]
+    public async Task OldProfileWithoutLocationFormat_DefaultsToCityCountry()
+    {
+        Assert.AreEqual(HttpStatusCode.Created, (await _client.PostAsJsonAsync("/api/profiles",
+            new { id = "old-location-label", name = "Old", display = new { overlayStyle = "bottom" } })).StatusCode);
+        Assert.AreEqual("cityCountry", (await _client.GetFromJsonAsync<Profile>("/api/profiles/old-location-label"))!.Display.LocationFormat);
+    }
+
+    [TestMethod]
     [DataRow(0.1, 3, true)]
     [DataRow(5.0, 10, true)]
     [DataRow(0.0, 10, false)]

@@ -291,8 +291,19 @@ else
             </div>
         </details>
         <details class="settings-card editor-card advanced-settings">
-            <summary>Date, time, and overlay options</summary>
+            <summary>Text and overlays</summary>
             <div class="advanced-settings-body">
+                <label>
+                    Location format:
+                    <select @bind="_profile.Display.LocationFormat">
+                        <option value="cityCountry">City, country</option>
+                        <option value="cityStateCountry">City, state/province, country</option>
+                        <option value="city">City only</option>
+                        <option value="stateCountry">State/province, country</option>
+                        <option value="country">Country only</option>
+                    </select>
+                </label>
+                <p class="field-hint">Uses the photo's location from Immich. Missing and repeated values are omitted.</p>
                 <label>
                         Overlay Behavior:
                         <select @bind="_profile.Display.OverlayBehavior">

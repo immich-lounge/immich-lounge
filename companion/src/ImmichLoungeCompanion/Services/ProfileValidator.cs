@@ -33,6 +33,11 @@ public class ProfileValidator : IProfileValidator
             return "Invalid backgroundEffect. Must be none, blur, or ambilight.";
         }
 
+        if (profile.Display.LocationFormat is not ("cityCountry" or "cityStateCountry" or "city" or "stateCountry" or "country"))
+        {
+            return "Invalid locationFormat. Must be cityCountry, cityStateCountry, city, stateCountry, or country.";
+        }
+
         if (!IsWeatherUnitValid(profile.Display.WeatherUnit))
         {
             return "Invalid weatherUnit. Must be celsius or fahrenheit.";
