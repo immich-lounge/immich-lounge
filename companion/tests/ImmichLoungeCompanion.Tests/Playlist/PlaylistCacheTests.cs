@@ -68,19 +68,25 @@ public sealed class PlaylistCacheTests
     }
 
     [TestMethod]
-    public async Task DelayedPersistenceOfSupersededEntry_KeepsNewestDiskCache()
+    public void DelayedPersistenceOfSupersededEntry_KeepsNewestDiskCache()
     {
         using var dir = new TempDataDirectory();
         var cache = new PlaylistCache(dir.Path);
         var old = Entry("old");
         var current = Entry("current");
-        cache.Set("edited", old);
-        cache.Set("edited", current);
-        await PersistAsync(cache, "edited", current);
-        await PersistAsync(cache, "edited", old);
-
-        Assert.AreEqual("current", new PlaylistCache(dir.Path).Get("edited")!.Assets.Single().Id);
-        cache.InvalidateAll();
+        // Keep queued writes out of the whole probe: a later current write must
+        // not repair an incorrect stale write before the simulated restart reads it.
+        var persistenceGate = typeof(PlaylistCache).GetField("_gate", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .GetValue(cache)!;
+        lock (persistenceGate)
+        {
+            cache.Set("edited", old);
+            cache.Set("edited", current);
+            PersistSynchronously(cache, "edited", current);
+            PersistSynchronously(cache, "edited", old);
+            Assert.AreEqual("current", new PlaylistCache(dir.Path).Get("edited")!.Assets.Single().Id);
+            cache.InvalidateAll();
+        }
     }
 
     private static PlaylistCacheEntry Entry(string id) =>
@@ -89,4 +95,11 @@ public sealed class PlaylistCacheTests
     private static Task PersistAsync(PlaylistCache cache, string id, PlaylistCacheEntry entry) =>
         (Task)typeof(PlaylistCache).GetMethod("PersistToDiskAsync", BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(cache, [id, entry])!;
+
+    private static void PersistSynchronously(PlaylistCache cache, string id, PlaylistCacheEntry entry)
+    {
+        var persistence = PersistAsync(cache, id, entry);
+        Assert.IsTrue(persistence.IsCompleted, "The locked persistence probe must complete synchronously.");
+        persistence.GetAwaiter().GetResult();
+    }
 }

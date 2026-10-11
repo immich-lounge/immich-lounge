@@ -6,6 +6,9 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+## 1.2.0 — 2026-10-11
+
+- Set companion assembly/package version to `1.2.0` and both Roku manifests to `1.2.0000`.
 - Allow playlists with regular sources to rebuild when optional memory retrieval times out or returns a transient network/server error. Log a warning; retain errors for memory-only profiles, permission failures, exclusions, and caller cancellation.
 - Add opt-in saved memories for Immich 3.2+, with complete pagination and deduplication. Include past saved memories, exclude upcoming memories, and retain birthday captions only for active daily birthday memories.
 - Fetch every Immich people page for the profile pickers, deduplicate shared people, and detect pagination that makes no progress.
@@ -25,9 +28,9 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 - Add `display.locationFormat` with five location label formats, defaulting to city/country. Share formatting across Roku overlay styles and modes; trim missing/blank values and deduplicate repeated place names. Apply profile format changes to the current metadata label.
 
-- Give the Zensical website distinct light and dark palettes, follow the system color preference until the visitor chooses a theme, replace dark card gradients with theme-aware solid surfaces, and improve link, button, and keyboard-focus contrast.
-
 ## 1.1.0 — 2026-10-11
+
+- Give the Zensical website distinct light and dark palettes, follow the system color preference until the visitor chooses a theme, replace dark card gradients with theme-aware solid surfaces, and improve link, button, and keyboard-focus contrast.
 
 - Set companion assembly/package version to `1.1.0` and both Roku manifests to `1.1.0000`.
 - Reorganize the companion editor into Photos, Playback, and Appearance, add bounded thumbnail samples to selection previews, and preserve pending-save edits and advanced matching rules.
