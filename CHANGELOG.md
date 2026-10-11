@@ -6,6 +6,7 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+- Add `slideshow.dateOrder` (`newestFirst` or `oldestFirst`) for unshuffled playlists. Expose Photo order when Shuffle is off and retain newest-first ordering for existing profiles.
 - Add opt-in `onlyPhotosWithPeople` profile filtering using Immich 3.2+ `hasPeople`, including shared album scopes and memories. Gate the editor by detected capability, preserve existing profiles, and reject unsupported filtering instead of dropping the predicate.
 
 - Support shared Immich albums as playlist sources and preserve selected album scope when matching or excluding people, including nested filter rules. Retain owned/partner searches, deduplicate matches, and propagate scoped search failures. Add legacy/cursor pagination boundary regressions and shared-people setup guidance in the editor and docs.

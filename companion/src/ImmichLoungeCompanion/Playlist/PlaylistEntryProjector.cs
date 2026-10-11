@@ -24,8 +24,11 @@ public static class PlaylistEntryProjector
             return Prioritize(entries, profile);
         }
 
-        return Prioritize(allAssets
-            .OrderByDescending(kvp => kvp.Value.Asset.ExifInfo?.DateTimeOriginal ?? "")
+        var orderedAssets = profile.Slideshow.DateOrder == "oldestFirst"
+            ? allAssets.OrderBy(kvp => kvp.Value.Asset.ExifInfo?.DateTimeOriginal ?? "")
+            : allAssets.OrderByDescending(kvp => kvp.Value.Asset.ExifInfo?.DateTimeOriginal ?? "");
+
+        return Prioritize(orderedAssets
             .ThenBy(kvp => kvp.Key, StringComparer.Ordinal)
             .Select(kvp => MapToEntry(kvp.Key, kvp.Value, profile.MediaTypes))
             .Where(entry => entry != null)

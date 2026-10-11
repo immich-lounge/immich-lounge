@@ -225,6 +225,17 @@ else
             </div>
 
             <label><input type="checkbox" @bind="_profile.Slideshow.Shuffle" /> Shuffle photos</label>
+            @if (!_profile.Slideshow.Shuffle)
+            {
+                <label>
+                    Photo order
+                    <select @bind="_profile.Slideshow.DateOrder">
+                        <option value="newestFirst">Newest first</option>
+                        <option value="oldestFirst">Oldest first</option>
+                    </select>
+                </label>
+                <p class="section-intro">Order photos by their original date.</p>
+            }
             <h3>Fit on screen</h3>
             <label><input type="checkbox" @bind="_profile.Display.ZoomToFit" /> Fill the screen with landscape photos</label>
             <p class="section-intro">Fill the screen by cropping the edges of landscape photos. Portrait and square photos still show the whole image.</p>
