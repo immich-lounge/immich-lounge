@@ -11,6 +11,8 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 ## Unreleased
 
+- Show all available people in profile pickers, including libraries with more than 500 people.
+
 - With Shuffle off, choose Newest first or Oldest first to play photos by their original date. Existing profiles keep Newest first.
 - Choose **Only photos with people** to show photos with any detected face, including unnamed people, shared albums, and memories. Requires Immich 3.2 or later.
 
