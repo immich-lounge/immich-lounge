@@ -15,7 +15,13 @@ public class PlaylistApiTests : IDisposable
     private readonly HttpClient _client;
 
     public PlaylistApiTests() => _client = _factory.CreateClient();
-    public void Dispose() => _factory.Dispose();
+    public void Dispose()
+    {
+        // Invalidation shares the persistence gate and prevents queued writes from
+        // recreating cache files while the factory deletes its temporary directory.
+        _factory.Services.GetRequiredService<IPlaylistCache>().InvalidateAll();
+        _factory.Dispose();
+    }
 
     private async Task<IPlaylistCache> CreateCyclePlaylistAsync(bool shuffle = true)
     {
@@ -111,13 +117,27 @@ public class PlaylistApiTests : IDisposable
             imageQuality = "preview"
         });
 
-        var response = await _client.GetAsync("/api/profiles/test-playlist/playlist");
-        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
+        var cache = _factory.Services.GetRequiredService<IPlaylistCache>();
+        try
+        {
+            var response = await _client.GetAsync("/api/profiles/test-playlist/playlist");
+            Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
 
-        var body = await response.Content.ReadFromJsonAsync<PlaylistResponse>();
-        Assert.IsTrue(body!.Building);
-        Assert.IsFalse(body.Cached);
-        Assert.AreEqual(0, body.Assets.Count);
+            var body = await response.Content.ReadFromJsonAsync<PlaylistResponse>();
+            Assert.IsTrue(body!.Building);
+            Assert.IsFalse(body.Cached);
+            Assert.AreEqual(0, body.Assets.Count);
+        }
+        finally
+        {
+            // The response intentionally precedes the background build. Let the
+            // build finish before teardown invalidates its cache and deletes data.
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            while (cache.IsBuilding("test-playlist"))
+            {
+                await Task.Delay(10, timeout.Token);
+            }
+        }
     }
 
     [TestMethod]
