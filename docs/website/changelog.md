@@ -11,6 +11,10 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 ## Unreleased
 
+## 1.2.0 — 2026-10-11
+
+- Companion and Roku apps version 1.2.0.
+
 - With Shuffle off, choose Newest first or Oldest first to play photos by their original date. Existing profiles keep Newest first.
 - Choose **Only photos with people** to show photos with any detected face, including unnamed people, shared albums, and memories. Requires Immich 3.2 or later.
 
@@ -26,9 +30,9 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 - Choose how photo locations appear: city and country, full city/state/province/country, city only, state/province and country, or country only. Existing profiles keep city and country.
 
-- Make the website easier to read with a true light mode, clearer links and buttons, and simpler card backgrounds. Follow your system theme by default and remember your choice when you switch modes.
-
 ## 1.1.0 — 2026-10-11
+
+- Make the website easier to read with a true light mode, clearer links and buttons, and simpler card backgrounds. Follow your system theme by default and remember your choice when you switch modes.
 
 - Companion and Roku apps version 1.1.0.
 - A simpler companion editor groups Photos, Playback, and Appearance settings, with sample photos when previewing your selection.
