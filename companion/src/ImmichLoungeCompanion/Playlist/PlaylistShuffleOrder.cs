@@ -7,6 +7,20 @@ namespace ImmichLoungeCompanion.Playlist;
 
 public static class PlaylistShuffleOrder
 {
+    // A device's cycle seed travels in its playlist version. Repeated windows and
+    // refreshes use the same permutation without changing the shared cache.
+    public static List<PlaylistEntry> ForCycle(IReadOnlyList<PlaylistEntry> assets, int seed)
+    {
+        var entries = assets.ToList();
+        var random = new Random(seed);
+        for (var i = entries.Count - 1; i > 0; i--)
+        {
+            var j = random.Next(i + 1);
+            (entries[i], entries[j]) = (entries[j], entries[i]);
+        }
+        return entries;
+    }
+
     public static List<PlaylistEntry> PreserveExistingOrder(
         IReadOnlyList<PlaylistEntry> existingOrder,
         List<PlaylistEntry> rebuiltAssets)

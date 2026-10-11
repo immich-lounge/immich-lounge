@@ -24,29 +24,39 @@ sub ShowSettingsDialogForScene(ctx as Object)
         scheduleName = ValueOrDefault(ctx.profile.selectionName, Mid(ctx.top.profileId, 10))
         dlg.message = ["Schedule: " + scheduleName, "Playing profile: " + profileName, ctx.top.companionUrl]
     end if
-    dlg.buttons = ["Refresh Now", "Choose Profile or Schedule", "Change Companion", "Clear Cache", "Clear Saved Setup", "Close"]
+    dlg.buttons = SettingsDialogButtonsForScene(ctx)
     dlg.observeField("buttonSelected", "OnSettingsButton")
     dlg.observeField("wasClosed", "OnSettingsDismissed")
     ctx.top.dialog = dlg
 end sub
 
+function SettingsDialogButtonsForScene(ctx as Object) as Object
+    buttons = ["Refresh Now"]
+    if ShufflePlaylistLoopsForScene(ctx) then buttons.Push("Restart with fresh shuffle")
+    buttons.Append(["Choose Profile or Schedule", "Change Companion", "Clear Cache", "Clear Saved Setup", "Close"])
+    return buttons
+end function
+
 sub OnSettingsButtonForScene(ctx as Object)
     dlg = ctx.top.dialog
     if dlg = invalid then return
     idx = dlg.buttonSelected
+    action = dlg.buttons[idx]
     LogDebug("SlideshowScene", "Settings dialog button=" + idx.ToStr())
     ResumeAfterDialogForScene(ctx)
 
-    if idx = 0 then
+    if action = "Refresh Now" then
         TriggerPlaylistRefreshForScene(ctx, ctx.top.isScreensaver)
-    else if idx = 1 then
+    else if action = "Restart with fresh shuffle" then
+        RestartShuffleForScene(ctx)
+    else if action = "Choose Profile or Schedule" then
         ctx.top.requestChangeProfile = true
-    else if idx = 2 then
+    else if action = "Change Companion" then
         ctx.top.requestChangeCompanion = true
-    else if idx = 3 then
+    else if action = "Clear Cache" then
         RegistryClearCachedData()
         TriggerPlaylistRefreshForScene(ctx, ctx.top.isScreensaver)
-    else if idx = 4 then
+    else if action = "Clear Saved Setup" then
         RegistryClearSavedSetup()
         ctx.top.requestChangeCompanion = true
     end if

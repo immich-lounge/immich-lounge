@@ -10,6 +10,7 @@
     "source/PlaybackConstants.brs",
     "source/DateTimeFormatting.brs",
     { "src": "components/playback/*.brs", "dest": "source/" },
+    { "src": "components/slideshow/SlideshowDialogs.brs", "dest": "source/SlideshowDialogs.brs" },
     "components/CompanionApiTask.*",
     "components/AssetMetaTask.*",
     "components/OverlayComponent.*",

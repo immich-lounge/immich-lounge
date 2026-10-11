@@ -45,7 +45,7 @@ Memories are added to the source results; they do not have to match the selected
 
 Profiles with nested content rules created through the API keep those rules when edited in the companion. Their source selectors are unavailable; edit the nested rules through the API. Excluded people, memories, and display settings can still be changed in the companion.
 
-The companion collects all matching result pages and removes duplicates. With **Shuffle** enabled, it randomizes the playlist when building it; it does not randomly choose a smaller sample. The Roku fetches the playlist in windows and keeps its place while the playlist version stays the same. Rebuilding can change the order. With shuffle off, photos are ordered by their original date, newest first.
+The companion collects all matching result pages and removes duplicates. With **Shuffle** enabled, every matching photo is included, and each Roku gets a fresh randomized order after completing a loop. The Roku fetches photos in windows and keeps the same order during refreshes and resume within that loop. Each device's loop is independent. With shuffle off, photos are ordered by their original date, newest first. Offline playback repeats the cached window until the companion is reachable, with a 60-second pause between failed playlist requests.
 
 ![Immich Lounge companion profiles page](./assets/screenshots/companion-profiles.png){ .doc-screenshot .on-glb }
 <p class="doc-caption">Each profile can target a different room, use case, or screensaver setup.</p>

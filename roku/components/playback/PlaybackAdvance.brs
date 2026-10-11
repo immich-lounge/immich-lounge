@@ -18,7 +18,7 @@ sub AdvanceToNextForScene(ctx as Object)
     end if
 
     if ctx.playlistIndex + ctx.slideAssetCount >= ctx.playlist.Count() then
-        hasMoreBatches = ctx.totalPlaylistCount > ctx.playlist.Count()
+        hasMoreBatches = HasNextPlaylistWindowForScene(ctx)
         if hasMoreBatches then
             ctx.waitingForNextBatchSwap = true
             FetchNextPlaylistBatchForScene(ctx, ctx.top.isScreensaver)
@@ -35,6 +35,8 @@ sub AdvanceToNextForScene(ctx as Object)
             end if
         end if
 
+        ' Replaying the cached window is a new local loop, not a pending swap.
+        ctx.waitingForNextBatchSwap = false
         ctx.playlistIndex = 0
     else
         ctx.playlistIndex = NextPortraitSlideIndex(ctx.playlistIndex, ctx.playlist.Count(), ctx.slideAssetCount)

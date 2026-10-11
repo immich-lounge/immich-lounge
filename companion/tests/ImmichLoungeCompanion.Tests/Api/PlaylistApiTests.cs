@@ -17,6 +17,78 @@ public class PlaylistApiTests : IDisposable
     public PlaylistApiTests() => _client = _factory.CreateClient();
     public void Dispose() => _factory.Dispose();
 
+    private async Task<IPlaylistCache> CreateCyclePlaylistAsync(bool shuffle = true)
+    {
+        var response = await _client.PostAsJsonAsync("/api/profiles", new Profile
+        {
+            Id = "cycle-playlist", Name = "Cycle playlist",
+            Slideshow = new() { Shuffle = shuffle }
+        });
+        response.EnsureSuccessStatusCode();
+        var cache = _factory.Services.GetRequiredService<IPlaylistCache>();
+        cache.Set("cycle-playlist", new PlaylistCacheEntry(
+            Enumerable.Range(0, 123).Select(i => new PlaylistEntry($"photo-{i}", "photo", null, null)).ToList(),
+            DateTimeOffset.UtcNow, "v1"));
+        return cache;
+    }
+
+    [TestMethod]
+    public async Task ShuffleCycle_PagesCoverEveryAssetOnce_AndRefreshKeepsTheSameWindow()
+    {
+        var cache = await CreateCyclePlaylistAsync();
+        var originalOrder = cache.Get("cycle-playlist")!.Assets.Select(a => a.Id).ToArray();
+        var seen = new List<string>();
+        var offset = 0;
+        do
+        {
+            var url = $"/api/profiles/cycle-playlist/playlist?count=50&offset={offset}&playlistVersion=v1~12345";
+            var page = (await _client.GetFromJsonAsync<PlaylistResponse>(url))!;
+            var refreshed = (await _client.GetFromJsonAsync<PlaylistResponse>(url))!;
+            Assert.AreEqual("v1~12345", page.PlaylistVersion);
+            Assert.AreEqual(offset, page.Offset);
+            CollectionAssert.AreEqual(page.Assets, refreshed.Assets);
+            seen.AddRange(page.Assets.Select(a => a.Id));
+            offset = page.NextOffset;
+        } while (offset != 0);
+
+        Assert.AreEqual(123, seen.Count);
+        CollectionAssert.AreEquivalent(originalOrder, seen.ToArray());
+        CollectionAssert.AreEqual(originalOrder, cache.Get("cycle-playlist")!.Assets.Select(a => a.Id).ToArray(),
+            "A device's shuffle cycle must not mutate the shared playlist.");
+        Assert.AreEqual("v1", cache.Get("cycle-playlist")!.PlaylistVersion);
+    }
+
+    [TestMethod]
+    public async Task ShuffleCycle_NewSeedChangesOrder_WithoutChangingOtherDevices()
+    {
+        await CreateCyclePlaylistAsync();
+        var first = (await _client.GetFromJsonAsync<PlaylistResponse>("/api/profiles/cycle-playlist/playlist?count=1000&playlistVersion=v1~12345"))!;
+        var second = (await _client.GetFromJsonAsync<PlaylistResponse>("/api/profiles/cycle-playlist/playlist?count=1000&playlistVersion=v1~67890"))!;
+        var resumedFirst = (await _client.GetFromJsonAsync<PlaylistResponse>("/api/profiles/cycle-playlist/playlist?count=1000&playlistVersion=v1~12345"))!;
+        CollectionAssert.AreEquivalent(first.Assets, second.Assets);
+        Assert.IsFalse(first.Assets.SequenceEqual(second.Assets));
+        CollectionAssert.AreEqual(first.Assets, resumedFirst.Assets);
+    }
+
+    [TestMethod]
+    public async Task ShuffleCycle_ContentVersionChangeResetsOffset_ButRetainsCycleSeed()
+    {
+        await CreateCyclePlaylistAsync();
+        var page = (await _client.GetFromJsonAsync<PlaylistResponse>("/api/profiles/cycle-playlist/playlist?count=50&offset=50&playlistVersion=old~12345"))!;
+        Assert.AreEqual(0, page.Offset);
+        Assert.AreEqual("v1~12345", page.PlaylistVersion);
+    }
+
+    [TestMethod]
+    public async Task ShuffleCycle_ShuffleDisabledKeepsChronologicalOrder()
+    {
+        var cache = await CreateCyclePlaylistAsync(shuffle: false);
+        var page = (await _client.GetFromJsonAsync<PlaylistResponse>("/api/profiles/cycle-playlist/playlist?count=50&offset=50&playlistVersion=v1~12345"))!;
+        Assert.AreEqual(50, page.Offset);
+        Assert.AreEqual("v1", page.PlaylistVersion);
+        CollectionAssert.AreEqual(cache.Get("cycle-playlist")!.Assets.Skip(50).Take(50).ToList(), page.Assets);
+    }
+
     [TestMethod]
     public async Task GetPlaylist_ProfileNotFound_Returns404()
     {

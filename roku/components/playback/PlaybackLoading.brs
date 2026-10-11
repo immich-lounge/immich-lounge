@@ -137,4 +137,6 @@ sub CommitSlideForScene(ctx as Object, fromSlot as Integer, toSlot as Integer, e
         ctx.slideTimer.control = "start"
         ctx.progressTimer.control = "start"
     end if
+    ' A transition with no effect finishes synchronously during commit.
+    ApplyDeferredShuffleRestartForScene(ctx)
 end sub

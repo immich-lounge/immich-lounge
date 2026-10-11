@@ -20,6 +20,7 @@ sub HandleAssetLoadFailureForScene(ctx as Object)
     ctx.layoutRetryAttempts = 0
     ctx.layoutRetryTimer.control = "stop"
     ctx.isTransitioning = false
+    if ApplyDeferredShuffleRestartForScene(ctx) then return
     ctx.consecutiveFails = ctx.consecutiveFails + 1
 
     if not ctx.hasShownFirstFrame then
