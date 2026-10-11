@@ -63,7 +63,7 @@ jobs:
           docker exec companion-smoke dotnet --info
           docker cp companion-smoke:/app/ImmichLoungeCompanion.deps.json /tmp/companion.deps.json
           grep -q 'linux-${{ matrix.dotnet-arch }}' /tmp/companion.deps.json
-          curl --fail --silent --show-error --retry 20 --retry-delay 1 --retry-connrefused http://127.0.0.1:4383/healthz
+          curl --fail --silent --show-error --max-time 2 --retry 20 --retry-delay 1 --retry-max-time 30 --retry-all-errors http://127.0.0.1:4383/healthz
           curl --fail --silent --show-error -X PUT -H 'Content-Type: application/json' --data '{"friendlyName":"CI smoke test","immich":{"serverUrl":"http://192.0.2.1:2283"}}' http://127.0.0.1:4383/api/settings
           docker cp companion-smoke:/data/settings.json /tmp/companion.settings.json
           grep -q 'CI smoke test' /tmp/companion.settings.json
