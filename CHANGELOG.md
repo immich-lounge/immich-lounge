@@ -8,6 +8,8 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 - Add signed GitHub build provenance and downloadable inner-ZIP SHA256 checksums to candidate companion, Roku channel/screensaver, and docs artifacts; enforce aligned source versions, required files, and strict docs validation.
 
+- Publish companion images for Linux AMD64 and ARM64 using native SDK cross-compilation. Build and smoke-test both architectures in CI, including the health endpoint and writable data volume.
+
 - Add `display.locationFormat` with five location label formats, defaulting to city/country. Share formatting across Roku overlay styles and modes; trim missing/blank values and deduplicate repeated place names. Apply profile format changes to the current metadata label.
 
 - Give the Zensical website distinct light and dark palettes, follow the system color preference until the visitor chooses a theme, replace dark card gradients with theme-aware solid surfaces, and improve link, button, and keyboard-focus contrast.
