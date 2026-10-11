@@ -79,7 +79,14 @@ public sealed class PlaylistCacheTests
         await PersistAsync(cache, "edited", current);
         await PersistAsync(cache, "edited", old);
 
-        Assert.AreEqual("current", new PlaylistCache(dir.Path).Get("edited")!.Assets.Single().Id);
+        // The old instance's queued current write may still run. A real restart
+        // cannot overlap that writer; hold its gate while simulating the fresh read.
+        var persistenceGate = typeof(PlaylistCache).GetField("_gate", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .GetValue(cache)!;
+        lock (persistenceGate)
+        {
+            Assert.AreEqual("current", new PlaylistCache(dir.Path).Get("edited")!.Assets.Single().Id);
+        }
         cache.InvalidateAll();
     }
 
