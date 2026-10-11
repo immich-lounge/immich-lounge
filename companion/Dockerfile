@@ -1,12 +1,13 @@
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+ARG TARGETARCH
 WORKDIR /app
 # Copy only the main project csproj first for layer-cached restore (no sln, no tests)
 COPY src/ImmichLoungeCompanion/ImmichLoungeCompanion.csproj src/ImmichLoungeCompanion/
-RUN dotnet restore src/ImmichLoungeCompanion/ImmichLoungeCompanion.csproj
+RUN dotnet restore src/ImmichLoungeCompanion/ImmichLoungeCompanion.csproj -a $TARGETARCH
 # Now copy the rest of the source (changes here don't invalidate the restore layer)
 COPY src/ src/
 RUN dotnet publish src/ImmichLoungeCompanion/ImmichLoungeCompanion.csproj \
-    -c Release -o /out --no-restore
+    -c Release -a $TARGETARCH --self-contained false -o /out --no-restore
 RUN mkdir -p /volume-seed/data \
     && touch /volume-seed/data/.volume-init \
     && chown -R ${APP_UID}:${APP_UID} /volume-seed

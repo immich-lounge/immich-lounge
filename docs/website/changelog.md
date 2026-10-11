@@ -13,6 +13,8 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 - Add checksums and signed build provenance to Immich Lounge candidate downloads so maintainers can verify their source and integrity.
 
+- Add ARM64 companion images for 64-bit ARM hosts. Docker automatically selects the image for your host.
+
 - Choose how photo locations appear: city and country, full city/state/province/country, city only, state/province and country, or country only. Existing profiles keep city and country.
 
 - Make the website easier to read with a true light mode, clearer links and buttons, and simpler card backgrounds. Follow your system theme by default and remember your choice when you switch modes.

@@ -33,8 +33,40 @@ jobs:
 
       - name: Build development fixture tooling
         run: dotnet build tests/LiveImmich/LiveImmich.csproj --configuration Release
+
+  companion-docker:
+    name: Companion Docker (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            dotnet-arch: x64
+            runner: ubuntu-latest
+          - arch: arm64
+            dotnet-arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
       - name: Build Docker image
-        run: docker build -t immich-lounge-companion:test .
+        run: docker build --platform linux/${{ matrix.arch }} -t immich-lounge-companion:test ./companion
+
+      - name: Check runtime and data volume
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run -d --name companion-smoke -p 127.0.0.1:4383:4383 -v companion-smoke-data:/data immich-lounge-companion:test
+          trap 'docker logs companion-smoke; docker rm -f companion-smoke; docker volume rm companion-smoke-data' EXIT
+          docker exec companion-smoke dotnet --info
+          docker cp companion-smoke:/app/ImmichLoungeCompanion.deps.json /tmp/companion.deps.json
+          grep -q 'linux-${{ matrix.dotnet-arch }}' /tmp/companion.deps.json
+          curl --fail --silent --show-error --max-time 2 --retry 20 --retry-delay 1 --retry-max-time 30 --retry-all-errors http://127.0.0.1:4383/healthz
+          curl --fail --silent --show-error -X PUT -H 'Content-Type: application/json' --data '{"friendlyName":"CI smoke test","immich":{"serverUrl":"http://192.0.2.1:2283"}}' http://127.0.0.1:4383/api/settings
+          docker cp companion-smoke:/data/settings.json /tmp/companion.settings.json
+          grep -q 'CI smoke test' /tmp/companion.settings.json
 
   roku:
     name: Roku Build
