@@ -277,6 +277,70 @@ public class SearchCompatibilityTests
         Assert.IsFalse((await client.GetSearchApiCapabilitiesAsync(Settings())).StructuredSearch);
     }
 
+    [TestMethod]
+    [DataRow(1, 1, 0)]
+    [DataRow(1, 1, 3)]
+    [DataRow(1, 1000, 999)]
+    [DataRow(1, 1000, 1000)]
+    [DataRow(1, 1000, 1001)]
+    [DataRow(2, 1, 3)]
+    [DataRow(2, 1000, 1000)]
+    [DataRow(2, 1000, 1001)]
+    [DataRow(3, 1, 0)]
+    [DataRow(3, 2, 3)]
+    [DataRow(3, 1000, 999)]
+    [DataRow(3, 1000, 1000)]
+    [DataRow(3, 1000, 1001)]
+    [DataRow(3, 1000, 2000)]
+    public async Task AlbumPersonSearchPreservesScopeAcrossPageSizeBoundaries(int minor, int size, int total)
+    {
+        var calls = 0;
+        var client = Client(async req =>
+        {
+            if (req.Method == HttpMethod.Get) { return Version(minor); }
+            var body = JsonDocument.Parse(await req.Content!.ReadAsStringAsync()).RootElement;
+            var offset = calls++ * size;
+            Assert.AreEqual(size, body.GetProperty("size").GetInt32());
+            if (minor >= 2)
+            {
+                var filter = body.GetProperty("filter");
+                Assert.AreEqual("album", filter.GetProperty("albumIds").GetProperty("all")[0].GetString());
+                Assert.AreEqual("person", filter.GetProperty("personIds").GetProperty("all")[0].GetString());
+                if (offset > 0) { Assert.AreEqual(offset.ToString(), body.GetProperty("cursor").GetString()); }
+            }
+            else
+            {
+                Assert.AreEqual(calls, body.GetProperty("page").GetInt32());
+                Assert.AreEqual("album", body.GetProperty("albumIds")[0].GetString());
+                Assert.AreEqual("person", body.GetProperty("personIds")[0].GetString());
+            }
+            var count = Math.Min(size, total - offset);
+            var items = Enumerable.Range(offset, count).Select(i => new { id = i.ToString() }).ToArray();
+            var more = offset + count < total;
+            return Json(JsonSerializer.Serialize(new { assets = new { items,
+                nextCursor = minor >= 2 && more ? (offset + count).ToString() : null,
+                nextPage = minor == 1 && more ? (calls + 1).ToString() : null } }));
+        });
+        var result = await client.SearchAssetsAllPagesAsync(Settings(), new() { AlbumIds = ["album"], PersonIds = ["person"], Size = size });
+        CollectionAssert.AreEqual(Enumerable.Range(0, total).Select(i => i.ToString()).ToArray(), result.Select(a => a.Id).ToArray());
+        Assert.AreEqual(Math.Max(1, (total + size - 1) / size), calls, "A full final page must stop when its continuation token is null.");
+    }
+
+    [TestMethod]
+    [DataRow(1)]
+    [DataRow(3)]
+    public async Task AlbumPersonSearchFailureOnLaterPageThrowsInsteadOfServingFirstPage(int minor)
+    {
+        var calls = 0;
+        var client = Client(req => Task.FromResult(req.Method == HttpMethod.Get ? Version(minor)
+            : ++calls == 1 ? Json(minor == 1
+                ? """{"assets":{"items":[{"id":"first"}],"nextPage":"2"}}"""
+                : """{"assets":{"items":[{"id":"first"}],"nextCursor":"next","nextPage":null}}""")
+            : new HttpResponseMessage(HttpStatusCode.Forbidden)));
+        await Assert.ThrowsAsync<HttpRequestException>(() => client.SearchAssetsAllPagesAsync(Settings(), new() { AlbumIds = ["album"], PersonIds = ["person"], Size = 1 }));
+        Assert.AreEqual(2, calls);
+    }
+
     private static ImmichClient Client(Func<HttpRequestMessage, Task<HttpResponseMessage>> respond, TimeProvider? time = null) =>
         new(new Factory(new HttpClient(new Handler(respond))), NullLogger<ImmichClient>.Instance, time);
 

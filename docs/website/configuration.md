@@ -77,7 +77,22 @@ The companion collects all matching result pages and removes duplicates. With **
 | Playback | Interval, shuffle, transition effect, photo motion, and playlist refresh interval |
 | Display | Overlay style and fields, background effect, date and time formatting, weather, and image quality |
 
-> **Shared albums:** Immich Lounge currently lists only albums owned by the configured Immich user. Shared albums are hidden because Immich search does not yet reliably return assets from shared albums. Track upstream support in the Immich discussion [Shared Albums in Search Results](https://github.com/immich-app/immich/discussions/2995).
+## Shared albums and people
+
+Albums shared with the Immich account used by the companion can be selected. People filters and exclusions also search the selected albums.
+
+People sharing and photo sharing are separate. On Immich 3.3 or later, users in the same cluster group can share person records so their names appear in the People selectors and photo labels. The photos still need to be shared through an album or partner sharing.
+
+To show one person from a shared album:
+
+1. In Immich, share the album with the account whose API key is configured in the companion.
+2. Add both users to the same cluster group and share the person with that account.
+3. In the profile's **Photos** view, select the album and person.
+4. Under **Filters**, choose **Every selection**. **Any selection** includes the whole album as well as other matching photos.
+
+To remove a person from that album instead, select the album and add the person under **Exclude people (NOT)**. Exclusions also apply to added memories.
+
+Person-only profiles use Immich's normal owned/partner library search. Select the shared album as well to include photos shared only through that album.
 
 ![Immich Lounge slideshow with overlay, clock, and weather](./assets/screenshots/slideshow.png){ .doc-screenshot .on-glb }
 <p class="doc-caption">Example slideshow with a left-side overlay, persistent clock, and weather.</p>

@@ -11,6 +11,8 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 ## Unreleased
 
+- Use shared Immich albums in slideshow profiles, including filters that match or exclude people. For another user's people and names, share the people separately in Immich 3.3 or later. New editor hints explain how to select the album and person and use **Every selection** to show only matching photos.
+
 - Add checksums and signed build provenance to Immich Lounge candidate downloads so maintainers can verify their source and integrity.
 
 - Add ARM64 companion images for 64-bit ARM hosts. Docker automatically selects the image for your host.

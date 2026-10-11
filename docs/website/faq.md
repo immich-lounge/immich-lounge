@@ -72,7 +72,7 @@ Yes. They share the same companion connection, but the Roku channel and Roku scr
 
 ## Can I use shared Immich albums?
 
-Not yet. Immich Lounge currently lists only albums owned by the configured Immich user because Immich search does not yet reliably return assets from shared albums. Follow upstream progress in the Immich discussion [Shared Albums in Search Results](https://github.com/immich-app/immich/discussions/2995).
+Yes. Select albums shared with the Immich user whose API key is configured in the companion. People matching and exclusions include those selected albums. To select another user's people or show their names, explicitly share the people within an Immich cluster group (Immich 3.3 or later). Sharing a person does not automatically share their photos; use album or partner sharing as well. To show only that person in a shared album, select the album and person, then choose **Every selection** under **Filters**. See [Shared albums and people](./configuration.md#shared-albums-and-people) for setup.
 
 ---
 

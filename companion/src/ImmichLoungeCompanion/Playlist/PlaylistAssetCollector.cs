@@ -19,8 +19,12 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
     {
         profile.NormalizeAssetFilter();
 
+        var albumIds = profile.AssetFilter == null
+            ? new List<string>()
+            : FindAlbumIds(profile.AssetFilter).Distinct(StringComparer.Ordinal).ToList();
+
         Dictionary<string, CollectedAsset> allAssets = profile.AssetFilter != null
-            ? await EvaluateRuleAsync(profile.AssetFilter, immichSettings, profile.DateFilter, profile.LocationFilter, ct)
+            ? await EvaluateRuleAsync(profile.AssetFilter, immichSettings, profile.DateFilter, profile.LocationFilter, albumIds, ct)
             : profile.HasMemoriesSource()
                 ? new(StringComparer.Ordinal)
                 : await FetchAllAssetsAsync(immichSettings, profile.DateFilter, profile.LocationFilter, ct);
@@ -59,8 +63,7 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
         foreach (var personId in profile.ExcludedPeople.Select(person => person.Id).Distinct(StringComparer.Ordinal))
         {
             ct.ThrowIfCancellationRequested();
-            var excluded = await immich.SearchAssetsAllPagesAsync(immichSettings,
-                new SearchAssetsRequest { PersonIds = [personId] });
+            var excluded = await SearchPersonAssetsAsync(immichSettings, personId, albumIds, null, null, ct);
             foreach (var asset in excluded)
             {
                 allAssets.Remove(asset.Id);
@@ -99,19 +102,20 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
         ImmichSettings immichSettings,
         DateFilter? dateFilter,
         LocationFilter? locationFilter,
+        IReadOnlyList<string> albumIds,
         CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
         if (rule.Kind == AssetFilterRuleKind.Condition)
         {
-            return await FetchConditionAssetsAsync(rule, immichSettings, dateFilter, locationFilter, ct);
+            return await FetchConditionAssetsAsync(rule, immichSettings, dateFilter, locationFilter, albumIds, ct);
         }
 
         var childResults = new List<Dictionary<string, CollectedAsset>>();
         foreach (var child in rule.Children)
         {
-            childResults.Add(await EvaluateRuleAsync(child, immichSettings, dateFilter, locationFilter, ct));
+            childResults.Add(await EvaluateRuleAsync(child, immichSettings, dateFilter, locationFilter, albumIds, ct));
         }
 
         if (childResults.Count == 0)
@@ -131,9 +135,16 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
         ImmichSettings immichSettings,
         DateFilter? dateFilter,
         LocationFilter? locationFilter,
+        IReadOnlyList<string> albumIds,
         CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
+
+        if (rule.Type == AssetFilterConditionType.Person)
+        {
+            var peopleAssets = await SearchPersonAssetsAsync(immichSettings, rule.Id!, albumIds, dateFilter, locationFilter, ct);
+            return ToAssetDictionary(peopleAssets, null);
+        }
 
         var request = BuildSearchRequest(rule, dateFilter);
         ApplyLocationFilter(request, locationFilter);
@@ -141,6 +152,55 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
         var sourceLabel = rule.Type == AssetFilterConditionType.Album ? rule.Label : null;
 
         return ToAssetDictionary(assets, sourceLabel);
+    }
+
+    private static IEnumerable<string> FindAlbumIds(AssetFilterRule rule)
+    {
+        if (rule.Kind == AssetFilterRuleKind.Condition)
+        {
+            if (rule.Type == AssetFilterConditionType.Album && !string.IsNullOrEmpty(rule.Id))
+            {
+                yield return rule.Id;
+            }
+            yield break;
+        }
+
+        foreach (var child in rule.Children)
+        {
+            foreach (var id in FindAlbumIds(child))
+            {
+                yield return id;
+            }
+        }
+    }
+
+    private async Task<List<ImmichAsset>> SearchPersonAssetsAsync(
+        ImmichSettings settings, string personId, IReadOnlyList<string> albumIds,
+        DateFilter? dateFilter, LocationFilter? locationFilter, CancellationToken ct)
+    {
+        var assets = new Dictionary<string, ImmichAsset>(StringComparer.Ordinal);
+        // Immich's default search covers owned/partner assets. Album-only shares
+        // require an explicit album scope, even when the person is shared too.
+        // Query albums separately: an ID list means intersection, not union.
+        foreach (var albumId in new string?[] { null }.Concat(albumIds))
+        {
+            ct.ThrowIfCancellationRequested();
+            var request = new SearchAssetsRequest { PersonIds = [personId] };
+            if (albumId != null)
+            {
+                request.AlbumIds = [albumId];
+            }
+            if (dateFilter != null)
+            {
+                ApplyDateFilter(request, dateFilter);
+            }
+            ApplyLocationFilter(request, locationFilter);
+            foreach (var asset in await immich.SearchAssetsAllPagesAsync(settings, request))
+            {
+                assets.TryAdd(asset.Id, asset);
+            }
+        }
+        return assets.Values.ToList();
     }
 
     private async Task<Dictionary<string, CollectedAsset>> FetchMemoriesAssetsAsync(
