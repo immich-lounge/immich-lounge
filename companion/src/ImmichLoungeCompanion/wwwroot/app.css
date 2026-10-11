@@ -35,6 +35,7 @@ p {color:var(--text-secondary);}
 .nav-section a:hover {background:var(--bg-surface); color:var(--text-primary);}
 .nav-section a.active {background:var(--accent-light); color:var(--accent);}
 .nav-help {margin-top:auto; padding:30px 14px 0; color:var(--text-muted); font-size:.85rem; text-decoration:none;}
+.nav-version {padding:8px 14px 0; color:var(--text-muted); font-size:.8rem; overflow-wrap:anywhere;}
 .page-heading {display:flex; justify-content:space-between; gap:20px; align-items:center; margin-bottom:26px;}
 .page-heading h1 {margin-bottom:8px;}
 .page-intro {max-width:640px; margin-bottom:24px; color:var(--text-secondary);}

@@ -9,4 +9,11 @@
         <NavLink href="/connection" Match="NavLinkMatch.All">Connection</NavLink>
     </div>
     <a class="nav-help" href="https://immich-lounge.github.io/" target="_blank" rel="noopener noreferrer">Help &amp; setup ↗</a>
+    <div class="nav-version">Companion v@CompanionVersion</div>
 </nav>
+
+@code {
+    private static readonly string CompanionVersion =
+        System.Reflection.CustomAttributeExtensions.GetCustomAttribute<System.Reflection.AssemblyInformationalVersionAttribute>(
+            typeof(Program).Assembly)?.InformationalVersion.Split('+')[0] ?? "unknown";
+}
