@@ -145,12 +145,39 @@ public class ImmichClient(IHttpClientFactory httpClientFactory, ILogger<ImmichCl
     public async Task<List<ImmichPerson>> GetPeopleAsync(ImmichSettings settings)
     {
         var (client, baseUrl) = BuildClient(settings);
-        var req = ApiRequest(HttpMethod.Get, baseUrl, "api/people", settings.ApiKey);
-        var response = await client.SendAsync(req);
-        await EnsureSuccessAsync(response, "GET /api/people");
-        // Immich returns { people: [...], total, hasNextPage }
-        var wrapper = await response.Content.ReadFromJsonAsync<PeopleResponse>(JsonOptions);
-        return wrapper?.People ?? [];
+        const int size = 500;
+        var people = new List<ImmichPerson>();
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        for (var page = 1; ; page++)
+        {
+            using var req = ApiRequest(HttpMethod.Get, baseUrl, $"api/people?page={page}&size={size}", settings.ApiKey);
+            using var response = await client.SendAsync(req);
+            await EnsureSuccessAsync(response, $"GET /api/people page={page}");
+            var wrapper = await response.Content.ReadFromJsonAsync<PeopleResponse>(JsonOptions);
+            if (wrapper?.People == null)
+            {
+                throw new JsonException("Immich returned an invalid people response.");
+            }
+            var added = 0;
+            foreach (var person in wrapper.People)
+            {
+                if (ids.Add(person.Id))
+                {
+                    people.Add(person);
+                    added++;
+                }
+            }
+            // Older servers may omit hasNextPage; their short final page ends pagination.
+            var hasNextPage = wrapper.HasNextPage ?? wrapper.People.Count == size;
+            if (!hasNextPage)
+            {
+                return people;
+            }
+            if (added == 0)
+            {
+                throw new JsonException("Immich people pagination did not make progress.");
+            }
+        }
     }
 
     public async Task<List<string>> GetLocationSuggestionsAsync(ImmichSettings settings, string type,
@@ -284,6 +311,7 @@ public class ImmichClient(IHttpClientFactory httpClientFactory, ILogger<ImmichCl
     {
         public List<ImmichPerson> People { get; set; } = [];
         public int Total { get; set; }
+        public bool? HasNextPage { get; set; }
     }
 
     private async Task<List<ImmichAlbum>> GetAlbumsPageAsync(
