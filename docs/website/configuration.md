@@ -133,6 +133,8 @@ Choose a **Memories time zone** to control which day's memories are requested. *
 
 Saved profile changes replace any waiting daily selection. After upgrading an older Roku package, memory-enabled profiles may start at the beginning of the playlist once; offline startup keeps the cached window.
 
+You can upgrade the companion and Roku separately. An older Roku plays the new companion's selection, including memory priority, using its existing refresh timing. A newer Roku works with an older companion using the companion's existing source behavior. The daily minute checks and changes at photo boundaries require both updated components.
+
 ### Zoom to fit
 
 In the profile's **Slideshow** settings, enable **Zoom to fit (landscape photos)** to fill the screen with landscape photos. This preserves the photo's proportions and crops the edges as needed. Portrait and square photos still show the whole image.
