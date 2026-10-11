@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_name:
-        description: "Optional label for the release artifacts"
+        description: "Optional label for the candidate download"
         required: false
         default: ""
         type: string
@@ -19,6 +19,9 @@ jobs:
       contents: read
       id-token: write
       attestations: write
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -60,115 +63,66 @@ jobs:
             if (($parts -join '.') -cne $expected) { throw "Version mismatch in $manifest; expected $expected" }
           }
 
-      - name: Install docs dependencies
-        run: pip install -r docs/website/requirements.txt
-
-      - name: Restore companion
+      - name: Build and package companion
         working-directory: companion
-        run: dotnet restore tests/ImmichLoungeCompanion.Tests/ImmichLoungeCompanion.Tests.csproj
-
-      - name: Install Roku dependencies
-        working-directory: roku
-        run: npm ci
-
-      - name: Test companion
-        working-directory: companion
-        run: dotnet test --project tests/ImmichLoungeCompanion.Tests/ImmichLoungeCompanion.Tests.csproj --configuration Release
-
-      - name: Publish companion
-        working-directory: companion
-        run: dotnet publish src/ImmichLoungeCompanion/ImmichLoungeCompanion.csproj -c Release -o artifacts/companion
-
-      - name: Build Roku channel
-        working-directory: roku
-        run: npm run build
-
-      - name: Build Roku screensaver
-        working-directory: roku
-        run: npm run build:screensaver
-
-      - name: Build docs
-        run: zensical build --clean --strict
-
-      - name: Package candidate artifacts and checksums
-        shell: bash
         run: |
-          set -euo pipefail
-          for file in \
-            companion/artifacts/companion/ImmichLoungeCompanion.dll \
-            companion/artifacts/companion/ImmichLoungeCompanion.deps.json \
-            companion/artifacts/companion/ImmichLoungeCompanion.runtimeconfig.json \
-            roku/_out/build/channel/manifest \
-            roku/_out/build/channel/source/main.brs \
-            roku/_out/build/channel/components/slideshow/SlideshowScene.xml \
-            roku/_out/build/screensaver/manifest \
-            roku/_out/build/screensaver/source/main.brs \
-            roku/_out/build/screensaver/components/screensaver/ScreensaverScene.xml \
-            _out/website/index.html \
-            _out/website/support/index.html \
-            _out/website/privacy/index.html \
-            _out/website/tos/index.html; do
-            test -s "$file" || { echo "Missing or empty required file: $file" >&2; exit 1; }
+          dotnet test --project tests/ImmichLoungeCompanion.Tests/ImmichLoungeCompanion.Tests.csproj --configuration Release
+          dotnet publish src/ImmichLoungeCompanion/ImmichLoungeCompanion.csproj -c Release -o artifacts/companion
+          mkdir -p "$GITHUB_WORKSPACE/_out/release"
+          cd artifacts/companion
+          for file in ImmichLoungeCompanion.dll ImmichLoungeCompanion.deps.json ImmichLoungeCompanion.runtimeconfig.json; do
+            test -s "$file"
           done
-          cmp roku/manifest roku/_out/build/channel/manifest
-          cmp roku/manifest_screensaver roku/_out/build/screensaver/manifest
-          test -d companion/artifacts/companion/wwwroot
-          test ! -e roku/_out/build/channel/source/test_main.brs
-          test ! -e roku/_out/build/screensaver/source/test_main.brs
-          # ZIP each staging root directly; Roku packages are unsigned sideload ZIPs.
-          (cd companion/artifacts/companion && zip -qr "$GITHUB_WORKSPACE/companion-release.zip" .)
-          (cd roku/_out/build/channel && zip -qr "$GITHUB_WORKSPACE/roku-channel-build.zip" .)
-          (cd roku/_out/build/screensaver && zip -qr "$GITHUB_WORKSPACE/roku-screensaver-build.zip" .)
-          (cd _out/website && zip -qr "$GITHUB_WORKSPACE/docs-site.zip" .)
+          test -d wwwroot
+          zip -qr "$GITHUB_WORKSPACE/_out/release/companion-release.zip" .
+
+      - name: Build and package Roku apps
+        working-directory: roku
+        run: |
+          npm ci
+          npm run build
+          npm run build:screensaver
+          cmp manifest _out/build/channel/manifest
+          cmp manifest_screensaver _out/build/screensaver/manifest
+          test -s _out/build/channel/components/slideshow/SlideshowScene.xml
+          test -s _out/build/screensaver/components/screensaver/ScreensaverScene.xml
+          for app in channel screensaver; do
+            (
+              cd "_out/build/$app"
+              test -s manifest
+              test -s source/main.brs
+              test ! -e source/test_main.brs
+              # Unsigned sideload ZIP with manifest at the package root.
+              zip -qr "$GITHUB_WORKSPACE/_out/release/roku-$app-build.zip" .
+            )
+          done
+
+      - name: Build and package docs
+        run: |
+          pip install -r docs/website/requirements.txt
+          zensical build --clean --strict
+          cd _out/website
+          for file in index.html support/index.html privacy/index.html tos/index.html; do
+            test -s "$file"
+          done
+          zip -qr "$GITHUB_WORKSPACE/_out/release/docs-site.zip" .
+
+      - name: Checksum candidate ZIPs
+        working-directory: _out/release
+        run: |
           sha256sum companion-release.zip roku-channel-build.zip roku-screensaver-build.zip docs-site.zip > SHA256SUMS
           sha256sum --check --strict SHA256SUMS
 
-      - name: Attest candidate artifacts
+      - name: Attest candidate provenance
         uses: actions/attest@v4
         with:
-          subject-path: |
-            companion-release.zip
-            roku-channel-build.zip
-            roku-screensaver-build.zip
-            docs-site.zip
-            SHA256SUMS
+          subject-path: _out/release/*
           create-storage-record: false
 
-      - name: Upload checksums
+      - name: Upload candidate
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ inputs.release_name != '' && format('{0}-checksums', inputs.release_name) || 'immich-lounge-checksums' }}
-          path: SHA256SUMS
-          if-no-files-found: error
-
-      - name: Upload companion artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: ${{ inputs.release_name != '' && format('{0}-companion', inputs.release_name) || 'immich-lounge-companion' }}
-          path: companion-release.zip
-          if-no-files-found: error
-          compression-level: 0
-
-      - name: Upload Roku channel artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: ${{ inputs.release_name != '' && format('{0}-roku-channel', inputs.release_name) || 'immich-lounge-roku-channel' }}
-          path: roku-channel-build.zip
-          if-no-files-found: error
-          compression-level: 0
-
-      - name: Upload Roku screensaver artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: ${{ inputs.release_name != '' && format('{0}-roku-screensaver', inputs.release_name) || 'immich-lounge-roku-screensaver' }}
-          path: roku-screensaver-build.zip
-          if-no-files-found: error
-          compression-level: 0
-
-      - name: Upload docs artifact
-        uses: actions/upload-artifact@v7
-        with:
-          name: ${{ inputs.release_name != '' && format('{0}-docs', inputs.release_name) || 'immich-lounge-docs' }}
-          path: docs-site.zip
+          name: ${{ inputs.release_name || 'immich-lounge-candidate' }}
+          path: _out/release/
           if-no-files-found: error
           compression-level: 0

@@ -11,7 +11,7 @@
 
 ## Verify candidate artifacts
 
-The Release workflow stores companion, channel, screensaver, and docs ZIPs using GitHub's official `actions/upload-artifact`, with signed build provenance from `actions/attest`. It also uploads `SHA256SUMS` and attests that file. GitHub's upload digest covers its outer artifact archive; `SHA256SUMS` covers the four inner ZIPs.
+The Release workflow stores one candidate download containing companion, channel, screensaver, and docs ZIPs plus `SHA256SUMS`, using GitHub's official `actions/upload-artifact`, with signed build provenance from `actions/attest`. It attests all four ZIPs and `SHA256SUMS`. GitHub's upload digest covers its outer artifact archive; `SHA256SUMS` covers the four inner ZIPs.
 
 Use a current [GitHub CLI](https://cli.github.com/manual/gh_attestation_verify) and select the successful candidate run and expected source commit/ref from its Actions page. Download into a new empty directory. In Bash (for example, WSL or Git Bash):
 
@@ -24,9 +24,7 @@ candidate_ref=refs/heads/REPLACE_WITH_CANDIDATE_BRANCH
 mkdir candidate-artifacts
 cd candidate-artifacts
 gh run view "$run_id" --repo "$repo" --json headSha,headBranch,conclusion,url
-gh run download "$run_id" --repo "$repo" --dir .
-# Each Actions download has its own directory; extract the inner files into this directory.
-find . -mindepth 2 -type f -exec mv -t . -- {} +
+gh run download "$run_id" --repo "$repo" --name REPLACE_WITH_CANDIDATE_LABEL --dir .
 sha256sum --check --strict SHA256SUMS
 for file in SHA256SUMS companion-release.zip roku-channel-build.zip roku-screensaver-build.zip docs-site.zip; do
   gh attestation verify "$file" --repo "$repo" \
