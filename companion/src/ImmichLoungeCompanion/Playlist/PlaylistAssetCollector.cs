@@ -1,17 +1,23 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using ImmichLoungeCompanion.Immich;
 using ImmichLoungeCompanion.Immich.Dtos;
 using ImmichLoungeCompanion.Models;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace ImmichLoungeCompanion.Playlist;
 
-public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProvider = null)
+public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProvider = null,
+    ILogger<PlaylistAssetCollector>? logger = null)
 {
     private readonly TimeProvider _time = timeProvider ?? TimeProvider.System;
+    private readonly ILogger<PlaylistAssetCollector> _logger = logger ?? NullLogger<PlaylistAssetCollector>.Instance;
     public async Task<Dictionary<string, CollectedAsset>> CollectAsync(
         Profile profile,
         ImmichSettings immichSettings,
@@ -41,7 +47,7 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
             var dateMatches = profile.PhotoSource != null && source == "memories" && profile.DateFilter != null
                 ? await FetchAllAssetsAsync(immichSettings, profile.DateFilter, profile.LocationFilter, profile.OnlyPhotosWithPeople, ct)
                 : null;
-            var memoryAssets = await FetchMemoriesAssetsAsync(profile, immichSettings, ct);
+            var memoryAssets = await FetchOptionalMemoriesAsync(profile, immichSettings, allAssets.Count > 0, ct);
             if (profile.OnlyPhotosWithPeople && memoryAssets.Count > 0)
             {
                 // Memories can omit faces and lie outside the regular date range.
@@ -107,6 +113,25 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
         ApplyQualityFilter(allAssets, profile.Quality);
         return allAssets;
     }
+
+    private async Task<Dictionary<string, CollectedAsset>> FetchOptionalMemoriesAsync(
+        Profile profile, ImmichSettings settings, bool hasRegularAssets, CancellationToken ct)
+    {
+        try
+        {
+            return await FetchMemoriesAssetsAsync(profile, settings, ct);
+        }
+        catch (Exception ex) when (hasRegularAssets && !ct.IsCancellationRequested && IsTransientMemoryFailure(ex))
+        {
+            _logger.LogWarning(ex, "Memories unavailable for profile {ProfileId}; continuing with regular photos until the next refresh", profile.Id);
+            return new(StringComparer.Ordinal);
+        }
+    }
+
+    private static bool IsTransientMemoryFailure(Exception ex) => ex is OperationCanceledException ||
+        ex is HttpRequestException request && (request.StatusCode == null ||
+            request.StatusCode is HttpStatusCode.RequestTimeout or HttpStatusCode.TooManyRequests ||
+            (int)request.StatusCode.Value >= 500);
 
     private static bool NeedsMemoryMetadata(Profile profile) =>
         profile.Quality.MinFileSizeKb is > 0 || CleanLocation(profile.LocationFilter?.Country) != null ||
