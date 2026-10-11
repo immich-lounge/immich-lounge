@@ -35,6 +35,7 @@ public class ContentSource
 
 public class MemorySettings
 {
+    public bool IncludeSaved { get; set; }
     public bool Prioritize { get; set; }
     public bool IncludeBirthdays { get; set; }
     public bool ShowBirthdayCaptions { get; set; } = true;

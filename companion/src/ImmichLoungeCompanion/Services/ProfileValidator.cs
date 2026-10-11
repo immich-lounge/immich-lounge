@@ -18,7 +18,7 @@ public class ProfileValidator : IProfileValidator
         }
         if (profile.PhotoSource == "memories" && !profile.HasMemoriesSource())
         {
-            return "Enable On This Day or birthday memories for Memories only.";
+            return "Enable On This Day, birthday, or saved memories for Memories only.";
         }
 
         if (!string.IsNullOrWhiteSpace(profile.Memories.TimeZoneId) &&

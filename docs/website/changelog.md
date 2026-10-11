@@ -11,6 +11,7 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 ## Unreleased
 
+- Include memories saved in Immich throughout the year, with Immich 3.2 or later.
 - Show all available people in profile pickers, including libraries with more than 500 people.
 
 - With Shuffle off, choose Newest first or Oldest first to play photos by their original date. Existing profiles keep Newest first.

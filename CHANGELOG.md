@@ -6,6 +6,7 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+- Add opt-in saved memories for Immich 3.2+, with complete pagination and deduplication. Include past saved memories, exclude upcoming memories, and retain birthday captions only for active daily birthday memories.
 - Fetch every Immich people page for the profile pickers, deduplicate shared people, and detect pagination that makes no progress.
 
 - Add `slideshow.dateOrder` (`newestFirst` or `oldestFirst`) for unshuffled playlists. Expose Photo order when Shuffle is off and retain newest-first ordering for existing profiles.
