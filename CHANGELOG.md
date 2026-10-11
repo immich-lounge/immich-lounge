@@ -6,6 +6,8 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+- Give the Zensical website distinct light and dark palettes, follow the system color preference until the visitor chooses a theme, replace dark card gradients with theme-aware solid surfaces, and improve link, button, and keyboard-focus contrast.
+
 ## 1.1.0 — 2026-10-11
 
 - Set companion assembly/package version to `1.1.0` and both Roku manifests to `1.1.0000`.
