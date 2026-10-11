@@ -113,6 +113,8 @@ Enable **Show birthday captions** to display the person's birthday alongside the
 
 Choose a **Memories time zone** to control which day's memories are requested. **Companion time zone** uses the host's time zone; containers often use UTC. The companion checks for a new day every 30 seconds and rebuilds memory playlists even when their normal refresh interval has not elapsed. Profiles using an explicit Photo source also start a fresh shuffle each day when shuffle is enabled. The Roku checks these profiles every minute and adopts a new day's playlist after the current photo finishes, or on resume if paused. Same-day refreshes preserve the current order. Offline playback continues with cached photos until the companion is reachable. This setting does not change the Roku clock or a schedule's time zone.
 
+Saved profile changes replace any waiting daily selection. After upgrading an older Roku package, memory-enabled profiles may start at the beginning of the playlist once; offline startup keeps the cached window.
+
 ### Zoom to fit
 
 In the profile's **Slideshow** settings, enable **Zoom to fit (landscape photos)** to fill the screen with landscape photos. This preserves the photo's proportions and crops the edges as needed. Portrait and square photos still show the whole image.

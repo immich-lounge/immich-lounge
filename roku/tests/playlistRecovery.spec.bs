@@ -84,6 +84,44 @@ namespace tests
       end for
     end function
 
+    @it("A changed profile discards a queued day's old selection")
+    function test_dailyMemoryProfileEdit()
+      for each mode in [false, true]
+        ctx = m.makeContext(mode)
+        oldProfile = { id: "profile", photoSource: "all", contentSources: [{ type: "memories" }] }
+        newProfile = { id: "profile", photoSource: "all", contentSources: [] }
+        ctx.pendingDailyProfile = oldProfile
+        ctx.pendingDailyPlaylist = { memoryDay: "2026-10-12", assets: [{ id: "old-memory" }] }
+        m.assertFalse(DiscardDailyPlaylistForChangedProfile(ctx, oldProfile))
+        m.assertEqual(ctx.pendingDailyPlaylist.assets[0].id, "old-memory")
+        m.assertTrue(DiscardDailyPlaylistForChangedProfile(ctx, newProfile))
+        m.assertInvalid(ctx.pendingDailyPlaylist)
+        m.assertInvalid(ctx.pendingDailyProfile)
+      end for
+    end function
+
+    @it("Disabling memories refreshes the playlist after discarding the queued day")
+    function test_dailyMemoryDisabledRefresh()
+      m.stubCall(ApplyProfile, sub()
+      end sub)
+      m.stubCall(PersistProfileCacheForMode, sub(profile as object, url as string, id as string, mode as boolean)
+      end sub)
+      m.stubCall(BeginProfilePlaylistRefreshForScene, sub(context as object, profile as object, mode as boolean, restart = false as boolean)
+        context.requestedProfile = profile
+      end sub)
+      ctx = m.makeContext(false)
+      ctx.profile = { id: "profile", photoSource: "all", contentSources: [{ type: "memories" }] }
+      ctx.pendingDailyProfile = ctx.profile
+      ctx.pendingDailyPlaylist = { memoryDay: "2026-10-12", assets: [{ id: "old-memory" }] }
+      updated = { id: "profile", photoSource: "all", contentSources: [] }
+      task = m.makeTask()
+      task.profileResult = { ok: true, profile: updated }
+      ctx.profileConfigTask = task
+      OnProfileConfigResultForScene(ctx, false)
+      m.assertInvalid(ctx.pendingDailyPlaylist)
+      m.assertEqual(ctx.requestedProfile, updated)
+    end function
+
     @it("Same-day refreshes preserve the current photo and do not queue a restart")
     function test_sameMemoryDayRefresh()
       ctx = m.makeContext(false)

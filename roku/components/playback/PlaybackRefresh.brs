@@ -50,6 +50,7 @@ sub OnProfileConfigResultForScene(ctx as Object, isScreensaver as Boolean)
             BeginProfilePlaylistRefreshForScene(ctx, result.profile, isScreensaver)
             return
         end if
+        discardedDaily = DiscardDailyPlaylistForChangedProfile(ctx, result.profile)
         ctx.pendingScheduledProfile = invalid
         ctx.pendingScheduledPlaylist = invalid
         ctx.profile = result.profile
@@ -59,7 +60,7 @@ sub OnProfileConfigResultForScene(ctx as Object, isScreensaver as Boolean)
         ctx.skipFullRefreshTimerRestart = false
         ' The companion knows the profile's time zone. Poll its playlist with the
         ' existing config timer so long refresh intervals cannot delay daily memories.
-        if UsesDailyMemories(ctx.profile) then BeginProfilePlaylistRefreshForScene(ctx, ctx.profile, isScreensaver)
+        if UsesDailyMemories(ctx.profile) or discardedDaily then BeginProfilePlaylistRefreshForScene(ctx, ctx.profile, isScreensaver)
     else
         LogDebug(PlaybackLogScope(ctx), "profile config refresh unavailable, continuing with existing profile")
     end if
@@ -343,18 +344,14 @@ function ApplyScheduledProfileForScene(ctx as Object) as Boolean
     return true
 end function
 
-function UsesDailyMemories(profile as Dynamic) as Boolean
-    if profile = invalid then return false
-    if profile.photoSource = invalid then return false
-    if profile.memories <> invalid then
-        if profile.memories.includeBirthdays = true then return true
-    end if
-    if profile.contentSources <> invalid then
-        for each source in profile.contentSources
-            if source.type = "memories" then return true
-        end for
-    end if
-    return false
+function DiscardDailyPlaylistForChangedProfile(ctx as Object, profile as Object) as Boolean
+    if ctx.pendingDailyPlaylist = invalid then return false
+    if FormatJson(ctx.pendingDailyProfile) = FormatJson(profile) then return false
+    ' A queued day's selection belongs to its profile snapshot. It must not
+    ' restore old sources, filters, or connection settings after a later edit.
+    ctx.pendingDailyPlaylist = invalid
+    ctx.pendingDailyProfile = invalid
+    return true
 end function
 
 function ApplyDailyPlaylistForScene(ctx as Object) as Boolean
