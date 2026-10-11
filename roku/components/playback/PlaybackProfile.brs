@@ -11,6 +11,7 @@ sub ApplyProfileForScene(ctx as Object)
         ctx.overlay.overlayStyle = ValueOrDefault(display.overlayStyle, "none")
         ctx.backgroundEffect = ValueOrDefault(display.backgroundEffect, "blur")
         ctx.overlay.overlayFields = ValueOrDefault(display.overlayFields, [])
+        ctx.overlay.locationFormat = ValueOrDefault(display.locationFormat, "cityCountry")
         ctx.overlay.overlayBehavior = ValueOrDefault(display.overlayBehavior, "manual")
         ctx.overlay.fadeSeconds = ValueOrDefault(display.overlayFadeSeconds, 5.0)
         ctx.overlay.clockFormat = formatting.clockFormat
@@ -22,6 +23,7 @@ sub ApplyProfileForScene(ctx as Object)
     else
         ctx.zoomToFit = false
         ctx.sideBySidePortraits = false
+        ctx.overlay.locationFormat = "cityCountry"
         ctx.backgroundEffect = "blur"
         ctx.overlay.clockFormat = formatting.clockFormat
         ctx.overlay.dateFormat = formatting.dateFormat

@@ -6,6 +6,8 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+- Add `display.locationFormat` with five location label formats, defaulting to city/country. Share formatting across Roku overlay styles and modes; trim missing/blank values and deduplicate repeated place names. Apply profile format changes to the current metadata label.
+
 - Give the Zensical website distinct light and dark palettes, follow the system color preference until the visitor chooses a theme, replace dark card gradients with theme-aware solid surfaces, and improve link, button, and keyboard-focus contrast.
 
 ## 1.1.0 — 2026-10-11

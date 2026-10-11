@@ -120,6 +120,7 @@ public class DisplaySettings
     public bool SideBySidePortraits { get; set; } = false;
     public DisplayFormatSource FormatSource { get; set; } = DisplayFormatSource.Roku;
     public string OverlayStyle { get; set; } = "bottom";
+    public string LocationFormat { get; set; } = "cityCountry";
     public string BackgroundEffect { get; set; } = "blur";
     public List<string> OverlayFields { get; set; } = ["date", "location", "album", "people"];
     public string OverlayBehavior { get; set; } = "fade";

@@ -151,15 +151,9 @@ function FormatAssetDate(meta as Object) as String
     return FormatAssetDateForDisplay(meta, m.top.dateFormat, m.top.locale)
 end function
 
-' City, Country from exifInfo
+' Selected location fields from Immich metadata.
 function BuildLocationString(meta as Object) as String
-    if meta.exifInfo = invalid then return ""
-    city    = meta.exifInfo.city
-    country = meta.exifInfo.country
-    if city <> invalid and country <> invalid then return city + ", " + country
-    if city <> invalid then return city
-    if country <> invalid then return country
-    return ""
+    return FormatAssetLocation(meta, m.top.locationFormat)
 end function
 
 ' "Alice, Bob"

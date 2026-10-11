@@ -9,6 +9,7 @@
     "source/PortraitPairs.brs",
     "source/PlaybackConstants.brs",
     "source/DateTimeFormatting.brs",
+    "source/LocationFormatting.brs",
     { "src": "components/playback/*.brs", "dest": "source/" },
     { "src": "components/slideshow/SlideshowDialogs.brs", "dest": "source/SlideshowDialogs.brs" },
     "components/CompanionApiTask.*",
