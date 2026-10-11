@@ -43,7 +43,9 @@ Saving a profile or connection settings clears the affected companion playlists.
 
 Choose **Any (OR)** to include photos matching any selected album, person, or tag, or **All (AND)** to require every selection. With no sources or memories selected, use the whole library; with only memories enabled, show only those memories. **Exclude people (NOT)** removes photos containing any excluded person from all results, including added memories. For example, select your children with **Any**, then exclude yourself to show either child without you.
 
-Memories are added to the source results; they do not have to match the selected sources. Location restrictions and people exclusions still apply to memories.
+**Only photos with people** keeps photos with at least one visible detected face, regardless of who it is or whether they have a name. It applies to all selected sources, shared albums, and memories. Face detection must have processed the photos. This option requires Immich 3.2 or later and is off by default; disable it before using an older server.
+
+Memories are added to the source results; they do not have to match the selected sources. Location restrictions, **Only photos with people**, and people exclusions still apply to memories.
 
 Profiles with nested content rules created through the API keep those rules when edited in the companion. Their source selectors are unavailable; edit the nested rules through the API. Excluded people, memories, and display settings can still be changed in the companion.
 
