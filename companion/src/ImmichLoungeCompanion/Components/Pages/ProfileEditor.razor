@@ -53,6 +53,10 @@ else
             }
             else if (_canEditContentSources && _connectionConfigured)
             {
+                @if (_sourcePickerType == "person")
+                {
+                    <p class="field-hint">For photos shared through an album, select the album too. Choose <strong>Every selection</strong> under Filters to show only photos of the selected person in that album.</p>
+                }
                 <SourcePicker @key="_sourcePickerType" SourceType="@_sourcePickerType" ShowSelected="false" @bind-Selected="_profile.ContentSources" @bind-Selected:after="CriteriaChanged" />
             }
             else if (!_canEditContentSources)
@@ -122,7 +126,7 @@ else
                 <label>Exclude people (NOT):</label>
                 <SourcePicker SourceType="person" @bind-Selected="_profile.ExcludedPeople" @bind-Selected:after="CriteriaChanged" />
             }
-            <p class="section-intro">Exclude photos of these people, including memories.</p>
+            <p class="section-intro">Exclude photos of these people, including memories and selected shared albums.</p>
         <div class="filter-group">
             <h3>File filters</h3>
             <div class="advanced-settings-body">

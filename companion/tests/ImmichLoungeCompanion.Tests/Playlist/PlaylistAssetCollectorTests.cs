@@ -111,7 +111,7 @@ public class PlaylistAssetCollectorTests
             LocationFilter = new() { Country = " Canada ", State = "British Columbia", City = "Vancouver" }
         };
         var assets = await new PlaylistAssetCollector(client).CollectAsync(profile, FakeImmich);
-        Assert.AreEqual(3, requests.Count);
+        Assert.AreEqual(4, requests.Count);
         foreach (var request in requests)
         {
             Assert.AreEqual("Canada", request.Country);

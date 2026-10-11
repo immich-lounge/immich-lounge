@@ -138,8 +138,7 @@ public class ImmichClient(IHttpClientFactory httpClientFactory, ILogger<ImmichCl
     public async Task<List<ImmichAlbum>> GetAlbumsAsync(ImmichSettings settings)
     {
         var (client, baseUrl) = BuildClient(settings);
-        // Shared album listing works, but Immich asset search does not resolve shared
-        // album ids yet. Keep the shared-album helpers below parked until that is fixed.
+        // Immich returns albums owned by or shared with the configured user.
         return await GetAlbumsPageAsync(client, baseUrl, settings.ApiKey, "api/albums", "GET /api/albums");
     }
 

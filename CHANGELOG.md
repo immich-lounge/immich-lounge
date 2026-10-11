@@ -6,6 +6,8 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+- Support shared Immich albums as playlist sources and preserve selected album scope when matching or excluding people, including nested filter rules. Retain owned/partner searches, deduplicate matches, and propagate scoped search failures. Add legacy/cursor pagination boundary regressions and shared-people setup guidance in the editor and docs.
+
 - Add signed GitHub build provenance and downloadable inner-ZIP SHA256 checksums to candidate companion, Roku channel/screensaver, and docs artifacts; enforce aligned source versions, required files, and strict docs validation.
 
 - Publish companion images for Linux AMD64 and ARM64 using native SDK cross-compilation. Build and smoke-test both architectures in CI, including the health endpoint and writable data volume.
