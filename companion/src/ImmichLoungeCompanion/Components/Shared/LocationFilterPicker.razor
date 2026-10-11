@@ -3,19 +3,19 @@
 
 <div class="settings-field-grid">
     <label>Country
-        <input @bind="Value.Country" @bind:after="LocationChangedAsync" list="location-countries" placeholder="Any country" />
+        <input @bind="Value.Country" @bind:event="oninput" @bind:after="NotifyChangedAsync" @onchange="LoadSuggestionsAsync" list="location-countries" placeholder="Any country" />
         <datalist id="location-countries">
             @foreach (var name in _countries) { <option value="@name"></option> }
         </datalist>
     </label>
     <label>State / province
-        <input @bind="Value.State" @bind:after="LocationChangedAsync" list="location-states" placeholder="Any state / province" />
+        <input @bind="Value.State" @bind:event="oninput" @bind:after="NotifyChangedAsync" @onchange="LoadSuggestionsAsync" list="location-states" placeholder="Any state / province" />
         <datalist id="location-states">
             @foreach (var name in _states) { <option value="@name"></option> }
         </datalist>
     </label>
     <label>City
-        <input @bind="Value.City" @bind:after="NotifyChangedAsync" list="location-cities" placeholder="Any city" />
+        <input @bind="Value.City" @bind:event="oninput" @bind:after="NotifyChangedAsync" list="location-cities" placeholder="Any city" />
         <datalist id="location-cities">
             @foreach (var name in _cities) { <option value="@name"></option> }
         </datalist>
@@ -34,12 +34,12 @@
 
     protected override Task OnInitializedAsync() => LoadSuggestionsAsync();
 
-    private Task NotifyChangedAsync() => OnChanged.InvokeAsync();
-
-    private async Task LocationChangedAsync()
+    private Task NotifyChangedAsync()
     {
-        await NotifyChangedAsync();
-        await LoadSuggestionsAsync();
+        if (Value.Country == "") Value.Country = null;
+        if (Value.State == "") Value.State = null;
+        if (Value.City == "") Value.City = null;
+        return OnChanged.InvokeAsync();
     }
 
     private async Task LoadSuggestionsAsync()

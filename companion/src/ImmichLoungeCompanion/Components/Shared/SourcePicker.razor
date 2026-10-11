@@ -5,6 +5,8 @@
 @using System.Text.Json
 
 <div class="source-picker">
+    @if (ShowSelected)
+    {
     <div class="chips">
         @* Filter chips to only show sources matching this picker's SourceType *@
         @foreach (var selected in Selected.Where(s => s.Type == SourceType))
@@ -15,6 +17,7 @@
             </span>
         }
     </div>
+    }
     <input type="text" @bind="_search" @bind:event="oninput" @bind:after="FilterItems"
            aria-label="Search @SourceType" placeholder="Search @SourceType..." class="search-input" disabled="@(_loading || _loadError != null)" />
     @if (_loading) { <p class="field-hint" role="status">Loading sources…</p> }
@@ -37,6 +40,7 @@
 </div>
 
 @code {
+    [Parameter] public bool ShowSelected { get; set; } = true;
     [Parameter] public string SourceType { get; set; } = "album";  // "album" | "person" | "tag"
     [Parameter] public List<ImmichLoungeCompanion.Models.ContentSource> Selected { get; set; } = [];
     [Parameter] public EventCallback<List<ImmichLoungeCompanion.Models.ContentSource>> SelectedChanged { get; set; }

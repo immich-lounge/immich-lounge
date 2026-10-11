@@ -9,70 +9,78 @@
 
 <PageTitle>@(_profile?.Name ?? "Profile") · Immich Lounge</PageTitle>
 <NavigationLock ConfirmExternalNavigation="@IsDirty" OnBeforeInternalNavigation="@(async context => await ConfirmInternalNavigationAsync(context))" />
-
 @if (_profile == null)
 {
-    <p>Loading...</p>
+    @if (_loadError != null) { <h1>Profile unavailable</h1><p class="error" role="alert">@_loadError</p><a href="/profiles">Back to profiles</a> }
+    else { <p role="status">Loading profile…</p> }
 }
 else
 {
-    <div class="editor-header">
-        <h2>Edit: @_profile.Name</h2>
-        <p class="page-intro">Tune what this profile shows, how the slideshow behaves, and which overlays appear on screen.</p>
-        <dl class="profile-summary" aria-label="Profile summary">
-            <div><dt>Photos</dt><dd>@SourceSummary</dd></div>
-            <div><dt>Playback</dt><dd>@_profile.Slideshow.IntervalSeconds seconds per photo · @(_profile.Slideshow.Shuffle ? "Shuffled" : "In order")</dd></div>
-            <div><dt>Image quality</dt><dd>@(_profile.ImageQuality == "original" ? "Original" : "Preview")</dd></div>
-        </dl>
-        @if (!_connectionConfigured)
-        {
-            <p class="alert alert-error" role="status">Connect Immich to choose albums, people, and tags or preview matching photos. You can still edit display settings. <a href="/connection">Configure connection</a>.</p>
-        }
-        @if (IsDirty)
-        {
-            <div class="editor-dirty-banner">
-                <div class="editor-dirty-copy">
-                    <strong>Unsaved changes</strong>
-                    <span>Save this profile before leaving so your latest settings are kept.</span>
-                </div>
-                <div class="editor-dirty-actions">
-                    <button @onclick="SaveAsync" class="btn btn-primary">Save Changes</button>
-                    <button @onclick='() => Nav.NavigateTo("/profiles")' class="btn btn-secondary">Cancel</button>
-                </div>
-            </div>
-        }
+    <a class="back-link" href="/profiles">← Profiles</a>
+    <div class="page-heading">
+        <div><h1>@_profile.Name</h1><p class="page-intro">@SourceSummary · @_profile.Slideshow.IntervalSeconds seconds per photo</p></div>
+        <span class="page-badge">Slideshow profile</span>
     </div>
-
-    <div class="editor-grid">
+    <nav class="editor-navigation" aria-label="Profile settings">
+        @foreach (var view in new[] { "Photos", "Playback", "Appearance" })
+        {
+            <button type="button" class="@(view == _editorView ? "active" : "")" aria-current="@(view == _editorView ? "page" : null)" @onclick="() => _editorView = view">@view</button>
+        }
+    </nav>
+    <div class="profile-workspace">
+    @if (_editorView == "Photos")
+    {
         <section class="settings-card editor-card">
-            <h3>Content Sources</h3>
-            <p class="section-intro">Choose which albums, people, tags, and memories feed this profile.</p>
-            @if (_canEditContentSources)
+            <h2>Choose your photos</h2>
+            <p class="section-intro">Combine selections across categories, then narrow them by location.</p>
+            @if (!_connectionConfigured)
             {
-                <label>
-                    Match selected sources:
-                    <select @bind="_sourceMatchOperator">
-                        <option value="@AssetFilterGroupOperator.Or">Any (OR)</option>
-                        <option value="@AssetFilterGroupOperator.And">All (AND)</option>
-                    </select>
-                </label>
-                <p class="section-intro">Any includes photos from any selected album, person, or tag. All requires every selection to match. With no sources or memories selected, use the whole library.</p>
-                @if (_connectionConfigured)
-                {
-                    <SourcePicker SourceType="album" @bind-Selected="_profile.ContentSources" />
-                    <SourcePicker SourceType="person" @bind-Selected="_profile.ContentSources" />
-                    <SourcePicker SourceType="tag"    @bind-Selected="_profile.ContentSources" />
-                }
+                <div class="connection-notice" role="status"><strong>Connect your Immich library first</strong><p>You can set up playback and appearance while you wait.</p><a class="btn btn-secondary" href="/connection">Set up connection →</a></div>
             }
-            else
+            <h3 class="criteria-heading">Add criteria</h3>
+            <p class="field-hint criteria-hint">Selections stay active when you switch categories.</p>
+            <div class="source-browser-navigation" aria-label="Choose photo sources and location">
+                @foreach (var sourceType in new[] { "album", "person", "tag", "location" })
+                {
+                    var sourceLabel = sourceType == "album" ? "Albums" : sourceType == "person" ? "People" : sourceType == "tag" ? "Tags" : "Location";
+                    <button type="button" class="@(sourceType == _sourcePickerType ? "active" : "")" aria-pressed="@(sourceType == _sourcePickerType)" disabled="@(sourceType != "location" && (!_canEditContentSources || !_connectionConfigured))" @onclick="() => _sourcePickerType = sourceType">@sourceLabel</button>
+                }
+            </div>
+            @if (_sourcePickerType == "location")
+            {
+                <LocationFilterPicker Value="_locationFilter" OnChanged="CriteriaChanged" />
+                <p class="field-hint">Limits all selected sources and memories. Filled fields must all match; leave blank for any location.</p>
+            }
+            else if (_canEditContentSources && _connectionConfigured)
+            {
+                <SourcePicker @key="_sourcePickerType" SourceType="@_sourcePickerType" ShowSelected="false" @bind-Selected="_profile.ContentSources" @bind-Selected:after="CriteriaChanged" />
+            }
+            else if (!_canEditContentSources)
             {
                 <p>This profile uses advanced content rules. Edit those rules through the API; album, people, and tag selections cannot be changed here.</p>
             }
+            <section class="criteria-summary" aria-label="Active photo criteria">
+                <h3>Showing</h3>
+                <p>@CriteriaDescription</p>
+                @if (_canEditContentSources && _profile.ContentSources.Any(source => source.Type != "memories"))
+                {
+                    <div class="selected-sources" aria-label="Selected photo sources">
+                        @foreach (var selected in _profile.ContentSources.Where(source => source.Type != "memories"))
+                        {
+                            <span class="chip">@selected.Label <button type="button" @onclick="() => RemoveSource(selected)" aria-label="Remove @selected.Label">×</button></span>
+                        }
+                    </div>
+                }
+                @if (LocationSummary.Length > 0) { <p class="criteria-detail">Limited to: @LocationSummary</p> }
+                @if (_profile.ExcludedPeople.Count > 0) { <p class="criteria-detail">Excluding: @string.Join(", ", _profile.ExcludedPeople.Select(person => person.Label))</p> }
+                @if (_profile.Quality.MinFileSizeKb > 0) { <p class="criteria-detail">Minimum file size: @_profile.Quality.MinFileSizeKb KB</p> }
+            </section>
+            <details class="advanced-settings"><summary>Memories</summary><div class="advanced-settings-body">
             <label>
-                <input type="checkbox" @bind="_memoriesEnabled" /> Include On This Day memories
+                <input type="checkbox" @bind="_memoriesEnabled" @bind:after="CriteriaChanged" /> Include On This Day memories
             </label>
             <label>
-                <input type="checkbox" @bind="_profile.Memories.IncludeBirthdays" disabled="@(!_birthdayMemoriesAvailable && !_profile.Memories.IncludeBirthdays)" /> Include birthday memories
+                <input type="checkbox" @bind="_profile.Memories.IncludeBirthdays" @bind:after="CriteriaChanged" disabled="@(!_birthdayMemoriesAvailable && !_profile.Memories.IncludeBirthdays)" /> Include birthday memories
             </label>
             @if (!_birthdayMemoriesAvailable)
             {
@@ -81,11 +89,13 @@ else
             @if (_profile.Memories.IncludeBirthdays)
             {
                 <label><input type="checkbox" @bind="_profile.Memories.ShowBirthdayCaptions" /> Show birthday captions</label>
-                <p class="section-intro">Immich selects photos from previous birthdays and shows them from three days before the birthday through the birthday itself. Set the person's birth date in Immich first.</p>
+                <p class="section-intro">Set birth dates in Immich. Birthday photos appear from three days before the birthday through the day itself.</p>
             }
+            @if (_memoriesEnabled || _profile.Memories.IncludeBirthdays)
+            {
             <label>
                 Memories time zone:
-                <select @bind="_profile.Memories.TimeZoneId">
+                <select @bind="_profile.Memories.TimeZoneId" @bind:after="CriteriaChanged">
                     <option value="">Companion time zone</option>
                     @if (!string.IsNullOrEmpty(_profile.Memories.TimeZoneId) && !_memoryTimeZones.Any(zone => zone.Id == _profile.Memories.TimeZoneId))
                     { <option value="@_profile.Memories.TimeZoneId">@_profile.Memories.TimeZoneId</option> }
@@ -93,32 +103,80 @@ else
                     { <option value="@zone.Id">@zone.DisplayName (@zone.Id)</option> }
                 </select>
             </label>
-            <p class="section-intro">Controls which day's memories are added. The companion refreshes them when the day changes; playback updates on the Roku's next playlist refresh.</p>
-            <p class="section-intro">Memories are added to the source results. Excluded people are removed from both.</p>
+            }
+            </div></details>
+            <details class="advanced-settings"><summary>Filters</summary><div class="advanced-settings-body">
+                @if (_canEditContentSources)
+                {
+                <label>
+                    Match selected sources:
+                    <select @bind="_sourceMatchOperator" @bind:after="CriteriaChanged">
+                        <option value="@AssetFilterGroupOperator.Or">Any selection</option>
+                        <option value="@AssetFilterGroupOperator.And">Every selection</option>
+                    </select>
+                </label>
+                <p class="section-intro">Any combines selections. Every requires all selections to match.</p>
+                }
             @if (_connectionConfigured)
             {
                 <label>Exclude people (NOT):</label>
-                <SourcePicker SourceType="person" @bind-Selected="_profile.ExcludedPeople" />
+                <SourcePicker SourceType="person" @bind-Selected="_profile.ExcludedPeople" @bind-Selected:after="CriteriaChanged" />
             }
-            <p class="section-intro">Remove photos containing any of these people, even if they match another source.</p>
+            <p class="section-intro">Exclude photos of these people, including memories.</p>
+        <div class="filter-group">
+            <h3>File filters</h3>
+            <div class="advanced-settings-body">
+                <label><input type="checkbox" @bind="_profile.MediaTypes.Photos" @bind:after="CriteriaChanged" /> Include photos</label>
+
+                <label>
+                    Minimum file size (KB):
+                    <input type="number" value="@GetMinFileSizeKbValue()" @oninput="OnMinFileSizeKbChanged" min="0" step="50" />
+                </label>
+                <p class="section-intro">Keep 0 to include all file sizes.</p>
+            </div>
+        </div>
+            </div></details>
+            @if (_connectionConfigured)
+            {
             <div class="btn-row">
                 <button type="button" class="btn btn-secondary" @onclick="PreviewMatchCountAsync" disabled="@(_matchCountLoading || !_connectionConfigured)">
-                    @if (_matchCountLoading) { <span>Counting…</span> } else { <span>Preview Match Count</span> }
+                    @if (_matchCountLoading) { <span>Counting…</span> } else { <span>Preview selection</span> }
                 </button>
-                @if (_matchCount != null)
+                @if (_matchCount != null && PreviewIsCurrent)
                 {
-                    <span>Matched @_matchCount.Value assets</span>
+                    <span>@_matchCount.Value matching @(_matchCount.Value == 1 ? "asset" : "assets")</span>
                 }
             </div>
+            @if (_previewError != null) { <p class="error" role="alert">@_previewError</p> }
+            @if (_matchCount != null && PreviewIsCurrent)
+            {
+                @if (_matchCount == 0) { <p class="field-hint preview-hint">No photos match. Try changing your selections or removing a filter.</p> }
+                else if (_previewAssets.Count > 0)
+                {
+                    <p class="field-hint preview-hint">A sample of matching photos. Previewing does not save your changes.</p>
+                    <div class="photo-preview-grid" aria-label="Matching photo samples">
+                        @foreach (var asset in _previewAssets)
+                        {
+                            <figure>
+                                @if (asset.ThumbnailUrl == null || _failedPreviewIds.Contains(asset.Id)) { <div class="photo-preview-missing">Thumbnail unavailable</div> }
+                                else { <img src="@asset.ThumbnailUrl" alt="Matching photo" loading="lazy" @onerror="() => _failedPreviewIds.Add(asset.Id)" /> }
+                                @if (!string.IsNullOrEmpty(asset.SourceLabel)) { <figcaption>@asset.SourceLabel</figcaption> }
+                            </figure>
+                        }
+                    </div>
+                }
+            }
+            }
         </section>
-
+    }
+    else if (_editorView == "Playback")
+    {
         <section class="settings-card editor-card">
-            <h3>Slideshow</h3>
-            <p class="section-intro">Control pace, refresh cadence, and transitions between items.</p>
+            <h2>Set the pace</h2>
+            <p class="section-intro">Choose how long each photo stays on screen and how it moves to the next.</p>
             <div class="settings-field-grid">
-                <label>Interval (seconds): <input type="number" value="@_profile.Slideshow.IntervalSeconds" @oninput="OnIntervalSecondsChanged" min="3" max="3600" /></label>
-                <label>Refresh interval (minutes): <input type="number" value="@_profile.Slideshow.RefreshIntervalMinutes" @oninput="OnRefreshIntervalMinutesChanged" min="5" max="1440" /></label>
-            </div>
+                <label>Seconds per photo <input type="number" value="@_profile.Slideshow.IntervalSeconds" @oninput="OnIntervalSecondsChanged" min="3" max="3600" /></label>
+
             <label>
                 Transition:
                 <select @bind="_profile.Slideshow.TransitionEffect">
@@ -130,60 +188,44 @@ else
                 </select>
             </label>
             <label>
-                Photo Motion:
+                Photo motion
                 <select @bind="_profile.Slideshow.PhotoMotion">
                     <option value="none">None</option>
-                    <option value="kenBurns">Ken Burns</option>
+                    <option value="kenBurns">Slow pan and zoom</option>
                 </select>
             </label>
+            </div>
+
+            <label><input type="checkbox" @bind="_profile.Slideshow.Shuffle" /> Shuffle photos</label>
+            <h3>Fit on screen</h3>
+            <label><input type="checkbox" @bind="_profile.Display.ZoomToFit" /> Fill the screen with landscape photos</label>
+            <p class="section-intro">Fill the screen by cropping the edges of landscape photos. Portrait and square photos still show the whole image.</p>
+            <label><input type="checkbox" @bind="_profile.Display.SideBySidePortraits" /> Pair portrait photos side by side</label>
+            <p class="section-intro">Pair consecutive portrait photos without cropping. The overlay describes the left photo. Pairs fade together without photo motion.</p>
+
+            <details class="advanced-settings"><summary>More playback options</summary><div class="advanced-settings-body">
+                <label>Refresh interval (minutes): <input type="number" value="@_profile.Slideshow.RefreshIntervalMinutes" @oninput="OnRefreshIntervalMinutesChanged" min="5" max="1440" /></label>
             <label>Transition duration (seconds): <input type="number" value="@_profile.Slideshow.TransitionDurationSeconds.ToString(System.Globalization.CultureInfo.InvariantCulture)" @oninput="OnTransitionDurationChanged" min="0.1" max="5" step="0.1" /></label>
             <p class="section-intro">Use 0.1–5 seconds, shorter than the photo interval. Applies to fade, slide, and zoom; None changes photos immediately.</p>
-            <label><input type="checkbox" @bind="_profile.Display.ZoomToFit" /> Zoom to fit (landscape photos)</label>
-            <p class="section-intro">Fill the screen by cropping the edges of landscape photos. Portrait and square photos still show the whole image.</p>
-            <label><input type="checkbox" @bind="_profile.Display.SideBySidePortraits" /> Show portrait photos side by side</label>
-            <p class="section-intro">Pair consecutive portrait photos without cropping. The overlay describes the left photo. Pairs fade together and do not use Ken Burns motion.</p>
-            <label><input type="checkbox" @bind="_profile.Slideshow.Shuffle" /> Shuffle</label>
             <label><input type="checkbox" @bind="_profile.Slideshow.PreventScreensaver" /> Prevent System Screensaver from running</label>
+            </div></details>
         </section>
-
-        <details class="settings-card editor-card advanced-settings">
-            <summary>Location</summary>
-            <div class="advanced-settings-body">
-                <p class="section-intro">Limit this profile to a country, state / province, or city. Filled fields must all match, including for memories. Leave fields blank for any location.</p>
-                <LocationFilterPicker Value="_locationFilter" OnChanged="StateHasChanged" />
-                <p class="section-intro">Use place names from Immich. Photos without matching location metadata are excluded.</p>
-            </div>
-        </details>
-
-        <details class="settings-card editor-card advanced-settings">
-            <summary>Media</summary>
-            <div class="advanced-settings-body">
-                <p class="section-intro">This version is photo-first. Video-related formats stay disabled for now.</p>
-                <label><input type="checkbox" @bind="_profile.MediaTypes.Photos" /> Photos</label>
-                @* <label><input type="checkbox" @bind="_profile.MediaTypes.Videos" /> Videos</label> *@
-                @* <label><input type="checkbox" @bind="_profile.MediaTypes.LivePhotos" /> Live Photos</label> *@
-                @* <label><input type="checkbox" @bind="_profile.MediaTypes.VideoAudio" /> Video Audio</label> *@
-                <label>
+    }
+    else
+    {
+        <section class="settings-card editor-card">
+            <h2>Make it yours</h2>
+            <div>
+                <p class="section-intro">Choose the backdrop and the details you want to see on your TV.</p>
+                <div class="settings-field-grid">
+<label>
                     Image Quality:
                     <select @bind="_profile.ImageQuality">
                         <option value="preview">Preview (recommended)</option>
                         <option value="original">Original</option>
                     </select>
                 </label>
-                <label>
-                    Minimum file size (KB):
-                    <input type="number" value="@GetMinFileSizeKbValue()" @oninput="OnMinFileSizeKbChanged" min="0" step="50" />
-                </label>
-                <p class="section-intro">Leave at 0 to keep all photos. Higher values can hide very small or heavily compressed images.</p>
-                <p class="section-intro">Good starting points: 500 KB is gentle, 1000 KB is moderate, and 2000 KB is stricter.</p>
-            </div>
-        </details>
 
-        <details class="settings-card editor-card advanced-settings">
-            <summary>Overlay & Clock</summary>
-            <div class="advanced-settings-body">
-                <p class="section-intro">Set how metadata, the clock, and the persistent date appear during playback.</p>
-                <div class="settings-field-grid">
                     <label>
                         Overlay Style:
                         <select @bind="_profile.Display.OverlayStyle">
@@ -200,7 +242,58 @@ else
                             <option value="ambilight">Ambilight Glow</option>
                         </select>
                     </label>
-                    <label>
+
+                </div>
+                <p class="section-intro">Use Ambilight Glow for a brighter, room-lighting style backdrop behind the photo.</p>
+                <label><input type="checkbox" @bind="_profile.Display.ClockAlwaysVisible" /> Clock Always Visible</label>
+                <label><input type="checkbox" @bind="_profile.Display.ShowDate" /> Show Date</label>
+                <label><input type="checkbox" @bind="_profile.Display.ShowTimer" /> Show Progress Timer</label>
+            </div>
+        <details class="settings-card editor-card advanced-settings editor-card-wide">
+            <summary>Weather</summary>
+            <div class="advanced-settings-body">
+                <p class="section-intro">Add a weather overlay by searching for a location or entering coordinates directly.</p>
+                <label><input type="checkbox" @bind="_weatherEnabled" @bind:after="OnWeatherToggled" /> Show Weather Overlay</label>
+                @if (_weatherEnabled && _profile.Weather != null)
+                {
+                    <div class="form-group">
+                        <label>Location</label>
+                        <div class="search-row">
+                            <input @bind="_locationQuery" @bind:event="oninput" placeholder="Search city or address…" />
+                            <button type="button" @onclick="SearchLocationAsync" class="btn btn-secondary" disabled="@_locationSearching">
+                                @if (_locationSearching) { <span>Searching…</span> } else { <span>Search</span> }
+                            </button>
+                        </div>
+                        @if (_locationError != null) { <p class="field-hint" role="status">@_locationError</p> }
+                        @if (_locationResults.Count > 0)
+                        {
+                            <ul class="search-results">
+                                @foreach (var r in _locationResults)
+                                {
+                                    <li><button type="button" @onclick="() => SelectLocation(r)">@r.DisplayName</button></li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                    <div class="settings-field-grid">
+                        <label>Latitude: <input type="number" step="0.0001" value="@_profile.Weather.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)" @oninput="OnWeatherLatitudeChanged" /></label>
+                        <label>Longitude: <input type="number" step="0.0001" value="@_profile.Weather.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)" @oninput="OnWeatherLongitudeChanged" /></label>
+                        <label>Poll interval (minutes): <input type="number" value="@_profile.Weather.PollIntervalMinutes" @oninput="OnWeatherPollIntervalMinutesChanged" min="5" max="1440" /></label>
+                        <label>
+                            Temperature unit:
+                            <select @bind="_profile.Display.WeatherUnit">
+                                <option value="celsius">Celsius (°C)</option>
+                                <option value="fahrenheit">Fahrenheit (°F)</option>
+                            </select>
+                        </label>
+                    </div>
+                }
+            </div>
+        </details>
+        <details class="settings-card editor-card advanced-settings">
+            <summary>Date, time, and overlay options</summary>
+            <div class="advanced-settings-body">
+                <label>
                         Overlay Behavior:
                         <select @bind="_profile.Display.OverlayBehavior">
                             <option value="always">Always On</option>
@@ -208,17 +301,6 @@ else
                             <option value="manual">Manual (OK button)</option>
                         </select>
                     </label>
-                </div>
-                <p class="section-intro">Use Ambilight Glow for a brighter, room-lighting style backdrop behind the photo.</p>
-                <label><input type="checkbox" @bind="_profile.Display.ClockAlwaysVisible" /> Clock Always Visible</label>
-                <label><input type="checkbox" @bind="_profile.Display.ShowDate" /> Show Date</label>
-                <label><input type="checkbox" @bind="_profile.Display.ShowTimer" /> Show Progress Timer</label>
-            </div>
-        </details>
-
-        <details class="settings-card editor-card advanced-settings">
-            <summary>Date & Time</summary>
-            <div class="advanced-settings-body">
                 <p class="section-intro">Choose whether playback dates and the clock follow the Roku device locale or a custom profile format.</p>
                 <label>
                     Formatting Source:
@@ -273,54 +355,18 @@ else
                 }
             </div>
         </details>
-
-        <details class="settings-card editor-card advanced-settings editor-card-wide">
-            <summary>Weather</summary>
-            <div class="advanced-settings-body">
-                <p class="section-intro">Add a weather overlay by searching for a location or entering coordinates directly.</p>
-                <label><input type="checkbox" @bind="_weatherEnabled" @bind:after="OnWeatherToggled" /> Show Weather Overlay</label>
-                @if (_weatherEnabled && _profile.Weather != null)
-                {
-                    <div class="form-group">
-                        <label>Location</label>
-                        <div class="search-row">
-                            <input @bind="_locationQuery" @bind:event="oninput" placeholder="Search city or address…" />
-                            <button type="button" @onclick="SearchLocationAsync" class="btn btn-secondary" disabled="@_locationSearching">
-                                @if (_locationSearching) { <span>Searching…</span> } else { <span>Search</span> }
-                            </button>
-                        </div>
-                        @if (_locationResults.Count > 0)
-                        {
-                            <ul class="search-results">
-                                @foreach (var r in _locationResults)
-                                {
-                                    <li @onclick="() => SelectLocation(r)">@r.DisplayName</li>
-                                }
-                            </ul>
-                        }
-                    </div>
-                    <div class="settings-field-grid">
-                        <label>Latitude: <input type="number" step="0.0001" value="@_profile.Weather.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture)" @oninput="OnWeatherLatitudeChanged" /></label>
-                        <label>Longitude: <input type="number" step="0.0001" value="@_profile.Weather.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture)" @oninput="OnWeatherLongitudeChanged" /></label>
-                        <label>Poll interval (minutes): <input type="number" value="@_profile.Weather.PollIntervalMinutes" @oninput="OnWeatherPollIntervalMinutesChanged" min="5" max="1440" /></label>
-                        <label>
-                            Temperature unit:
-                            <select @bind="_profile.Display.WeatherUnit">
-                                <option value="celsius">Celsius (°C)</option>
-                                <option value="fahrenheit">Fahrenheit (°F)</option>
-                            </select>
-                        </label>
-                    </div>
-                }
-            </div>
-        </details>
+        </section>
+    }
     </div>
-
-    @if (_saveError != null) { <p class="error">@_saveError</p> }
-    <div class="btn-row editor-actions @(IsDirty ? "is-dirty" : "")">
-        <div class="editor-actions-status">@(IsDirty ? "Changes pending" : "All changes saved")</div>
-        <button @onclick="SaveAsync" class="btn btn-primary">@(IsDirty ? "Save Changes" : "Saved")</button>
-        <button @onclick='() => Nav.NavigateTo("/profiles")' class="btn btn-secondary">Cancel</button>
+    <div class="editor-footer">
+        <div><span class="save-state @(IsDirty ? "pending" : "")" role="status">@(IsDirty ? "Unsaved changes" : "All changes saved")</span>
+            @if (_saveError != null) { <p class="error" role="alert">@_saveError</p> }
+            @if (_saveMessage != null) { <p class="field-hint" role="status">@_saveMessage</p> }
+        </div>
+        <div class="btn-row">
+            <button @onclick='() => Nav.NavigateTo("/profiles")' class="btn btn-secondary">Close</button>
+            <button @onclick="SaveAsync" class="btn btn-primary" disabled="@(!IsDirty || _saving)">@(_saving ? "Saving…" : "Save changes")</button>
+        </div>
     </div>
 }
 
@@ -335,6 +381,37 @@ else
     private List<MemoryTimeZone> _memoryTimeZones = [];
     private bool _canEditContentSources;
     private bool _connectionConfigured;
+    private string _editorView = "Photos";
+    private string _sourcePickerType = "album";
+    private void CriteriaChanged()
+    {
+        _matchCount = null;
+        _previewSnapshot = null;
+        _previewAssets.Clear();
+        _failedPreviewIds.Clear();
+        _previewError = null;
+    }
+    private void RemoveSource(ContentSource source)
+    {
+        _profile!.ContentSources.Remove(source);
+        CriteriaChanged();
+    }
+    private string LocationSummary => string.Join(" · ", new[] { _locationFilter.Country, _locationFilter.State, _locationFilter.City }.Where(value => !string.IsNullOrWhiteSpace(value)));
+    private string CriteriaDescription
+    {
+        get
+        {
+            if (!_profile!.MediaTypes.Photos) { return "Photos are disabled for this profile."; }
+            if (!_canEditContentSources) { return "Photos matching this profile's advanced content rules."; }
+            var hasSources = _profile.ContentSources.Any(source => source.Type != "memories");
+            var hasMemories = _memoriesEnabled || _profile.Memories.IncludeBirthdays;
+            if (!hasSources) { return hasMemories ? "Enabled memories only." : "Photos from the whole library."; }
+            var description = _sourceMatchOperator == AssetFilterGroupOperator.And
+                ? "Photos matching every selected source"
+                : "Photos matching any selected source";
+            return description + (hasMemories ? ", plus enabled memories." : ".");
+        }
+    }
     private string SourceSummary => !_canEditContentSources ? "Advanced content rules"
         : _profile!.ContentSources.Any(source => source.Type != "memories")
             ? $"{_profile.ContentSources.Count(source => source.Type != "memories")} selected sources ({(_sourceMatchOperator == AssetFilterGroupOperator.And ? "all must match" : "any can match")})"
@@ -349,14 +426,20 @@ else
     private bool _locationSearching;
     private int? _matchCount;
     private bool _matchCountLoading;
-    private string? _saveError;
+    private bool _saving;
+    private string? _previewSnapshot, _previewError, _loadError, _locationError;
+    private List<PreviewAsset> _previewAssets = [];
+    private HashSet<string> _failedPreviewIds = [];
+    private bool PreviewIsCurrent => _previewSnapshot == BuildPreviewSnapshot();
+    private string? _saveError, _saveMessage;
     private string? _initialSnapshot;
     private string? _loadedProfileId;
     private bool _skipNavigationPrompt;
 
     private record GeocodeResult(string DisplayName, string Lat, string Lon);
     private record ErrorResponse(string Error);
-    private record MatchCountResponse(int MatchedAssets);
+    private record PreviewAsset(string Id, string? ThumbnailUrl, string? SourceLabel);
+    private record MatchCountResponse(int MatchedAssets, List<PreviewAsset>? PreviewAssets = null);
     private record DateFormatOption(string Value, string Label);
     private record MemoryTimeZone(string Id, string DisplayName);
     private bool IsDirty => _profile != null && _initialSnapshot != null && BuildSnapshot() != _initialSnapshot;
@@ -368,12 +451,21 @@ else
             return;
         }
 
-        await LoadProfileAsync();
+        try { await LoadProfileAsync(); }
+        catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+        { _loadError = "This profile does not exist. It may have been deleted."; }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or TaskCanceledException)
+        { _loadError = "Could not load this profile. Reload the page to try again."; }
     }
 
     private async Task LoadProfileAsync()
     {
+        _loadError = null;
+        CriteriaChanged();
+        _editorView = "Photos";
+        _sourcePickerType = "album";
         _saveError = null;
+        _saveMessage = null;
         _locationQuery = "";
         _locationResults = [];
         _locationSearching = false;
@@ -444,14 +536,20 @@ else
 
     private async Task SearchLocationAsync()
     {
-        if (string.IsNullOrWhiteSpace(_locationQuery)) return;
+        if (_locationSearching || string.IsNullOrWhiteSpace(_locationQuery)) return;
         _locationSearching = true;
+        _locationError = null;
         _locationResults = [];
         try
         {
             var results = await Http.GetFromJsonAsync<List<GeocodeResult>>(
                 $"/api/geocode?q={Uri.EscapeDataString(_locationQuery)}");
             _locationResults = results ?? [];
+            if (_locationResults.Count == 0) _locationError = "No places found. Try another name or enter coordinates below.";
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or TaskCanceledException)
+        {
+            _locationError = "Could not search for a location. Try again or enter coordinates below.";
         }
         finally
         {
@@ -535,56 +633,87 @@ else
         if (TryParseInt(args.Value, out var value))
         {
             _profile.Quality.MinFileSizeKb = value <= 0 ? null : value;
+            CriteriaChanged();
         }
     }
 
     private async Task SaveAsync()
     {
-        if (_profile == null) return;
-        _profile = BuildProfilePayloadForRequest();
-        var response = await Http.PutAsJsonAsync($"/api/profiles/{Id}", _profile);
-        if (response.IsSuccessStatusCode)
-        {
-            _initialSnapshot = BuildSnapshot();
-            _skipNavigationPrompt = true;
-            Nav.NavigateTo("/profiles");
-        }
-        else
-        {
-            var err = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-            _saveError = err?.Error ?? $"Failed to save profile (HTTP {(int)response.StatusCode}).";
-        }
-    }
-
-    private async Task PreviewMatchCountAsync()
-    {
-        if (_profile == null) return;
-
-        _matchCountLoading = true;
+        if (_profile == null || _saving) return;
+        var savingProfile = _profile;
+        var savingSnapshot = BuildSnapshot();
+        _saving = true;
+        _saveError = null;
+        _saveMessage = null;
         try
         {
             var payload = BuildProfilePayloadForRequest();
-            var response = await Http.PostAsJsonAsync("/api/profiles/preview-count", payload);
+            using var response = await Http.PutAsJsonAsync($"/api/profiles/{Id}", payload);
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<MatchCountResponse>();
-                _matchCount = result?.MatchedAssets;
-                _saveError = null;
+                // A slow save must not overwrite edits made after its request started.
+                if (!ReferenceEquals(_profile, savingProfile)) return;
+                if (BuildSnapshot() != savingSnapshot)
+                {
+                    _initialSnapshot = savingSnapshot;
+                    _saveMessage = "Saved earlier changes. Save again to keep your latest edits.";
+                    return;
+                }
+                _profile = payload;
+                _initialSnapshot = BuildSnapshot();
+                _skipNavigationPrompt = true;
+                Nav.NavigateTo("/profiles");
             }
             else
             {
                 var err = await response.Content.ReadFromJsonAsync<ErrorResponse>();
-                _saveError = err?.Error ?? $"Failed to preview match count (HTTP {(int)response.StatusCode}).";
+                _saveError = err?.Error ?? $"Failed to save profile (HTTP {(int)response.StatusCode}).";
+            }
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or TaskCanceledException)
+        { _saveError = "Could not save this profile. Your edits are still here; try again."; }
+        finally { _saving = false; }
+    }
+
+    private async Task PreviewMatchCountAsync()
+    {
+        if (_profile == null || _matchCountLoading) return;
+        var snapshot = BuildPreviewSnapshot();
+        _previewError = null;
+        _matchCountLoading = true;
+        try
+        {
+            var payload = BuildProfilePayloadForRequest();
+            using var response = await Http.PostAsJsonAsync("/api/profiles/preview-count", payload);
+            if (snapshot != BuildPreviewSnapshot()) return;
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<MatchCountResponse>();
+                if (snapshot != BuildPreviewSnapshot()) return;
+                _matchCount = result?.MatchedAssets;
+                _previewAssets = result?.PreviewAssets ?? [];
+                _failedPreviewIds.Clear();
+                _previewSnapshot = snapshot;
+            }
+            else
+            {
+                var err = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+                _previewError = err?.Error ?? $"Could not preview photos (HTTP {(int)response.StatusCode}).";
             }
         }
         catch (Exception ex) when (ex is HttpRequestException or JsonException or TaskCanceledException)
         {
-            _saveError = "Could not preview matching photos. Check the Immich connection and try again.";
+            if (snapshot == BuildPreviewSnapshot()) _previewError = "Could not preview matching photos. Check the Immich connection and try again.";
         }
-        finally
-        {
-            _matchCountLoading = false;
-        }
+        finally { _matchCountLoading = false; }
+    }
+
+    private string BuildPreviewSnapshot()
+    {
+        if (_profile == null) return "";
+        var payload = BuildProfilePayloadForRequest();
+        return JsonSerializer.Serialize(new { payload.AssetFilter, payload.ContentSources, payload.ExcludedPeople,
+            payload.LocationFilter, payload.DateFilter, payload.Quality, payload.MediaTypes, payload.Memories });
     }
 
     private string BuildSnapshot()
@@ -610,7 +739,7 @@ else
         var clone = JsonSerializer.Deserialize<ImmichLoungeCompanion.Models.Profile>(
             JsonSerializer.Serialize(_profile)) ?? new();
 
-        clone.LocationFilter = _locationFilter;
+        clone.LocationFilter = new() { Country = _locationFilter.Country, State = _locationFilter.State, City = _locationFilter.City };
         clone.MediaTypes.Videos = false;
         clone.MediaTypes.LivePhotos = false;
         clone.MediaTypes.VideoAudio = false;

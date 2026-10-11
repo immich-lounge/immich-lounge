@@ -1,4 +1,7 @@
+using System;
 using System.Linq;
+using System.Net.Http;
+using System.Threading;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
@@ -18,7 +21,9 @@ public class ProfilesController(
     IPlaylistCache cache,
     IPlaylistBuilder playlistBuilder,
     IProfileValidator profileValidator,
-    IProfileDocumentService profileDocuments) : ControllerBase
+    IProfileDocumentService profileDocuments,
+    ISettingsRepository settings,
+    IHttpClientFactory httpFactory) : ControllerBase
 {
     private static readonly Regex ValidId = new(@"^[a-z0-9][a-z0-9\-]{1,62}[a-z0-9]$", RegexOptions.Compiled);
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -115,7 +120,7 @@ public class ProfilesController(
     }
 
     [HttpPost("preview-count")]
-    public async Task<IActionResult> PreviewCount([FromBody] Profile profile)
+    public async Task<IActionResult> PreviewCount([FromBody] Profile profile, CancellationToken cancellationToken)
     {
         profileDocuments.Normalize(profile);
 
@@ -126,7 +131,50 @@ public class ProfilesController(
         }
 
         var entries = await playlistBuilder.BuildAsync(profile);
-        return Ok(new { matchedAssets = entries.Count });
+        var connection = (await settings.LoadAsync()).Immich;
+        var samples = await Task.WhenAll(entries.Where(entry => entry.Type is "photo" or "livePhoto")
+            .Where(entry => Guid.TryParse(entry.Id, out _))
+            .Take(6)
+            .Select(async entry => new
+            {
+                entry.Id,
+                entry.SourceLabel,
+                thumbnailUrl = await ReadThumbnailAsync(connection, Guid.Parse(entry.Id), cancellationToken)
+            }));
+        return Ok(new
+        {
+            matchedAssets = entries.Count,
+            previewAssets = samples
+        });
+    }
+
+    // Small, bounded samples are returned only by an explicit preview request.
+    // No asset-serving endpoint or Immich credential is exposed to the browser.
+    private async Task<string?> ReadThumbnailAsync(ImmichSettings connection, Guid assetId, CancellationToken cancellationToken)
+    {
+        const long maxBytes = 512 * 1024;
+        if (string.IsNullOrWhiteSpace(connection.ApiKey) ||
+            !Uri.TryCreate(connection.ServerUrl, UriKind.Absolute, out var server) ||
+            server.Scheme is not ("http" or "https")) { return null; }
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(5));
+        using var request = new HttpRequestMessage(HttpMethod.Get,
+            $"{connection.ServerUrl.TrimEnd('/')}/api/assets/{assetId:D}/thumbnail?size=thumbnail");
+        request.Headers.Add("x-api-key", connection.ApiKey);
+        try
+        {
+            using var response = await httpFactory.CreateClient("immich").SendAsync(request,
+                HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+            if (!response.IsSuccessStatusCode) { return null; }
+            var mediaType = response.Content.Headers.ContentType?.MediaType?.ToLowerInvariant();
+            if (mediaType is not ("image/jpeg" or "image/png" or "image/webp" or "image/avif") ||
+                response.Content.Headers.ContentLength > maxBytes) { return null; }
+            await response.Content.LoadIntoBufferAsync(maxBytes, timeout.Token);
+            var bytes = await response.Content.ReadAsByteArrayAsync(timeout.Token);
+            return $"data:{mediaType};base64,{Convert.ToBase64String(bytes)}";
+        }
+        catch (HttpRequestException) { return null; }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested) { return null; }
     }
 
     private static bool IsCompleteProfilePayload(JsonElement body)
