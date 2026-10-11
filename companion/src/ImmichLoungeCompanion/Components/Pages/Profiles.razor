@@ -5,7 +5,8 @@
 @using ImmichLoungeCompanion.Services
 
 <PageTitle>Profiles · Immich Lounge</PageTitle>
-<h2>Profiles</h2>
+<h1>Profiles</h1>
+<p class="page-intro">Choose what plays on your TV. Each profile has its own photos and slideshow settings.</p>
 
 <div class="btn-row">
     <button @onclick="NewProfile" class="btn btn-primary" disabled="@_busy">+ New Profile</button>
@@ -48,7 +49,7 @@ else if (_profiles.Count == 0 && _actionError == null)
 @if (_showNewDialog)
 {
     <div class="modal-shell" @onclick="CloseNewDialog">
-        <div class="dialog dialog-profile" role="dialog" aria-modal="true" aria-labelledby="new-profile-title" @onclick:stopPropagation="true">
+        <div class="dialog dialog-profile" role="dialog" aria-modal="true" aria-labelledby="new-profile-title" @onclick:stopPropagation="true" @onkeydown="HandleDialogKey">
             <div class="dialog-header">
                 <div>
                     <p class="dialog-eyebrow">Create profile</p>
@@ -61,7 +62,7 @@ else if (_profiles.Count == 0 && _actionError == null)
             <div class="dialog-fields">
                 <div class="form-group">
                     <label for="profile-name">Name</label>
-                    <input id="profile-name" @bind:get="_newName" @bind:set="SetProfileName" @bind:event="oninput" class="form-control" placeholder="Living Room" disabled="@_busy" />
+                    <input @ref="_nameInput" id="profile-name" @bind:get="_newName" @bind:set="SetProfileName" @bind:event="oninput" class="form-control" placeholder="Living Room" disabled="@_busy" />
                 </div>
                 <details>
                     <summary>Customize profile ID</summary>
@@ -89,7 +90,8 @@ else if (_profiles.Count == 0 && _actionError == null)
 @code {
     private HttpClient Http => HttpFactory.CreateClient("local");
     private List<ProfileSummary> _profiles = [];
-    private bool _showNewDialog;
+    private bool _showNewDialog, _focusNewDialog;
+    private ElementReference _nameInput;
     private bool _loading = true, _busy, _customId;
     private string? _actionMessage, _actionError;
     private string _newId = "", _newName = "", _createError = "";
@@ -109,7 +111,22 @@ else if (_profiles.Count == 0 && _actionError == null)
     private void NewProfile()
     {
         _showNewDialog = true;
+        _focusNewDialog = true;
         _newId = ""; _newName = ""; _createError = ""; _customId = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_showNewDialog && _focusNewDialog)
+        {
+            _focusNewDialog = false;
+            await _nameInput.FocusAsync();
+        }
+    }
+
+    private void HandleDialogKey(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape") CloseNewDialog();
     }
 
     private void SetProfileName(string? name)

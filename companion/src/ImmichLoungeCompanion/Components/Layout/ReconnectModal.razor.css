@@ -1,3 +1,4 @@
+.components-reconnect-rejected-visible,
 .components-reconnect-first-attempt-visible,
 .components-reconnect-repeated-attempt-visible,
 .components-reconnect-failed-visible,
@@ -7,6 +8,7 @@
     display: none;
 }
 
+#components-reconnect-modal.components-reconnect-rejected .components-reconnect-rejected-visible,
 #components-reconnect-modal.components-reconnect-show .components-reconnect-first-attempt-visible,
 #components-reconnect-modal.components-reconnect-show .components-rejoining-animation,
 #components-reconnect-modal.components-reconnect-paused .components-pause-visible,
@@ -21,11 +23,12 @@
 
 
 #components-reconnect-modal {
-    background-color: white;
+    background-color: var(--bg-card, #1b1e25);
+    color: var(--text, #e9eaf0);
     width: 20rem;
     margin: 20vh auto;
     padding: 2rem;
-    border: 0;
+    border: 1px solid var(--border, #343740);
     border-radius: 0.5rem;
     box-shadow: 0 3px 6px 2px rgba(0, 0, 0, 0.3);
     opacity: 0;
@@ -90,14 +93,14 @@
 
 #components-reconnect-modal button {
     border: 0;
-    background-color: #6b9ed2;
-    color: white;
+    background-color: var(--accent, #b6a1ff);
+    color: #17131f;
     padding: 4px 24px;
     border-radius: 4px;
 }
 
     #components-reconnect-modal button:hover {
-        background-color: #3b6ea2;
+        background-color: var(--accent-hover, #c6b6ff);
     }
 
     #components-reconnect-modal button:active {

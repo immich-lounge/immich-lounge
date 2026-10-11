@@ -4,7 +4,7 @@
 @inject NavigationManager Nav
 
 <PageTitle>Connection · Immich Lounge</PageTitle>
-<h2>Immich Connection</h2>
+<h1>Connect to Immich</h1>
 <p class="page-intro">Connect your Immich library, then create a profile to choose what plays on Roku.</p>
 
 <div class="settings-card">
@@ -25,8 +25,8 @@
     </div>
 
     <div class="btn-row">
-        <button @onclick="SaveAsync" class="btn btn-primary" disabled="@_busy">Save</button>
-        <button @onclick="TestConnectionAsync" class="btn btn-secondary" disabled="@_busy">@(_testing ? "Saving and testing…" : "Save & Test Connection")</button>
+        <button @onclick="SaveAsync" class="btn btn-secondary" disabled="@_busy">Save without testing</button>
+        <button @onclick="TestConnectionAsync" class="btn btn-primary" disabled="@_busy">@(_testing ? "Saving and testing…" : "Save & Test Connection")</button>
     </div>
     <p class="field-hint">Save &amp; Test Connection saves these settings before checking access to Immich. The settings stay saved even if the test fails.</p>
 

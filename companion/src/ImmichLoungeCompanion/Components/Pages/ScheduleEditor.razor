@@ -152,10 +152,12 @@
     }
     private async Task SaveAsync()
     {
+        if (_saving) return;
         _saving = true;
+        _error = null;
         try
         {
-            var response = Id == null ? await Http.PostAsJsonAsync("/api/schedules", _schedule) : await Http.PutAsJsonAsync($"/api/schedules/{Id}", _schedule);
+            using var response = Id == null ? await Http.PostAsJsonAsync("/api/schedules", _schedule) : await Http.PutAsJsonAsync($"/api/schedules/{Id}", _schedule);
             if (!response.IsSuccessStatusCode)
             {
                 _error = (await response.Content.ReadFromJsonAsync<ErrorResponse>())?.Error ?? "Could not save the schedule.";
@@ -165,6 +167,10 @@
             _error = null;
             _skipPrompt = true;
             Nav.NavigateTo($"/schedules/{_schedule!.Id}/edit");
+        }
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or TaskCanceledException)
+        {
+            _error = "Could not save the schedule. Your changes are still here. Try again.";
         }
         finally { _saving = false; }
     }

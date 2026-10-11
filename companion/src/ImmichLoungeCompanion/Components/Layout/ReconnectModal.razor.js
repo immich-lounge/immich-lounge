@@ -5,6 +5,9 @@ reconnectModal.addEventListener("components-reconnect-state-changed", handleReco
 const retryButton = document.getElementById("components-reconnect-button");
 retryButton.addEventListener("click", retry);
 
+const reloadButton = document.getElementById("components-reload-button");
+reloadButton.addEventListener("click", () => location.reload());
+
 const resumeButton = document.getElementById("components-resume-button");
 resumeButton.addEventListener("click", resume);
 
@@ -16,7 +19,7 @@ function handleReconnectStateChanged(event) {
     } else if (event.detail.state === "failed") {
         document.addEventListener("visibilitychange", retryWhenDocumentBecomesVisible);
     } else if (event.detail.state === "rejected") {
-        location.reload();
+        document.removeEventListener("visibilitychange", retryWhenDocumentBecomesVisible);
     }
 }
 

@@ -19,7 +19,7 @@ Use it when you need to:
 - replace the API key
 - save the entered settings and verify access with **Save & Test Connection**
 
-**Save** stores the settings without testing. **Save & Test Connection** stores them first, then checks access to Immich. A failed test does not undo the saved settings.
+**Save without testing** stores the settings without testing. **Save & Test Connection** stores them first, then checks access to Immich. A failed test does not undo the saved settings.
 
 If you need to generate or rotate the key, see [Immich API Key](./api-key.md).
 
@@ -52,18 +52,24 @@ Deleting a profile requires confirmation. It removes the companion profile, not 
 
 Each profile controls both what the Roku shows and how playback should feel.
 
-The summary at the top shows the selected sources, photo interval, shuffle setting, and image quality. **Content Sources** and **Slideshow** stay open; expand **Location**, **Media**, **Overlay & Clock**, **Date & Time**, or **Weather** when needed. These sections keep their existing settings when collapsed.
+Use **Photos** to choose your library content, **Playback** to set the pace and fit, and **Appearance** to choose the background and on-screen information. Only one view is shown at a time. Switching views keeps your unsaved changes.
+
+Memories and less-used settings sit in expandable options within each view. Choose **Albums**, **People**, **Tags**, or **Location** at the same level. Tabs only change which controls are visible; selections in every category remain active. The **Showing** summary lists the combined selection and any location or exclusions. **Any selection** combines albums, people, and tags; **Every selection** requires all of them to match. Location narrows all selected sources and memories; filled country, state, and city fields must all match. Source matching, exclusions, and file size are under **Filters**. Memories and their time zone are under **Memories**. Refresh timing and transition duration are under **More playback options**. Weather and custom date formats are under **Appearance**.
+
+Choose **Preview selection** to see the matching count and up to six sample photos without saving. Changing photo criteria clears the old preview. If a thumbnail cannot load, the count remains available.
+
+The save bar shows whether changes are pending. Choose **Save changes** to keep them, or **Close** to return to Profiles. Leaving with unsaved changes requires confirmation. If the companion restarts and your session expires, choose **Reload page** in the recovery dialog; unsaved edits may be lost.
 
 You can edit display settings before connecting Immich. Follow **Configure connection** to enable source selection and match previews. If sources cannot load, check the connection and use the picker’s retry button; the rest of the editor remains usable.
 
 | Area | What you manage there |
 |---|---|
-| Content | Albums, people, tags, memories, and optional date filters |
+| Photos | Albums, people, tags, memories, location, and file filters |
 | Playback | Interval, shuffle, transitions, photo motion, and refresh timing |
-| Display | Overlay style, fields, background effects, date formatting, weather, and image quality |
+| Appearance | Photo details, backgrounds, clock, date formatting, weather, and image quality |
 
 ![Immich Lounge companion profile editor](./assets/screenshots/companion-profile-editor.png){ .doc-screenshot .on-glb }
-<p class="doc-caption">The profile editor combines content selection, playback settings, and visual tuning in one place.</p>
+<p class="doc-caption">The profile editor separates photos, playback, and appearance into focused views.</p>
 
 ## Schedules page
 
@@ -91,7 +97,7 @@ For time-zone, fallback, and offline behavior, see [Schedules](./configuration.m
 
 ## What the companion does not do
 
-- it does not proxy image delivery
+- Roku fetches slideshow images directly from Immich; the companion only fetches small samples when you preview a selection
 - it does not store the API key inside the profile JSON files on disk
 - it does not control Roku-side cache clearing or profile switching directly
 
