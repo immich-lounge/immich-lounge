@@ -50,6 +50,6 @@ Use GitHub Issues for:
 - feature requests
 - documentation improvements
 
-When reporting a problem, include your Roku model, Roku OS version, immich version, and whether the issue is in the companion app, channel, or screensaver.
+When reporting a problem, include your Roku model, Roku OS version, Immich version, companion version, and whether the issue is in the companion app, channel, or screensaver. The companion version appears below **Help & setup** in the companion's navigation.
 
 Use **Copy as Markdown** above a guide's heading to copy its text into a support conversation or an assistant. The [Markdown documentation index](./llms.txt) links to the exported setup and help pages.
