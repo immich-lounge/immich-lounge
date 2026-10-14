@@ -414,7 +414,7 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
         }
     }
 
-    private static SearchAssetsRequest BuildSearchRequest(AssetFilterRule rule, DateFilter? dateFilter)
+    private SearchAssetsRequest BuildSearchRequest(AssetFilterRule rule, DateFilter? dateFilter)
     {
         var request = new SearchAssetsRequest();
 
@@ -450,7 +450,7 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
     private static bool MatchesField(string? actual, string? expected) =>
         CleanLocation(expected) is not { } value || string.Equals(actual, value, StringComparison.Ordinal);
 
-    private static void ApplyDateFilter(SearchAssetsRequest request, DateFilter filter)
+    private void ApplyDateFilter(SearchAssetsRequest request, DateFilter filter)
     {
         if (filter.Type == "range")
         {
@@ -459,7 +459,7 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
         }
         else if (filter.Type == "rolling" && filter.Amount.HasValue)
         {
-            var now = DateTime.UtcNow;
+            var now = _time.GetUtcNow();
             var from = filter.Unit switch
             {
                 "days"   => now.AddDays(-filter.Amount.Value),
@@ -468,7 +468,7 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
                 "years"  => now.AddYears(-filter.Amount.Value),
                 _        => now
             };
-            request.TakenAfter = from.ToString("yyyy-MM-dd");
+            request.TakenAfter = from.ToString("O", System.Globalization.CultureInfo.InvariantCulture);
         }
     }
 }

@@ -169,6 +169,10 @@ If the right photo cannot load, the left shows alone and the right is retried as
 
 Date ranges configured through the API use UTC calendar days and include the entire final day. Explicit ISO timestamps keep their exact bounds. Empty bounds are omitted.
 
+## Date filter controls
+
+Under **Photos → Filters → Date filter**, choose all dates, a fixed range, or a rolling window of 1–100 days, weeks, months, or years. A range needs at least one bound. Rolling windows are recalculated when the playlist refreshes. Existing profile dates are retained when opening or saving the editor. Date changes invalidate the selection preview.
+
 ## Location filters
 
 In the profile editor, fill in **Country**, **State / province**, or **City** to limit the playlist by location. Suggestions come from locations in your Immich library. Use the exact names stored in Immich; if suggestions are unavailable, you can enter those names manually.
