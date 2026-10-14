@@ -1,7 +1,10 @@
 ' PlaybackPortraits.brs - shared loading and recovery for portrait pairs.
 
 sub ResetPendingPortraitForScene(ctx as Object)
-    ReleasePortraitPosterForSlot(ctx, ctx.loadingToSlot)
+    ' Keep a prefetched partner until its URL is checked against the next slide.
+    node = ctx.pairedPosters[ctx.loadingToSlot]
+    node.unobserveField("loadStatus")
+    node.visible = false
     ctx.pendingPairEntry = invalid
     ctx.pairLoadStarted = false
     ctx.pairFallbackTried = false
@@ -10,18 +13,57 @@ sub ResetPendingPortraitForScene(ctx as Object)
     ctx.slideAssetCount = 1
 end sub
 
+sub PreloadNextPortraitForScene(ctx as Object)
+    if not ctx.sideBySidePortraits or ctx.profile = invalid then return
+    if ctx.playlist.Count() = 0 then return
+    slot = ctx.ringNext
+    if slot = ctx.ringCurrent or slot = ctx.activeBgSlot then return
+    index = (ctx.playlistIndex + ValueOrDefault(ctx.slideAssetCount, 1)) mod ctx.playlist.Count()
+    main = ctx.mainPosters[slot]
+    if main.uri <> BuildMediaUrl(ctx.playlist[index], ctx.profile) then return
+    if main.loadStatus <> "ready" then
+        main.observeField("loadStatus", "OnPreloadPortraitMainLoaded")
+        return
+    end if
+    main.unobserveField("loadStatus")
+    candidate = PortraitPairCandidateIndex(ctx.playlist, index, main.bitmapWidth, main.bitmapHeight, true)
+    if candidate < 0 then
+        ReleasePortraitPosterForSlot(ctx, slot)
+        return
+    end if
+    paired = ctx.pairedPosters[slot]
+    paired.visible = false
+    url = BuildMediaUrl(ctx.playlist[candidate], ctx.profile)
+    if paired.uri <> url then
+        paired.unobserveField("loadStatus")
+        paired.uri = url
+        LogDebug(PlaybackLogScope(ctx), "PreloadPortrait slot=" + slot.ToStr() + " index=" + candidate.ToStr())
+    end if
+end sub
+
 sub TryStartPortraitPairForScene(ctx as Object)
     if ctx.pairLoadStarted or not ctx.nextMainReady then return
     main = ctx.mainPosters[ctx.loadingToSlot]
     candidate = PortraitPairCandidateIndex(ctx.playlist, ctx.playlistIndex, main.bitmapWidth, main.bitmapHeight, ctx.sideBySidePortraits)
-    if candidate < 0 then return
+    if candidate < 0 then
+        ReleasePortraitPosterForSlot(ctx, ctx.loadingToSlot)
+        return
+    end if
 
     ctx.pairLoadStarted = true
     ctx.nextPairReady = false
     ctx.pendingPairEntry = ctx.playlist[candidate]
     node = ctx.pairedPosters[ctx.loadingToSlot]
+    url = BuildMediaUrl(ctx.pendingPairEntry, ctx.profile)
+    if node.uri = url and node.loadStatus = "ready" then
+        LogDebug(PlaybackLogScope(ctx), "Using preloaded portrait slot=" + ctx.loadingToSlot.ToStr())
+        if not ApplyLoadedPortraitPairForScene(ctx) then QueueLayoutRetryForScene(ctx)
+        return
+    end if
+    ' Retry a failed prefetch through the normal load/fallback path.
+    if node.uri = url and node.loadStatus = "failed" then node.uri = ""
     node.observeField("loadStatus", "OnNextPortraitLoaded")
-    node.uri = BuildMediaUrl(ctx.pendingPairEntry, ctx.profile)
+    node.uri = url
 end sub
 
 sub DropPendingPortraitForScene(ctx as Object)

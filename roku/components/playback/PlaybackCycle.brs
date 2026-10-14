@@ -25,6 +25,8 @@ sub ShowCurrentSlideForScene(ctx as Object)
 
     toNode = ctx.mainPosters[ctx.loadingToSlot]
     bgNode = ctx.bgPosters[ctx.loadingToSlot]
+    ' Foreground loading takes over from the lookahead observer.
+    toNode.unobserveField("loadStatus")
 
     ctx.nextMainReady = false
     ctx.nextBgReady = false

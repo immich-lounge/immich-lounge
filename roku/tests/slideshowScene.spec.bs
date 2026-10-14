@@ -57,6 +57,116 @@ namespace tests
 
     @describe("Portrait pairs")
 
+    function portraitPreloadContext()
+      m.stubCall(BuildMediaUrl, function(entry as object, _profile as object) as string
+        return entry.id
+      end function)
+      main = {
+        uri: "left", loadStatus: "ready", bitmapWidth: 810, bitmapHeight: 1080
+        observeField: sub(_field as string, callback as string)
+          m.callback = callback
+        end sub
+        unobserveField: sub(_field as string)
+          m.callback = ""
+        end sub
+      }
+      paired = {
+        uri: "", loadStatus: "loading", visible: false, bitmapWidth: 720, bitmapHeight: 1080
+        observeField: sub(_field as string, callback as string)
+          m.callback = callback
+        end sub
+        unobserveField: sub(_field as string)
+          m.callback = ""
+        end sub
+      }
+      return {
+        playlist: [{ id: "current", type: "photo" }, { id: "left", type: "photo" }, { id: "right", type: "photo" }]
+        profile: {}, sideBySidePortraits: true, playlistIndex: 0, slideAssetCount: 1
+        ringCurrent: 0, ringNext: 1, activeBgSlot: 0, loadingToSlot: 1
+        mainPosters: [{}, main], pairedPosters: [{}, paired]
+        sceneWidth: 1920, sceneHeight: 1080, nextMainReady: true
+      }
+    end function
+
+    @it("Loads the next partner while the current slide is still showing")
+    function test_portraitPreloadAhead()
+      ctx = m.portraitPreloadContext()
+      PreloadNextPortraitForScene(ctx)
+      m.assertEqual(ctx.pairedPosters[1].uri, "right")
+      m.assertFalse(ctx.pairedPosters[1].visible)
+      m.assertEqual(ctx.ringCurrent, 0)
+      m.assertEqual(ctx.playlistIndex, 0)
+    end function
+
+    @it("Starts partner preloading after the next main image becomes ready")
+    function test_portraitPreloadWaitsForMain()
+      ctx = m.portraitPreloadContext()
+      ctx.mainPosters[1].loadStatus = "loading"
+      PreloadNextPortraitForScene(ctx)
+      m.assertEqual(ctx.mainPosters[1].callback, "OnPreloadPortraitMainLoaded")
+      m.assertEqual(ctx.pairedPosters[1].uri, "")
+      ctx.mainPosters[1].loadStatus = "ready"
+      PreloadNextPortraitForScene(ctx)
+      m.assertEqual(ctx.mainPosters[1].callback, "")
+      m.assertEqual(ctx.pairedPosters[1].uri, "right")
+    end function
+
+    @it("Does not preload disabled pairs, visible slots, or stale playlist images")
+    function test_portraitPreloadGuards()
+      ctx = m.portraitPreloadContext()
+      ctx.sideBySidePortraits = false
+      PreloadNextPortraitForScene(ctx)
+      m.assertEqual(ctx.pairedPosters[1].uri, "")
+      ctx.sideBySidePortraits = true
+      ctx.activeBgSlot = 1
+      PreloadNextPortraitForScene(ctx)
+      m.assertEqual(ctx.pairedPosters[1].uri, "")
+      ctx.activeBgSlot = 0
+      ctx.mainPosters[1].uri = "old-playlist"
+      PreloadNextPortraitForScene(ctx)
+      m.assertEqual(ctx.pairedPosters[1].uri, "")
+    end function
+
+    @it("Keeps a ready prefetched partner through foreground reset and layout")
+    function test_portraitPreloadReuse()
+      ctx = m.portraitPreloadContext()
+      PreloadNextPortraitForScene(ctx)
+      ctx.pairedPosters[1].loadStatus = "ready"
+      ResetPendingPortraitForScene(ctx)
+      m.assertEqual(ctx.pairedPosters[1].uri, "right")
+      ctx.playlistIndex = 1
+      TryStartPortraitPairForScene(ctx)
+      m.assertTrue(ctx.nextPairReady)
+      m.assertTrue(ctx.pairedPosters[1].visible)
+      m.assertEqual(ctx.pendingSlideAssetCount, 2)
+      m.assertEqual(ctx.pairedPosters[1].callback, "")
+      m.assertEqual(ctx.mainPosters[1].translation, [75, 0])
+      m.assertEqual(ctx.pairedPosters[1].translation, [1005, 0])
+    end function
+
+    @it("Revalidates a prefetched partner after navigation or playlist changes")
+    function test_portraitPreloadRevalidation()
+      ctx = m.portraitPreloadContext()
+      ctx.pairedPosters[1].uri = "old-partner"
+      ctx.pairedPosters[1].loadStatus = "ready"
+      ResetPendingPortraitForScene(ctx)
+      ctx.playlistIndex = 1
+      TryStartPortraitPairForScene(ctx)
+      m.assertEqual(ctx.pairedPosters[1].uri, "right")
+      m.assertFalse(ctx.nextPairReady)
+      m.assertEqual(ctx.pairedPosters[1].callback, "OnNextPortraitLoaded")
+    end function
+
+    @it("Discards a prefetched partner when the main image is landscape")
+    function test_portraitPreloadLandscape()
+      ctx = m.portraitPreloadContext()
+      ctx.pairedPosters[1].uri = "old-partner"
+      ctx.mainPosters[1].bitmapWidth = 1920
+      PreloadNextPortraitForScene(ctx)
+      m.assertEqual(ctx.pairedPosters[1].uri, "")
+      m.assertFalse(ctx.pairedPosters[1].visible)
+    end function
+
     @it("Pairs only a portrait with an adjacent photo without wrapping")
     function test_portraitPairCandidate()
       playlist = [{ id: "a", type: "photo" }, { id: "b", type: "photo" }, { id: "v", type: "video" }]

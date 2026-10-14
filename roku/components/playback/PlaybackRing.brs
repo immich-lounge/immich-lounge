@@ -94,6 +94,7 @@ sub PreloadRingForScene(ctx as Object, fromSlot as Integer)
         ctx.bgPosters[ctx.ringNext].uri = nextBgUrl
         ctx.ringUrls[ctx.ringNext] = nextUrl
     end if
+    PreloadNextPortraitForScene(ctx)
 
     slot = (ctx.ringNext + 1) mod ctx.ringSize
     lookahead = slideStep + 1
