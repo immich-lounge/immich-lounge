@@ -22,7 +22,7 @@ Display your <a href="https://immich.app">Immich</a> photos as a slideshow or sc
 </div>
 
 <figure class="screenshot-card home-playback">
-  <img class="on-glb" src="./assets/screenshots/slideshow.png" alt="Immich Lounge slideshow on Roku with photo information, clock, and weather" />
+  <img class="on-glb" src="./assets/screenshots/slideshow.jpg" alt="Immich Lounge fullscreen slideshow on Roku with an album label and clock" />
   <figcaption>Your photos on the TV, with optional information, clock, and weather.</figcaption>
 </figure>
 

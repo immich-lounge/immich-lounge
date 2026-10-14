@@ -72,7 +72,7 @@ You can edit display settings before connecting Immich. Follow **Configure conne
 | Playback | Interval, shuffle, transitions, photo motion, and refresh timing |
 | Appearance | Photo details, backgrounds, clock, date formatting, weather, and image quality |
 
-![Immich Lounge companion profile editor](./assets/screenshots/companion-profile-editor.png){ .doc-screenshot .on-glb }
+![Immich Lounge companion profile editor](./assets/screenshots/companion-profile-editor.jpg){ .doc-screenshot .on-glb }
 <p class="doc-caption">The profile editor separates photos, playback, and appearance into focused views.</p>
 
 ## Schedules page

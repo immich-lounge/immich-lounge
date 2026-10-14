@@ -11,6 +11,14 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 ## Unreleased
 
+## 1.2.1 — 2026-10-14
+
+- Smoother transitions into side-by-side portrait photos: the channel and screensaver load the next pair while the current photo is showing.
+- Show the installed companion version in the navigation.
+- Clearer browser icons for the companion and website.
+- Update the website documentation builder.
+- Refresh screenshots with the current interface and non-personal demo photos.
+
 ## 1.2.0 — 2026-10-11
 
 - Companion and Roku apps version 1.2.0.
