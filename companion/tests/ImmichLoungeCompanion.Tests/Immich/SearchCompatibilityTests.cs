@@ -72,6 +72,8 @@ public class SearchCompatibilityTests
         Assert.IsFalse(bodies[0].TryGetProperty("cursor", out _));
         Assert.AreEqual("opaque+/=", bodies[1].GetProperty("cursor").GetString());
         var filter = bodies[0].GetProperty("filter");
+        CollectionAssert.AreEqual(new[] { "hidden", "locked" }, filter.GetProperty("visibility").GetProperty("notIn")
+            .EnumerateArray().Select(v => v.GetString()).ToArray());
         Assert.AreEqual(2, filter.GetProperty("albumIds").GetProperty("all").GetArrayLength());
         Assert.AreEqual("person", filter.GetProperty("personIds").GetProperty("all")[0].GetString());
         Assert.AreEqual("tag", filter.GetProperty("tagIds").GetProperty("all")[0].GetString());

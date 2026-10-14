@@ -11,6 +11,8 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 ## Unreleased
 
+- Exclude hidden and locked photos from playlists and selection previews.
+
 ## 1.2.1 — 2026-10-14
 
 - Smoother transitions into side-by-side portrait photos: the channel and screensaver load the next pair while the current photo is showing.

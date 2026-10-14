@@ -6,6 +6,8 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+- Exclude hidden/locked assets in structured metadata search and final playlist projection, retaining archived and legacy assets.
+
 ## 1.2.1 — 2026-10-14
 
 - Set companion assembly/package version to `1.2.1` and both Roku manifests to `1.2.0001`.

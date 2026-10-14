@@ -165,6 +165,10 @@ The setting is off by default and works in both the channel and screensaver, inc
 
 If the right photo cannot load, the left shows alone and the right is retried as the next item. Changes apply to the next photo displayed after the profile refresh.
 
+## Asset visibility
+
+Hidden and locked Immich assets are excluded from playlists and selection previews, including memories and hidden live-photo motion clips. Archived photos retain their existing eligibility.
+
 ## Location filters
 
 In the profile editor, fill in **Country**, **State / province**, or **City** to limit the playlist by location. Suggestions come from locations in your Immich library. Use the exact names stored in Immich; if suggestions are unavailable, you can enter those names manually.

@@ -51,6 +51,9 @@ public static class PlaylistEntryProjector
     private static PlaylistEntry? MapToEntry(string id, CollectedAsset collected, MediaTypes filter)
     {
         var asset = collected.Asset;
+        // Covers regular search, memories, and servers using the legacy search format.
+        // Archived photos retain their existing eligibility.
+        if (asset.Visibility is "hidden" or "locked") { return null; }
         var sourceLabel = collected.SourceLabel;
         bool isLivePhoto = asset.LivePhotoVideoId != null;
         bool isVideo = asset.Type == "VIDEO";
