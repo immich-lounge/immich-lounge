@@ -284,6 +284,45 @@ public class ImmichClient(IHttpClientFactory httpClientFactory, ILogger<ImmichCl
         return allAssets;
     }
 
+    public async Task<List<ImmichAsset>> SmartSearchAsync(
+        ImmichSettings settings, string query, SearchAssetsRequest request, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(query)) { throw new ArgumentException("Smart search needs query text.", nameof(query)); }
+        var (client, baseUrl) = BuildClient(settings);
+        var capabilities = await GetSearchApiCapabilitiesAsync(settings);
+        var allAssets = new List<ImmichAsset>();
+        var page = 1;
+        while (true)
+        {
+            ct.ThrowIfCancellationRequested();
+            var body = SearchRequestSerializer.SerializeSmart(request, query, capabilities.StructuredSearch, page, JsonOptions);
+            using var req = ApiRequest(HttpMethod.Post, baseUrl, "api/search/smart", settings.ApiKey);
+            req.Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json");
+            using var response = await client.SendAsync(req, ct);
+            await EnsureSuccessAsync(response, $"POST /api/search/smart page={page}");
+            using var document = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(ct), cancellationToken: ct);
+            var root = document.RootElement;
+            if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("assets", out var assets) ||
+                assets.ValueKind != JsonValueKind.Object || !assets.TryGetProperty("items", out var items) ||
+                items.ValueKind != JsonValueKind.Array ||
+                (capabilities.StructuredSearch && !assets.TryGetProperty("nextCursor", out _)))
+            { throw new JsonException("Immich returned an invalid or incompatible smart search response."); }
+            var result = root.Deserialize<SearchAssetsResponse>(JsonOptions)!;
+            allAssets.AddRange(result.Assets.Items);
+            if (capabilities.StructuredSearch)
+            {
+                // Immich 3.2+ deliberately has no rank-aware smart-search pagination.
+                if (result.Assets.NextPage != null || result.Assets.NextCursor != null)
+                { throw new JsonException("Immich returned unexpected smart search pagination. Refresh server detection before retrying."); }
+                return allAssets;
+            }
+            if (result.Assets.NextPage == null) { return allAssets; }
+            if (!int.TryParse(result.Assets.NextPage, out var nextPage) || nextPage <= page)
+            { throw new JsonException("Immich returned an invalid or repeated smart search page."); }
+            page = nextPage;
+        }
+    }
+
     public async Task<ImmichAsset?> GetAssetAsync(ImmichSettings settings, string assetId, CancellationToken ct = default)
     {
         var (client, baseUrl) = BuildClient(settings);

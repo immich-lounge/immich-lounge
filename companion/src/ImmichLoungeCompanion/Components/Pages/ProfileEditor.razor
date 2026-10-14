@@ -41,7 +41,7 @@ else
                     <option value="memories">Memories only</option>
                 </select>
             </label>
-            <p class="field-hint">All photos uses the whole library. Selected sources uses your albums, people, and tags. Location and file filters narrow either choice.</p>
+            <p class="field-hint">All photos uses the whole library. Selected sources uses your albums, people, tags, and smart searches. Location and file filters narrow either choice.</p>
             @if (!_connectionConfigured)
             {
                 <div class="connection-notice" role="status"><strong>Connect your Immich library first</strong><p>You can set up playback and appearance while you wait.</p><a class="btn btn-secondary" href="/connection">Set up connection →</a></div>
@@ -49,9 +49,9 @@ else
             <h3 class="criteria-heading">Add criteria</h3>
             <p class="field-hint criteria-hint">Within Selected sources, selections stay active when you switch categories.</p>
             <div class="source-browser-navigation" aria-label="Choose photo sources and location">
-                @foreach (var sourceType in new[] { "album", "person", "tag", "location" })
+                @foreach (var sourceType in new[] { "album", "person", "tag", "search", "location" })
                 {
-                    var sourceLabel = sourceType == "album" ? "Albums" : sourceType == "person" ? "People" : sourceType == "tag" ? "Tags" : "Location";
+                    var sourceLabel = sourceType == "album" ? "Albums" : sourceType == "person" ? "People" : sourceType == "tag" ? "Tags" : sourceType == "search" ? "Smart search" : "Location";
                     <button type="button" class="@(sourceType == _sourcePickerType ? "active" : "")" aria-pressed="@(sourceType == _sourcePickerType)" disabled="@(sourceType != "location" && (!_canEditContentSources || !_connectionConfigured || _profile.PhotoSource is "all" or "memories"))" @onclick="() => _sourcePickerType = sourceType">@sourceLabel</button>
                 }
             </div>
@@ -62,11 +62,22 @@ else
             }
             else if (_canEditContentSources && _connectionConfigured && _profile.PhotoSource is not ("all" or "memories"))
             {
+                @if (_sourcePickerType == "search")
+                {
+                    <label>Search terms:
+                        <input @bind="_newSearchTerms" @bind:event="oninput" placeholder="For example: beach sunset" />
+                    </label>
+                    <div class="btn-row"><button type="button" class="btn btn-secondary" @onclick="AddSearchSource" disabled="@string.IsNullOrWhiteSpace(_newSearchTerms)">Add search</button></div>
+                    <p class="field-hint">Requires smart search enabled in Immich and assets processed by machine learning. Immich 3.2 and later return up to 1,000 ranked matches per query and library or selected album. Older servers return all result pages.</p>
+                }
+                else
+                {
                 @if (_sourcePickerType == "person")
                 {
                     <p class="field-hint">For photos shared through an album, select the album too. Choose <strong>Every selection</strong> under Filters to show only photos of the selected person in that album.</p>
                 }
                 <SourcePicker @key="_sourcePickerType" SourceType="@_sourcePickerType" ShowSelected="false" @bind-Selected="_profile.ContentSources" @bind-Selected:after="CriteriaChanged" />
+                }
             }
             else if (!_canEditContentSources)
             {
@@ -471,6 +482,16 @@ else
     private bool _connectionConfigured;
     private string _editorView = "Photos";
     private string _sourcePickerType = "album";
+    private string _newSearchTerms = "";
+    private void AddSearchSource()
+    {
+        var terms = _newSearchTerms.Trim();
+        if (_profile == null || terms.Length == 0 || !_canEditContentSources || !_connectionConfigured || _profile?.PhotoSource is "all" or "memories") { return; }
+        if (!_profile!.ContentSources.Any(source => source.Type == "search" && string.Equals(source.Id, terms, StringComparison.OrdinalIgnoreCase)))
+        { _profile.ContentSources.Add(new() { Type = "search", Id = terms, Label = terms }); }
+        _newSearchTerms = "";
+        CriteriaChanged();
+    }
     private void CriteriaChanged()
     {
         _matchCount = null;
@@ -526,7 +547,7 @@ else
             if (!_canEditContentSources) { return "Photos matching this profile's advanced content rules."; }
             var hasSources = _profile.ContentSources.Any(source => source.Type != "memories");
             var hasMemories = _memoriesEnabled || _profile.Memories.IncludeBirthdays || _profile.Memories.IncludeSaved;
-            if (!hasSources) { return _profile.PhotoSource == "selected" ? "Choose at least one album, person, or tag." : hasMemories ? "Enabled memories only." : "Photos from the whole library."; }
+            if (!hasSources) { return _profile.PhotoSource == "selected" ? "Choose at least one album, person, tag, or smart search." : hasMemories ? "Enabled memories only." : "Photos from the whole library."; }
             var description = _sourceMatchOperator == AssetFilterGroupOperator.And
                 ? "Photos matching every selected source"
                 : "Photos matching any selected source";
@@ -587,6 +608,7 @@ else
         CriteriaChanged();
         _editorView = "Photos";
         _sourcePickerType = "album";
+        _newSearchTerms = "";
         _saveError = null;
         _saveMessage = null;
         _locationQuery = "";

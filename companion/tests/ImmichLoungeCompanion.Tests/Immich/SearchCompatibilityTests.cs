@@ -406,6 +406,80 @@ public class SearchCompatibilityTests
     [TestMethod]
     [DataRow(1)]
     [DataRow(2)]
+    [DataRow(3)]
+    public async Task SmartSearchPreservesFiltersAndUsesSupportedPagination(int minor)
+    {
+        var bodies = new List<JsonElement>();
+        var client = Client(async req =>
+        {
+            if (req.Method == HttpMethod.Get) { return Version(minor); }
+            Assert.AreEqual("/api/search/smart", req.RequestUri!.AbsolutePath);
+            Assert.AreEqual("key", req.Headers.GetValues("x-api-key").Single());
+            bodies.Add(JsonDocument.Parse(await req.Content!.ReadAsStringAsync()).RootElement.Clone());
+            return minor == 1 && bodies.Count == 1
+                ? Json("""{"assets":{"items":[{"id":"first"}],"nextPage":"2"}}""")
+                : Json("""{"assets":{"items":[{"id":"last"}],"nextPage":null,"nextCursor":null}}""");
+        });
+        var request = new SearchAssetsRequest { AlbumIds = ["shared"], Type = "IMAGE", Country = "Switzerland",
+            TakenBefore = "2024-12-31", HasPeople = minor >= 2, Page = 9 };
+        var result = await client.SmartSearchAsync(Settings(), " beach sunset ", request);
+        Assert.AreEqual(minor == 1 ? 2 : 1, result.Count);
+        Assert.AreEqual(9, request.Page);
+        Assert.AreEqual("2024-12-31", request.TakenBefore);
+        foreach (var body in bodies)
+        {
+            Assert.AreEqual("beach sunset", body.GetProperty("query").GetString());
+            Assert.IsFalse(body.TryGetProperty("cursor", out _));
+            Assert.AreEqual(1000, body.GetProperty("size").GetInt32());
+            if (minor == 1)
+            {
+                Assert.AreEqual("shared", body.GetProperty("albumIds")[0].GetString());
+                Assert.AreEqual("Switzerland", body.GetProperty("country").GetString());
+                Assert.AreEqual("2024-12-31T23:59:59.999Z", body.GetProperty("takenBefore").GetString());
+            }
+            else
+            {
+                Assert.IsFalse(body.TryGetProperty("page", out _));
+                var filter = body.GetProperty("filter");
+                Assert.AreEqual("shared", filter.GetProperty("albumIds").GetProperty("all")[0].GetString());
+                Assert.IsTrue(filter.GetProperty("hasPeople").GetProperty("eq").GetBoolean());
+                Assert.AreEqual("Switzerland", filter.GetProperty("country").GetProperty("eq").GetString());
+                Assert.AreEqual("2024-12-31T23:59:59.999Z", filter.GetProperty("takenAt").GetProperty("lte").GetString());
+            }
+        }
+        if (minor == 1) { Assert.AreEqual(2, bodies[1].GetProperty("page").GetInt32()); }
+    }
+
+    [TestMethod]
+    [DataRow("{}")]
+    [DataRow("{\"assets\":{\"items\":[]}}")]
+    [DataRow("{\"assets\":{\"items\":[],\"nextCursor\":\"unexpected\"}}")]
+    public async Task StructuredSmartSearchRejectsMalformedOrUnexpectedPagination(string response)
+    {
+        var client = Client(req => Task.FromResult(req.Method == HttpMethod.Get ? Version(3) : Json(response)));
+        await Assert.ThrowsExactlyAsync<JsonException>(() => client.SmartSearchAsync(Settings(), "beach", new()));
+    }
+
+    [TestMethod]
+    public async Task SmartSearchRejectsRepeatedLegacyPageAndPropagatesMlFailure()
+    {
+        var posts = 0;
+        var client = Client(req =>
+        {
+            if (req.Method == HttpMethod.Get) { return Task.FromResult(Version(1)); }
+            posts++;
+            return Task.FromResult(Json("""{"assets":{"items":[],"nextPage":"1"}}"""));
+        });
+        await Assert.ThrowsExactlyAsync<JsonException>(() => client.SmartSearchAsync(Settings(), "beach", new()));
+        Assert.AreEqual(1, posts);
+        client = Client(req => Task.FromResult(req.Method == HttpMethod.Get ? Version(3)
+            : new HttpResponseMessage(HttpStatusCode.BadRequest) { Content = new StringContent("Smart search is not enabled") }));
+        await Assert.ThrowsExactlyAsync<HttpRequestException>(() => client.SmartSearchAsync(Settings(), "beach", new()));
+    }
+
+    [TestMethod]
+    [DataRow(1)]
+    [DataRow(2)]
     public async Task EmptyDateBoundsAreNotSentToImmich(int minor)
     {
         var client = Client(async req =>

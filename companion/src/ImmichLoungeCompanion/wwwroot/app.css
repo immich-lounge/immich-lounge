@@ -146,14 +146,14 @@ h1[tabindex="-1"]:focus-visible {outline:none;}
 
 @media(max-width:760px) {.nav-logo-icon {width:40px;} .nav-wordmark {display:flex; gap:5px; font-size:18px;}}
 
-.source-browser-navigation {display:flex; gap:6px; margin:20px 0 14px;}
+.source-browser-navigation {display:flex; flex-wrap:wrap; gap:6px; margin:20px 0 14px;}
 .source-browser-navigation button {background:transparent; border:1px solid transparent; border-radius:6px; color:var(--text-secondary); padding:7px 14px; cursor:pointer; font-size:.88rem;}
 .source-browser-navigation button.active {color:var(--accent); background:var(--accent-light); border-color:var(--border);}
 .selected-sources {display:flex; flex-wrap:wrap; gap:8px; margin:14px 0 24px;}
 .profile-workspace .advanced-settings-body .section-intro {font-size:.83rem; margin:8px 0 18px;}
 
 .location-summary {font-size:.85rem; margin:12px 0 20px; color:var(--text-secondary);}
-@media(max-width:760px) {.source-browser-navigation {gap:4px;} .source-browser-navigation button {flex:1; min-width:0; padding:7px 8px;}}
+@media(max-width:760px) {.source-browser-navigation {gap:4px;} .source-browser-navigation button {flex:1 1 90px; min-width:0; padding:7px 8px;}}
 
 .criteria-heading {margin:20px 0 8px;}
 .criteria-hint {margin:0 0 12px;}

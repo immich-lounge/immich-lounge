@@ -177,6 +177,12 @@ Date ranges configured through the API use UTC calendar days and include the ent
 
 Under **Photos → Filters → Date filter**, choose all dates, a fixed range, or a rolling window of 1–100 days, weeks, months, or years. A range needs at least one bound. Rolling windows are recalculated when the playlist refreshes. Existing profile dates are retained when opening or saving the editor. Date changes invalidate the selection preview.
 
+## Smart search
+
+For **Selected sources**, open **Smart search**, enter terms such as “beach sunset”, then choose **Add search**. Searches combine with albums, people, and tags through **Any selection** or **Every selection**. Date, location, people, and file-size filters still apply. Explicitly selected shared albums are searched too. Immich must have smart search enabled and machine-learning processing completed for those photos.
+
+Immich 3.2 and later return up to 1,000 ranked matches per query and scope (your library plus each explicitly selected album); they currently provide no smart-search pagination. Older supported servers return all numbered result pages. A failed or disabled smart search reports an error rather than substituting the whole library.
+
 ## Location filters
 
 In the profile editor, fill in **Country**, **State / province**, or **City** to limit the playlist by location. Suggestions come from locations in your Immich library. Use the exact names stored in Immich; if suggestions are unavailable, you can enter those names manually.

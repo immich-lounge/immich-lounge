@@ -28,7 +28,7 @@ public class Profile
 
 public class ContentSource
 {
-    public string Type { get; set; } = "";   // "album" | "person" | "tag" | "memories"
+    public string Type { get; set; } = "";   // "album" | "person" | "tag" | "memories" | "search" (Id is query text)
     public string Id { get; set; } = "";
     public string Label { get; set; } = "";
 }
@@ -62,7 +62,8 @@ public enum AssetFilterConditionType
 {
     Album,
     Person,
-    Tag
+    Tag,
+    Search
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter<DisplayFormatSource>))]

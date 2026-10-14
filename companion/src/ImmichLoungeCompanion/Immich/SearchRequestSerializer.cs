@@ -62,6 +62,15 @@ internal static class SearchRequestSerializer
         return JsonSerializer.Serialize(new { Filter = filter, Cursor = cursor, request.WithExif, request.Size }, options);
     }
 
+    public static string SerializeSmart(SearchAssetsRequest request, string query, bool structured, int page,
+        JsonSerializerOptions options)
+    {
+        var body = System.Text.Json.Nodes.JsonNode.Parse(Serialize(request, structured, page, null, options))!.AsObject();
+        body.Remove("cursor");
+        body["query"] = query.Trim();
+        return body.ToJsonString(options);
+    }
+
     private static void AddIds(Dictionary<string, object> filter, string name, List<string>? ids)
     {
         if (ids is { Count: > 0 })
