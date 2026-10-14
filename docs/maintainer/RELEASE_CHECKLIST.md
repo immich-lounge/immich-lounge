@@ -3,10 +3,10 @@
 ## Prepare the candidate
 
 - Create a release branch from current `master`; keep unrelated checkout changes separate.
-- Update both Roku manifests and the companion project version together. For 1.1.0, Roku uses `major_version=1`, `minor_version=1`, and `build_version=0000`.
+- Update both Roku manifests and the companion project version together. For 1.2.1, Roku uses `major_version=1`, `minor_version=2`, and `build_version=0001`.
 - Move released entries into dated sections in both changelogs and keep their links intact.
 - Run companion Release tests, Roku script tests, both builds/lints/static analyses, the physical-device suite, and the docs build.
-- Run the Release workflow on the candidate branch with `release_name=v1.1.0` to build reviewable artifacts. This input labels downloads only; versions come from the companion project and both Roku manifests, which must agree. This workflow does not publish a GitHub release or update the stable Docker tag.
+- Run the Release workflow on the candidate branch with `release_name=v1.2.1` to build reviewable artifacts. This input labels downloads only; versions come from the companion project and both Roku manifests, which must agree. This workflow does not publish a GitHub release or update the stable Docker tag.
 - Prepare a draft GitHub release with notes, artifact checksums, and the exact candidate commit. Roku build ZIPs are unsigned; Store packaging/signing is a separate step.
 
 ## Verify candidate artifacts

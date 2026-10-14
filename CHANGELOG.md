@@ -6,6 +6,15 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+## 1.2.1 — 2026-10-14
+
+- Set companion assembly/package version to `1.2.1` and both Roku manifests to `1.2.0001`.
+- Preload the next portrait partner during the current slide in both Roku modes, retain its image through foreground loading, and validate the partner URL before reuse. Preserve pairing, navigation, and secondary-image fallback behavior.
+- Show the companion's assembly version in navigation and fix its Razor rendering.
+- Simplify browser favicons for small sizes and provide SVG favicons for the companion and public website.
+- Update the public documentation builder to Zensical `0.0.70`.
+- Refresh fullscreen playback and companion editor screenshots from a bundled demo album; add a portrait-pair screenshot to configuration documentation.
+
 ## 1.2.0 — 2026-10-11
 
 - Set companion assembly/package version to `1.2.0` and both Roku manifests to `1.2.0000`.

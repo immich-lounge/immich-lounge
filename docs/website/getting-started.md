@@ -60,7 +60,7 @@ On **Profiles**, click **Create a Profile** or **New Profile** and enter a name,
 
 Pick one or more content sources, then save the profile. The companion starts building the playlist in the background.
 
-![Immich Lounge companion profile editor](./assets/screenshots/companion-profile-editor.png){ .doc-screenshot .on-glb }
+![Immich Lounge companion profile editor](./assets/screenshots/companion-profile-editor.jpg){ .doc-screenshot .on-glb }
 <p class="doc-caption">A profile controls content, slideshow behavior, overlays, and weather.</p>
 
 ## 4. Connect the Roku

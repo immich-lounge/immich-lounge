@@ -114,8 +114,8 @@ To remove a person from that album instead, select the album and add the person 
 
 Person-only profiles use Immich's normal owned/partner library search. Select the shared album as well to include photos shared only through that album.
 
-![Immich Lounge slideshow with overlay, clock, and weather](./assets/screenshots/slideshow.png){ .doc-screenshot .on-glb }
-<p class="doc-caption">Example slideshow with a left-side overlay, persistent clock, and weather.</p>
+![Immich Lounge fullscreen slideshow with an album label and clock](./assets/screenshots/slideshow.jpg){ .doc-screenshot .on-glb }
+<p class="doc-caption">Example fullscreen slideshow with an album label and persistent clock.</p>
 
 When weather is enabled for a profile, you can choose whether the Roku shows temperatures in Celsius or Fahrenheit.
 
@@ -158,6 +158,8 @@ Set **Transition duration (seconds)** to 0.1–5 seconds, shorter than the photo
 Enable **Show portrait photos side by side** in the profile's **Slideshow** settings to pair consecutive portrait photos. Both photos are shown in full for one slideshow interval. Landscape, square, and unmatched portrait photos show alone. Pairs stay within the current playlist window and do not cross its boundary.
 
 The channel and screensaver preload the next pair while the current slide is showing. If loading takes longer than the slideshow interval, the current slide stays on screen until the next one is ready.
+
+![Two portrait photos shown side by side on Roku](./assets/screenshots/slideshow-portraits.jpg){ .doc-screenshot .on-glb }
 
 The setting is off by default and works in both the channel and screensaver, including cached playlists. The overlay describes the left photo. Pairs fade together (or switch immediately if transitions are set to None); Ken Burns motion still applies to single photos.
 

@@ -30,7 +30,7 @@ Roku install links:
 
 ## Screenshots
 
-![Immich Lounge slideshow on Roku](./docs/website/assets/screenshots/slideshow.png)
+![Immich Lounge slideshow on Roku](./docs/website/assets/screenshots/slideshow.jpg)
 
 
 ## Getting Started
