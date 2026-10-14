@@ -54,11 +54,14 @@ function TryFallbackMainPosterLoadForScene(ctx as Object) as Boolean
 
     quality = "preview"
     if ctx.profile.imageQuality <> invalid then quality = ctx.profile.imageQuality
-    if quality = "original" then return false
 
     if ctx.loadingToSlot < 0 or ctx.loadingToSlot >= ctx.mainPosters.Count() then return false
 
     fallbackUrl = BuildBackgroundMediaUrl(ctx.pendingEntry, ctx.profile)
+    if quality = "original" then
+        previewProfile = { immich: ctx.profile.immich, imageQuality: "preview" }
+        fallbackUrl = BuildMediaUrl(ctx.pendingEntry, previewProfile)
+    end if
     if fallbackUrl = invalid or fallbackUrl = "" then return false
     if fallbackUrl = ctx.loadingMediaUrl then return false
 
