@@ -104,7 +104,14 @@ function render(svgName, pngName, width, height, deployTo) {
 }
 
 console.log("Rendering branding assets with Inkscape...\n");
-for (const [svg, png, w, h, deploy] of ASSETS) {
+// Use --favicon-only when changing just the browser icon.
+const assets = process.argv.includes("--favicon-only")
+  ? ASSETS.filter(([svg]) => svg === "favicon.svg")
+  : ASSETS;
+for (const [svg, png, w, h, deploy] of assets) {
   render(svg, png, w, h, deploy);
+}
+for (const rel of ["companion/src/ImmichLoungeCompanion/wwwroot/favicon.svg", "docs/website/assets/favicon.svg"]) {
+  cpSync(join(BRANDING, "favicon.svg"), join(ROOT, rel));
 }
 console.log("\nDone.");

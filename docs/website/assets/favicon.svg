@@ -1,0 +1,16 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <!-- Tab-size TV: a full-width frame and flat, high-contrast landscape. -->
+  <defs>
+    <clipPath id="screen">
+      <rect x="3" y="5" width="26" height="18" rx="1"/>
+    </clipPath>
+  </defs>
+  <path d="M13 24H19V28H24V30H8V28H13Z" fill="#1E83F7"/>
+  <rect x="1" y="3" width="30" height="22" rx="3" fill="#FFFFFF"/>
+  <rect x="3" y="5" width="26" height="18" rx="1" fill="#6748D2"/>
+  <g clip-path="url(#screen)">
+    <circle cx="24" cy="10" r="3" fill="#FFB400"/>
+    <path d="M0 23L11 10L23 23Z" fill="#FA7921"/>
+    <path d="M13 23L22 14L32 23Z" fill="#18C249"/>
+  </g>
+</svg>
