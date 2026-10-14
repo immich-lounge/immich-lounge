@@ -2,6 +2,30 @@ namespace tests
   @suite("SlideshowScene Helpers")
   class SlideshowSceneTests extends rooibos.BaseTestSuite
 
+    @describe("Original image recovery")
+
+    @it("Retries an original with a normalized preview URL only once")
+    function test_originalPreviewFallback()
+      poster = { uri: "", unobserveField: sub(_field as string)
+      end sub
+        observeField: sub(_field as string, _callback as string)
+      end sub }
+      ctx = {
+        profile: { imageQuality: "original", immich: { serverUrl: "  http://immich/// " } }
+        pendingEntry: { id: "photo", type: "photo" }, loadingMainFallbackTried: false
+        loadingToSlot: 0, mainPosters: [poster], ringUrls: [""]
+        loadingMediaUrl: "http://immich/api/assets/photo/original"
+        loadingTimer: CreateObject("roSGNode", "Timer")
+        transitionSafetyTimer: CreateObject("roSGNode", "Timer")
+      }
+      m.assertTrue(TryFallbackMainPosterLoadForScene(ctx))
+      m.assertEqual(ctx.loadingMediaUrl, "http://immich/api/assets/photo/thumbnail?size=preview")
+      m.assertEqual(poster.uri, ctx.loadingMediaUrl)
+      m.assertFalse(TryFallbackMainPosterLoadForScene(ctx))
+      ctx.loadingTimer.control = "stop"
+      ctx.transitionSafetyTimer.control = "stop"
+    end function
+
     @describe("Transition duration")
 
     @it("Old and invalid cached profiles retain the half-second default")

@@ -6,6 +6,8 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+- Retry failed original-quality Roku photos once with the normalized JPEG preview URL before skipping the asset.
+
 ## 1.2.1 — 2026-10-14
 
 - Set companion assembly/package version to `1.2.1` and both Roku manifests to `1.2.0001`.
