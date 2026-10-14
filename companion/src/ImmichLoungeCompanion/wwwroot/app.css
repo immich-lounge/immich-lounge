@@ -56,7 +56,7 @@ p {color:var(--text-secondary);}
 .editor-card-wide {grid-column:1/-1;}
 label {display:grid; gap:7px; color:var(--text-primary); font-size:.9rem; margin-bottom:18px; font-weight:500;}
 label:has(input[type="checkbox"]) {display:flex; align-items:center; gap:10px; font-weight:400;}
-input:not([type]),input[type="text"],input[type="password"],input[type="email"],input[type="number"],input[type="time"],select,.form-control,.search-input {display:block; width:100%; min-width:0; max-width:100%; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-base); color:var(--text-primary); padding:10px 12px; line-height:1.4;}
+input:not([type]),input[type="text"],input[type="password"],input[type="email"],input[type="number"],input[type="time"],input[type="date"],select,.form-control,.search-input {display:block; width:100%; min-width:0; max-width:100%; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-base); color:var(--text-primary); padding:10px 12px; line-height:1.4;}
 input::placeholder {color:var(--text-muted);}
 input[type="number"] {max-width:180px;}
 input[type="checkbox"] {width:17px; height:17px; flex-shrink:0; margin:0; accent-color:var(--accent);}
