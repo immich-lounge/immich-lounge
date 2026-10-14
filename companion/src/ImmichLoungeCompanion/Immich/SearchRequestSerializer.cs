@@ -13,7 +13,7 @@ internal static class SearchRequestSerializer
         JsonSerializerOptions options)
     {
         var after = NormalizeDate(request.TakenAfter);
-        var before = NormalizeDate(request.TakenBefore);
+        var before = NormalizeDate(request.TakenBefore, endOfDay: true);
         if (!structured)
         {
             if (request.HasPeople)
@@ -81,16 +81,16 @@ internal static class SearchRequestSerializer
         }
     }
 
-    private static string? NormalizeDate(string? value)
+    private static string? NormalizeDate(string? value, bool endOfDay = false)
     {
-        if (string.IsNullOrEmpty(value))
+        if (string.IsNullOrWhiteSpace(value))
         {
             return null;
         }
-        // Older profiles store date-only values. Preserve midnight UTC and inclusive boundaries.
+        // Date-only ranges include the whole final UTC day; explicit timestamps stay exact.
         if (DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
         {
-            return date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + "T00:00:00.000Z";
+            return date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) + (endOfDay ? "T23:59:59.999Z" : "T00:00:00.000Z");
         }
 
         return value;

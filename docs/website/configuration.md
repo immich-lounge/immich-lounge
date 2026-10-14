@@ -165,6 +165,14 @@ The setting is off by default and works in both the channel and screensaver, inc
 
 If the right photo cannot load, the left shows alone and the right is retried as the next item. Changes apply to the next photo displayed after the profile refresh.
 
+## Image loading
+
+When an original photo cannot load, Immich Lounge retries its JPEG preview before skipping it. This also covers formats the Roku cannot decode.
+
+## Date filter boundaries
+
+Date ranges configured through the API use UTC calendar days and include the entire final day. Explicit ISO timestamps keep their exact bounds. Empty bounds are omitted.
+
 ## Asset visibility
 
 Hidden and locked Immich assets are excluded from playlists and selection previews, including memories and hidden live-photo motion clips. Archived photos retain their existing eligibility.
