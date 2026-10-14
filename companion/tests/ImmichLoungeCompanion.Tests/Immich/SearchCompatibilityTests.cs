@@ -80,7 +80,7 @@ public class SearchCompatibilityTests
         Assert.AreEqual("Zürich", filter.GetProperty("city").GetProperty("eq").GetString());
         Assert.AreEqual("IMAGE", filter.GetProperty("type").GetProperty("eq").GetString());
         Assert.AreEqual("2020-01-01T00:00:00.000Z", filter.GetProperty("takenAt").GetProperty("gte").GetString());
-        Assert.AreEqual("2021-01-01T00:00:00.000Z", filter.GetProperty("takenAt").GetProperty("lte").GetString());
+        Assert.AreEqual("2021-01-01T23:59:59.999Z", filter.GetProperty("takenAt").GetProperty("lte").GetString());
         Assert.AreEqual(12, bodies[0].GetProperty("size").GetInt32());
         Assert.IsTrue(bodies[0].GetProperty("withExif").GetBoolean());
         foreach (var body in bodies)
@@ -378,6 +378,49 @@ public class SearchCompatibilityTests
             return EmptyPage();
         });
         await client.SearchAssetsAllPagesAsync(Settings(), new());
+    }
+
+    [TestMethod]
+    [DataRow(1)]
+    [DataRow(2)]
+    public async Task DateOnlyEndIncludesWholeDayAndExplicitTimestampsStayExact(int minor)
+    {
+        JsonElement sent = default;
+        var client = Client(async req =>
+        {
+            if (req.Method == HttpMethod.Get) { return Version(minor); }
+            sent = JsonDocument.Parse(await req.Content!.ReadAsStringAsync()).RootElement.Clone();
+            return EmptyPage();
+        });
+        foreach (var value in new[] { "2024-02-29", "2024-02-29T13:14:15+02:00" })
+        {
+            var request = new SearchAssetsRequest { TakenBefore = value };
+            await client.SearchAssetsAllPagesAsync(Settings(), request);
+            var actual = minor == 1 ? sent.GetProperty("takenBefore").GetString()
+                : sent.GetProperty("filter").GetProperty("takenAt").GetProperty("lte").GetString();
+            Assert.AreEqual(value.Contains('T') ? value : "2024-02-29T23:59:59.999Z", actual);
+            Assert.AreEqual(value, request.TakenBefore);
+        }
+    }
+
+    [TestMethod]
+    [DataRow(1)]
+    [DataRow(2)]
+    public async Task EmptyDateBoundsAreNotSentToImmich(int minor)
+    {
+        var client = Client(async req =>
+        {
+            if (req.Method == HttpMethod.Get) { return Version(minor); }
+            var body = JsonDocument.Parse(await req.Content!.ReadAsStringAsync()).RootElement;
+            if (minor == 1)
+            {
+                Assert.IsFalse(body.TryGetProperty("takenAfter", out _));
+                Assert.IsFalse(body.TryGetProperty("takenBefore", out _));
+            }
+            else { Assert.IsFalse(body.GetProperty("filter").TryGetProperty("takenAt", out _)); }
+            return EmptyPage();
+        });
+        await client.SearchAssetsAllPagesAsync(Settings(), new() { TakenAfter = " ", TakenBefore = "" });
     }
 
     private static ImmichClient Client(Func<HttpRequestMessage, Task<HttpResponseMessage>> respond, TimeProvider? time = null) =>

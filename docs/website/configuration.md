@@ -169,6 +169,10 @@ If the right photo cannot load, the left shows alone and the right is retried as
 
 When an original photo cannot load, Immich Lounge retries its JPEG preview before skipping it. This also covers formats the Roku cannot decode.
 
+## Date filter boundaries
+
+Date ranges configured through the API use UTC calendar days and include the entire final day. Explicit ISO timestamps keep their exact bounds. Empty bounds are omitted.
+
 ## Location filters
 
 In the profile editor, fill in **Country**, **State / province**, or **City** to limit the playlist by location. Suggestions come from locations in your Immich library. Use the exact names stored in Immich; if suggestions are unavailable, you can enter those names manually.
