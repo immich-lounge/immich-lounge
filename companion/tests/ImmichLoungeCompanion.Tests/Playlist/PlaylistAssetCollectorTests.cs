@@ -10,6 +10,22 @@ namespace ImmichLoungeCompanion.Tests.Playlist;
 [TestClass]
 public class PlaylistAssetCollectorTests
 {
+    private sealed class FixedClock : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => DateTimeOffset.Parse("2026-10-14T15:12:13Z");
+    }
+
+    [TestMethod]
+    public async Task RollingWindowUsesInjectedClockAndRetainsTimeOfDay()
+    {
+        var client = Substitute.For<IImmichClient>();
+        client.SearchAssetsAllPagesAsync(FakeImmich, Arg.Any<SearchAssetsRequest>()).Returns([]);
+        await new PlaylistAssetCollector(client, new FixedClock()).CollectAsync(new Profile
+        { PhotoSource = "all", DateFilter = new() { Type = "rolling", Amount = 2, Unit = "days" } }, FakeImmich);
+        await client.Received().SearchAssetsAllPagesAsync(FakeImmich, Arg.Is<SearchAssetsRequest>(r =>
+            r.TakenAfter == "2026-10-12T15:12:13.0000000+00:00"));
+    }
+
     [TestMethod]
     public async Task CollectAsync_ExcludesAnyPersonFromSourcesAndMemories()
     {

@@ -89,7 +89,39 @@ public class ProfileValidator : IProfileValidator
             return "Excluded people must have type person and a non-empty id.";
         }
 
-        return profile.ValidateAssetFilter();
+        return ValidateDateFilter(profile.DateFilter) ?? profile.ValidateAssetFilter();
+    }
+
+    private static string? ValidateDateFilter(DateFilter? filter)
+    {
+        if (filter == null) { return null; }
+        if (filter.Type == "rolling")
+        {
+            if (filter.Amount is not (>= 1 and <= 100)) { return "Rolling date filter amount must be 1–100."; }
+            return filter.Unit is "days" or "weeks" or "months" or "years" ? null
+                : "Rolling date filter unit must be days, weeks, months, or years.";
+        }
+        if (filter.Type != "range") { return "Invalid date filter type. Choose range or rolling."; }
+        if (string.IsNullOrWhiteSpace(filter.From) && string.IsNullOrWhiteSpace(filter.To))
+        { return "Date range needs a from or to date."; }
+        if (!TryDateBound(filter.From, out var from) || !TryDateBound(filter.To, out var to))
+        { return "Date filter bounds must be yyyy-MM-dd dates or ISO timestamps."; }
+        // Date-only upper bounds include the whole day; timestamps keep their exact value.
+        if (filter.To is { Length: 10 } && to.HasValue) { to = to.Value.AddHours(23).AddMinutes(59).AddSeconds(59).AddMilliseconds(999); }
+        return from.HasValue && to.HasValue && from > to ? "Date filter from date must not be after the to date." : null;
+    }
+
+    private static bool TryDateBound(string? value, out DateTimeOffset? bound)
+    {
+        bound = null;
+        if (string.IsNullOrWhiteSpace(value)) { return true; }
+        var culture = System.Globalization.CultureInfo.InvariantCulture;
+        if (DateOnly.TryParseExact(value, "yyyy-MM-dd", culture, System.Globalization.DateTimeStyles.None, out var date))
+        { bound = new DateTimeOffset(date.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero); return true; }
+        var hasOffset = value.EndsWith('Z') || (value.Length >= 6 && value[^6] is '+' or '-' && value[^3] == ':');
+        if (value.Contains('T') && hasOffset && DateTimeOffset.TryParse(value, culture, System.Globalization.DateTimeStyles.None, out var timestamp))
+        { bound = timestamp; return true; }
+        return false;
     }
 
     private static bool IsMediaTypesValid(MediaTypes m) => m.Photos || m.Videos || m.LivePhotos;

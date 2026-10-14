@@ -576,6 +576,30 @@ public sealed class ProfileEditorTests : IDisposable
         }
     }
 
+    [TestMethod]
+    public async Task DateControlsInvalidatePreviewAndPersistWithoutDroppingTimestampBounds()
+    {
+        using var client = _factory.CreateClient();
+        var (editor, profile) = await LoadEditorAsync(client, new Profile
+        {
+            Id = "date-controls", Name = "Dates",
+            DateFilter = new() { Type = "range", From = "2024-01-01T12:00:00Z" }
+        });
+        Assert.AreEqual("2024-01-01T12:00:00Z", BuildPayload(editor).DateFilter!.From);
+        typeof(ProfileEditor).GetField("_matchCount", PrivateInstance)!.SetValue(editor, 5);
+        typeof(ProfileEditor).GetMethod("OnDateFilterModeChanged", PrivateInstance)!.Invoke(editor,
+            [new ChangeEventArgs { Value = "rolling" }]);
+        Assert.IsNull(GetField(editor, "_matchCount"));
+        Assert.AreEqual(12, BuildPayload(editor).DateFilter!.Amount);
+        (await client.PutAsJsonAsync("/api/profiles/date-controls", BuildPayload(editor))).EnsureSuccessStatusCode();
+        var (_, reloaded) = await ReloadEditorAsync(client, "date-controls");
+        Assert.AreEqual("rolling", reloaded.DateFilter!.Type);
+        Assert.AreEqual("months", reloaded.DateFilter.Unit);
+        typeof(ProfileEditor).GetMethod("OnDateFilterModeChanged", PrivateInstance)!.Invoke(editor,
+            [new ChangeEventArgs { Value = "none" }]);
+        Assert.IsNull(BuildPayload(editor).DateFilter);
+    }
+
     private static async Task<(ProfileEditor Editor, Profile Profile)> LoadEditorAsync(HttpClient client, Profile profile)
     {
         var created = await client.PostAsJsonAsync("/api/profiles", profile);

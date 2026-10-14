@@ -89,6 +89,7 @@ else
                     </div>
                 }
                 @if (LocationSummary.Length > 0) { <p class="criteria-detail">Limited to: @LocationSummary</p> }
+                @if (_profile.DateFilter != null) { <p class="criteria-detail">Date filter: @DateFilterSummary</p> }
                 @if (_profile.OnlyPhotosWithPeople) { <p class="criteria-detail">Only photos with people</p> }
                 @if (_profile.ExcludedPeople.Count > 0) { <p class="criteria-detail">Excluding: @string.Join(", ", _profile.ExcludedPeople.Select(person => person.Label))</p> }
                 @if (_profile.Quality.MinFileSizeKb > 0) { <p class="criteria-detail">Minimum file size: @_profile.Quality.MinFileSizeKb KB</p> }
@@ -141,6 +142,37 @@ else
                 </label>
                 <p class="section-intro">Any combines selections. Every requires all selections to match.</p>
                 }
+            <div class="filter-group">
+                <h3>Date filter</h3>
+                <label>Period:
+                    <select value="@(_profile.DateFilter?.Type ?? "none")" @onchange="OnDateFilterModeChanged">
+                        <option value="none">All dates</option>
+                        <option value="range">Date range</option>
+                        <option value="rolling">Rolling window</option>
+                    </select>
+                </label>
+                @if (_profile.DateFilter?.Type == "range")
+                {
+                    <div class="settings-field-grid">
+                        <label>From: <input type="date" value="@DateInputValue(_profile.DateFilter.From)" @onchange="@(e => OnDateBoundChanged(true, e))" /></label>
+                        <label>To: <input type="date" value="@DateInputValue(_profile.DateFilter.To)" @onchange="@(e => OnDateBoundChanged(false, e))" /></label>
+                    </div>
+                    <p class="field-hint">Leave one side empty for an open-ended range. Dates include the entire final UTC day.</p>
+                }
+                else if (_profile.DateFilter?.Type == "rolling")
+                {
+                    <div class="settings-field-grid">
+                        <label>Last: <input type="number" min="1" max="100" @bind="_profile.DateFilter.Amount" @bind:after="CriteriaChanged" /></label>
+                        <label>Unit:
+                            <select @bind="_profile.DateFilter.Unit" @bind:after="CriteriaChanged">
+                                <option value="days">Days</option><option value="weeks">Weeks</option>
+                                <option value="months">Months</option><option value="years">Years</option>
+                            </select>
+                        </label>
+                    </div>
+                    <p class="field-hint">Recomputed when the playlist refreshes. Choose 1–100 units.</p>
+                }
+            </div>
             <label>
                 <input id="only-photos-with-people" type="checkbox" @bind="_profile.OnlyPhotosWithPeople" @bind:after="CriteriaChanged" disabled="@(!_peopleFilterAvailable && !_profile.OnlyPhotosWithPeople)" /> Only photos with people
             </label>
@@ -446,6 +478,27 @@ else
         _previewAssets.Clear();
         _failedPreviewIds.Clear();
         _previewError = null;
+    }
+    private static string? DateInputValue(string? value) => value?.Split('T')[0];
+    private string DateFilterSummary => _profile?.DateFilter is { Type: "rolling" } rolling
+        ? $"Last {rolling.Amount} {rolling.Unit}"
+        : $"{_profile?.DateFilter?.From ?? "Any date"} to {_profile?.DateFilter?.To ?? "Any date"}";
+    private void OnDateFilterModeChanged(ChangeEventArgs args)
+    {
+        _profile!.DateFilter = args.Value?.ToString() switch
+        {
+            "range" => new() { Type = "range" },
+            "rolling" => new() { Type = "rolling", Amount = 12, Unit = "months" },
+            _ => null
+        };
+        CriteriaChanged();
+    }
+    private void OnDateBoundChanged(bool from, ChangeEventArgs args)
+    {
+        var value = string.IsNullOrWhiteSpace(args.Value?.ToString()) ? null : args.Value!.ToString();
+        if (from) { _profile!.DateFilter!.From = value; }
+        else { _profile!.DateFilter!.To = value; }
+        CriteriaChanged();
     }
     private void OnPhotoSourceChanged(ChangeEventArgs args)
     {
