@@ -177,6 +177,10 @@ Date ranges configured through the API use UTC calendar days and include the ent
 
 Under **Photos → Filters → Date filter**, choose all dates, a fixed range, or a rolling window of 1–100 days, weeks, months, or years. A range needs at least one bound. Rolling windows are recalculated when the playlist refreshes. Existing profile dates are retained when opening or saving the editor. Date changes invalidate the selection preview.
 
+## Asset visibility
+
+Hidden and locked Immich assets are excluded from playlists and selection previews, including memories and hidden live-photo motion clips. Archived photos retain their existing eligibility.
+
 ## Location filters
 
 In the profile editor, fill in **Country**, **State / province**, or **City** to limit the playlist by location. Suggestions come from locations in your Immich library. Use the exact names stored in Immich; if suggestions are unavailable, you can enter those names manually.

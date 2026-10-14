@@ -11,6 +11,19 @@ namespace ImmichLoungeCompanion.Tests.Playlist;
 public class PlaylistEntryProjectorTests
 {
     [TestMethod]
+    [DataRow("hidden", false)]
+    [DataRow("locked", false)]
+    [DataRow("archive", true)]
+    [DataRow("timeline", true)]
+    [DataRow(null, true)]
+    public void VisibilityFilteringPreservesArchivedAndLegacyAssets(string? visibility, bool included)
+    {
+        var asset = new ImmichAsset { Id = "asset", Type = "IMAGE", Visibility = visibility };
+        var entries = PlaylistEntryProjector.CreateEntries(new() { [asset.Id] = new(asset, null, IsMemory: true) }, new Profile());
+        Assert.AreEqual(included ? 1 : 0, entries.Count);
+    }
+
+    [TestMethod]
     [DataRow("newestFirst", "memory-new", "memory-old", "regular-new", "regular-old")]
     [DataRow("oldestFirst", "memory-old", "memory-new", "regular-old", "regular-new")]
     public void MemoryPriority_PreservesChosenDateOrderWithinBothGroups(string order, string first, string second, string third, string fourth)

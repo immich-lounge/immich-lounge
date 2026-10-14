@@ -29,7 +29,10 @@ internal static class SearchRequestSerializer
             }, options);
         }
 
-        var filter = new Dictionary<string, object>();
+        var filter = new Dictionary<string, object>
+        {
+            ["visibility"] = new { NotIn = new[] { "hidden", "locked" } }
+        };
         if (request.HasPeople)
         {
             filter["hasPeople"] = new { Eq = true };
