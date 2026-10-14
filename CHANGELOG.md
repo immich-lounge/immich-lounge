@@ -6,6 +6,8 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+- Expand date-only upper bounds through the final UTC day in both search formats; preserve explicit timestamps and omit empty bounds.
+
 ## 1.2.1 — 2026-10-14
 
 - Set companion assembly/package version to `1.2.1` and both Roku manifests to `1.2.0001`.
