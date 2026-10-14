@@ -600,6 +600,31 @@ public sealed class ProfileEditorTests : IDisposable
         Assert.IsNull(BuildPayload(editor).DateFilter);
     }
 
+    [TestMethod]
+    public async Task SmartSearchSourcesDeduplicateInvalidatePreviewAndSurviveSaveReload()
+    {
+        using var client = _factory.CreateClient();
+        var (editor, _) = await LoadEditorAsync(client, new Profile { Id = "smart-editor", Name = "Search", PhotoSource = "selected",
+            ContentSources = [new() { Type = "album", Id = "album", Label = "Album" }] });
+        typeof(ProfileEditor).GetField("_connectionConfigured", PrivateInstance)!.SetValue(editor, true);
+        typeof(ProfileEditor).GetField("_matchCount", PrivateInstance)!.SetValue(editor, 7);
+        foreach (var terms in new[] { " beach sunset ", "BEACH SUNSET" })
+        {
+            typeof(ProfileEditor).GetField("_newSearchTerms", PrivateInstance)!.SetValue(editor, terms);
+            typeof(ProfileEditor).GetMethod("AddSearchSource", PrivateInstance)!.Invoke(editor, null);
+        }
+        Assert.IsNull(GetField(editor, "_matchCount"));
+        var payload = BuildPayload(editor);
+        Assert.AreEqual(1, payload.ContentSources.Count(s => s.Type == "search"));
+        Assert.AreEqual("beach sunset", payload.ContentSources.Single(s => s.Type == "search").Id);
+        (await client.PutAsJsonAsync("/api/profiles/smart-editor", payload)).EnsureSuccessStatusCode();
+        var (reloadedEditor, reloaded) = await ReloadEditorAsync(client, "smart-editor");
+        Assert.IsTrue(reloaded.CanEditContentSources());
+        Assert.IsTrue(BuildPayload(reloadedEditor).AssetFilter!.Children.Any(rule => rule.Type == AssetFilterConditionType.Search));
+        Assert.IsFalse(reloaded.MediaTypes.Videos);
+        Assert.IsFalse(reloaded.MediaTypes.LivePhotos);
+    }
+
     private static async Task<(ProfileEditor Editor, Profile Profile)> LoadEditorAsync(HttpClient client, Profile profile)
     {
         var created = await client.PostAsJsonAsync("/api/profiles", profile);

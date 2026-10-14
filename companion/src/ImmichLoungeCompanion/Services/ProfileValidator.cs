@@ -14,7 +14,7 @@ public class ProfileValidator : IProfileValidator
         if (profile.PhotoSource == "selected" && profile.AssetFilter == null &&
             ProfileAssetFilterExtensions.BuildAssetFilterFromContentSources(profile.ContentSources) == null)
         {
-            return "Choose at least one album, person, or tag for Selected sources.";
+            return "Choose at least one album, person, tag, or smart search for Selected sources.";
         }
         if (profile.PhotoSource == "memories" && !profile.HasMemoriesSource())
         {

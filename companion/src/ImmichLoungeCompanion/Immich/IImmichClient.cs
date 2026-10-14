@@ -18,6 +18,8 @@ public interface IImmichClient
     Task<List<ImmichTag>> GetTagsAsync(ImmichSettings settings);
     /// <summary>Fetches ALL pages for a search using the server-compatible format. Preserves date and location filters.</summary>
     Task<List<ImmichAsset>> SearchAssetsAllPagesAsync(ImmichSettings settings, SearchAssetsRequest request);
+    /// <summary>Legacy search reads all pages; structured search returns Immich's top Size results (maximum 1000).</summary>
+    Task<List<ImmichAsset>> SmartSearchAsync(ImmichSettings settings, string query, SearchAssetsRequest request, CancellationToken ct = default);
     Task<List<ImmichMemory>> GetMemoriesAsync(ImmichSettings settings, DateOnly date);
     Task<List<ImmichMemory>> GetSavedMemoriesAsync(ImmichSettings settings);
     Task<ImmichAsset?> GetAssetAsync(ImmichSettings settings, string assetId, CancellationToken ct = default);

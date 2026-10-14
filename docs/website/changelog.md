@@ -11,6 +11,8 @@ For technical release details, see [CHANGELOG.md](https://github.com/immich-loun
 
 ## Unreleased
 
+- Add smart text searches as profile sources alongside albums, people, and tags.
+
 - Choose a fixed date range or rolling window in the profile editor.
 
 - Include the whole final day in date-filtered playlists.

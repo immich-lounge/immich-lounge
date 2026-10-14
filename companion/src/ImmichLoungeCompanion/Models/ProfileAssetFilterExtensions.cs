@@ -8,7 +8,7 @@ public static class ProfileAssetFilterExtensions
 {
     public static string EffectivePhotoSource(this Profile profile) =>
         profile.PhotoSource ?? (profile.AssetFilter != null ||
-            profile.ContentSources.Any(source => source.Type is "album" or "person" or "tag")
+            profile.ContentSources.Any(source => source.Type is "album" or "person" or "tag" or "search")
                 ? "selected" : profile.HasMemoriesSource() ? "memories" : "all");
 
     public static void NormalizeAssetFilter(this Profile profile)
@@ -29,7 +29,7 @@ public static class ProfileAssetFilterExtensions
             filter.Type == null && string.IsNullOrWhiteSpace(filter.Id) && string.IsNullOrWhiteSpace(filter.Label) &&
             filter.Children.Count > 0 && filter.Children.All(child =>
                 child.Kind == AssetFilterRuleKind.Condition && child.Operator == null && child.Children.Count == 0 &&
-                child.Type is AssetFilterConditionType.Album or AssetFilterConditionType.Person or AssetFilterConditionType.Tag &&
+                child.Type is AssetFilterConditionType.Album or AssetFilterConditionType.Person or AssetFilterConditionType.Tag or AssetFilterConditionType.Search &&
                 !string.IsNullOrWhiteSpace(child.Id));
     }
 
@@ -156,6 +156,9 @@ public static class ProfileAssetFilterExtensions
                 return true;
             case "tag":
                 conditionType = AssetFilterConditionType.Tag;
+                return true;
+            case "search":
+                conditionType = AssetFilterConditionType.Search;
                 return true;
             default:
                 conditionType = default;

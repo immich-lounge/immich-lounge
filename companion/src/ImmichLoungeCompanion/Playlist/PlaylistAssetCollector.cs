@@ -202,6 +202,23 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
     {
         ct.ThrowIfCancellationRequested();
 
+        if (rule.Type == AssetFilterConditionType.Search)
+        {
+            var matches = new Dictionary<string, ImmichAsset>(StringComparer.Ordinal);
+            // Include explicitly selected album-only shares, matching people-search scope.
+            foreach (var albumId in new string?[] { null }.Concat(albumIds))
+            {
+                var smartRequest = BuildSearchRequest(rule, dateFilter);
+                smartRequest.HasPeople = onlyPhotosWithPeople;
+                smartRequest.Type = "IMAGE";
+                if (albumId != null) { smartRequest.AlbumIds = [albumId]; }
+                ApplyLocationFilter(smartRequest, locationFilter);
+                foreach (var asset in await immich.SmartSearchAsync(immichSettings, rule.Id!, smartRequest, ct))
+                { matches.TryAdd(asset.Id, asset); }
+            }
+            return ToAssetDictionary(matches.Values, rule.Label);
+        }
+
         if (rule.Type == AssetFilterConditionType.Person)
         {
             var peopleAssets = await SearchPeopleAssetsAsync(immichSettings, rule.Id!, albumIds, dateFilter, locationFilter, ct, onlyPhotosWithPeople);
