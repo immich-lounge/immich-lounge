@@ -6,10 +6,9 @@ For a shorter user-facing summary, see [docs/website/changelog.md](./docs/websit
 
 ## Unreleased
 
+- Retry failed original-quality Roku photos once with the normalized JPEG preview URL before skipping the asset.
 - Add smart-search sources with legacy pagination, structured top-ranked results, shared-album scopes, existing filters, and responsive editor controls.
-
 - Add validated date range and rolling-window editor controls, preserve timestamp profiles, and calculate rolling bounds with the injected clock.
-
 - Expand date-only upper bounds through the final UTC day in both search formats; preserve explicit timestamps and omit empty bounds.
 
 ## 1.2.1 — 2026-10-14
