@@ -671,6 +671,36 @@ public sealed class ProfileEditorTests : IDisposable
         Assert.AreEqual(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/profiles", payload)).StatusCode);
     }
 
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public async Task NoFaceSettingPersistsAndPreviewNeverDropsUnsupportedPredicate(bool supported)
+    {
+        _factory.ImmichClient.GetSearchApiCapabilitiesAsync(Arg.Any<ImmichSettings>(), Arg.Any<bool>())
+            .Returns(new SearchApiCapabilities(supported ? "3.2.0" : "3.1.0", supported));
+        _factory.ImmichClient.SearchAssetsAllPagesAsync(Arg.Any<ImmichSettings>(), Arg.Any<SearchAssetsRequest>())
+            .Returns(call => call.Arg<SearchAssetsRequest>().HasNoPeople ? [new ImmichAsset { Id = "scenery", Type = "IMAGE" }] : []);
+        using var client = _factory.CreateClient();
+        var (editor, profile) = await LoadEditorAsync(client, new Profile { Id = "no-face", Name = "Scenery" });
+        Assert.IsFalse(profile.OnlyPhotosWithoutPeople);
+        var snapshot = typeof(ProfileEditor).GetMethod("BuildPreviewSnapshot", PrivateInstance)!;
+        var before = (string)snapshot.Invoke(editor, null)!;
+        profile.OnlyPhotosWithoutPeople = true;
+        Assert.AreNotEqual(before, (string)snapshot.Invoke(editor, null)!);
+        (await client.PutAsJsonAsync("/api/profiles/no-face", BuildPayload(editor))).EnsureSuccessStatusCode();
+        var (reloadedEditor, reloaded) = await ReloadEditorAsync(client, "no-face");
+        Assert.IsTrue(reloaded.OnlyPhotosWithoutPeople);
+        var preview = await client.PostAsJsonAsync("/api/profiles/preview-count", BuildPayload(reloadedEditor));
+        Assert.AreEqual(supported ? HttpStatusCode.OK : HttpStatusCode.BadRequest, preview.StatusCode);
+        if (supported) { Assert.AreEqual(1, (await preview.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("matchedAssets").GetInt32()); }
+        reloaded.OnlyPhotosWithPeople = true;
+        Assert.AreEqual(HttpStatusCode.BadRequest, (await client.PutAsJsonAsync("/api/profiles/no-face", BuildPayload(reloadedEditor))).StatusCode);
+        Assert.AreEqual(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/profiles/preview-count", BuildPayload(reloadedEditor))).StatusCode);
+        reloaded.OnlyPhotosWithPeople = false; reloaded.OnlyPhotosWithoutPeople = false;
+        (await client.PutAsJsonAsync("/api/profiles/no-face", BuildPayload(reloadedEditor))).EnsureSuccessStatusCode();
+        Assert.IsFalse((await client.GetFromJsonAsync<Profile>("/api/profiles/no-face"))!.OnlyPhotosWithoutPeople);
+    }
+
     private static async Task<(ProfileEditor Editor, Profile Profile)> LoadEditorAsync(HttpClient client, Profile profile)
     {
         var created = await client.PostAsJsonAsync("/api/profiles", profile);

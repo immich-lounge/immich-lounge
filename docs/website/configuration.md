@@ -107,6 +107,16 @@ Requires **Immich 3.2 or later** and is off by default. The companion enables th
 
 For API-managed profiles, set the optional top-level field `"onlyPhotosWithPeople": true`. Omitting it or setting it to `false` keeps the existing unfiltered behavior. No specific person IDs or person names are required.
 
+### Only photos without people
+
+Under **Photos → Filters**, enable **Only photos without people** for scenery, architecture, or other photos with no detected faces. Leave **Only photos with people** off; the two options cannot be enabled together. This narrows all sources, including memories and selected shared albums, and works with both Roku apps.
+
+Immich must have processed face detection. Any visible detected face excludes the photo, whether or not the person has a name. People whose faces were missed, are too distant, or face away can still appear; this is not a guarantee that every photo is people-free. **Preview selection** checks the count and sample photos before saving.
+
+Requires **Immich 3.2 or later** and is off by default. The companion enables the option after detecting a supported server. If detection is unavailable, use **Save & Test Connection**, then reopen the profile. An enabled filter must be turned off before using an older server; requests fail rather than silently playing unfiltered photos.
+
+For API-managed profiles, set the top-level `"onlyPhotosWithoutPeople": true`. Omit it or use `false` to preserve the existing selection. Enabling it together with `onlyPhotosWithPeople` is rejected.
+
 ## Shared albums and people
 
 Albums shared with the Immich account used by the companion can be selected. People filters and exclusions also search the selected albums.

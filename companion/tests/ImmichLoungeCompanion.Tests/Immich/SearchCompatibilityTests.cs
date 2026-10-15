@@ -440,6 +440,35 @@ public class SearchCompatibilityTests
         await client.SearchAssetsAllPagesAsync(Settings(), new() { TakenAfter = " ", TakenBefore = "" });
     }
 
+    [TestMethod]
+    public async Task NoFacePredicateIsSerializedAsExplicitFalse()
+    {
+        var client = Client(async req =>
+        {
+            if (req.Method == HttpMethod.Get) { return Version(2); }
+            var body = JsonDocument.Parse(await req.Content!.ReadAsStringAsync()).RootElement;
+            Assert.IsFalse(body.GetProperty("filter").GetProperty("hasPeople").GetProperty("eq").GetBoolean());
+            Assert.IsFalse(body.TryGetProperty("hasNoPeople", out _));
+            return EmptyPage();
+        });
+        await client.SearchAssetsAllPagesAsync(Settings(), new() { HasNoPeople = true });
+    }
+
+    [TestMethod]
+    [DataRow(1)]
+    [DataRow(-1)]
+    public async Task NoFaceNeverDropsPredicateOnLegacyOrUnknownServer(int minor)
+    {
+        var searches = 0;
+        var client = Client(req =>
+        {
+            if (req.Method == HttpMethod.Get) { return Task.FromResult(minor < 0 ? new HttpResponseMessage(HttpStatusCode.NotFound) : Version(minor)); }
+            searches++; return Task.FromResult(EmptyPage());
+        });
+        await Assert.ThrowsExactlyAsync<NotSupportedException>(() => client.SearchAssetsAllPagesAsync(Settings(), new() { HasNoPeople = true }));
+        Assert.AreEqual(0, searches);
+    }
+
     private static ImmichClient Client(Func<HttpRequestMessage, Task<HttpResponseMessage>> respond, TimeProvider? time = null) =>
         new(new Factory(new HttpClient(new Handler(respond))), NullLogger<ImmichClient>.Instance, time);
 

@@ -7,6 +7,7 @@ public class SearchAssetsRequest
     public List<string>? AlbumIds { get; set; }
     public List<string>? PersonIds { get; set; }
     public bool HasPeople { get; set; }
+    public bool HasNoPeople { get; set; }
     public List<string>? TagIds { get; set; }
     public string? TakenAfter { get; set; }         // ISO 8601 date
     public string? TakenBefore { get; set; }

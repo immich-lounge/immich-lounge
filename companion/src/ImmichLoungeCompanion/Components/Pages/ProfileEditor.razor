@@ -91,6 +91,7 @@ else
                 @if (LocationSummary.Length > 0) { <p class="criteria-detail">Limited to: @LocationSummary</p> }
                 @if (_profile.DateFilter != null) { <p class="criteria-detail">Date filter: @DateFilterSummary</p> }
                 @if (_profile.OnlyPhotosWithPeople) { <p class="criteria-detail">Only photos with people</p> }
+                @if (_profile.OnlyPhotosWithoutPeople) { <p class="criteria-detail">Only photos without people</p> }
                 @if (_profile.OnlyFavorites) { <p class="criteria-detail">Only favorites</p> }
                 @if (_profile.MinimumRating is { } minimumRating) { <p class="criteria-detail">Minimum rating: @minimumRating @(minimumRating == 1 ? "star" : "stars")</p> }
                 @if (_profile.ExcludedPeople.Count > 0) { <p class="criteria-detail">Excluding: @string.Join(", ", _profile.ExcludedPeople.Select(person => person.Label))</p> }
@@ -176,9 +177,13 @@ else
                 }
             </div>
             <label>
-                <input id="only-photos-with-people" type="checkbox" @bind="_profile.OnlyPhotosWithPeople" @bind:after="CriteriaChanged" disabled="@(!_peopleFilterAvailable && !_profile.OnlyPhotosWithPeople)" /> Only photos with people
+                <input id="only-photos-with-people" type="checkbox" @bind="_profile.OnlyPhotosWithPeople" @bind:after="CriteriaChanged" disabled="@(!_profile.OnlyPhotosWithPeople && (!_peopleFilterAvailable || _profile.OnlyPhotosWithoutPeople))" /> Only photos with people
             </label>
             <p class="section-intro">Include photos with any detected face, including unnamed people and memories. Photos with no detected faces are skipped.</p>
+            <label>
+                <input id="only-photos-without-people" type="checkbox" @bind="_profile.OnlyPhotosWithoutPeople" @bind:after="CriteriaChanged" disabled="@(!_profile.OnlyPhotosWithoutPeople && (!_peopleFilterAvailable || _profile.OnlyPhotosWithPeople))" /> Only photos without people
+            </label>
+            <p class="section-intro">Keep photos with no detected faces, including memories. Named and unnamed faces are excluded. Run face detection in Immich first; undetected people may still appear. Choose one people filter at a time.</p>
             @if (!_peopleFilterAvailable)
             {
                 <p class="section-intro">Requires Immich 3.2 or later. Unavailable until the companion detects a supported server. An enabled filter must be turned off to use an older server.</p>
@@ -857,7 +862,7 @@ else
     {
         if (_profile == null) return "";
         var payload = BuildProfilePayloadForRequest();
-        return JsonSerializer.Serialize(new { payload.PhotoSource, payload.AssetFilter, payload.ContentSources, payload.ExcludedPeople, payload.OnlyPhotosWithPeople, payload.OnlyFavorites, payload.MinimumRating,
+        return JsonSerializer.Serialize(new { payload.PhotoSource, payload.AssetFilter, payload.ContentSources, payload.ExcludedPeople, payload.OnlyPhotosWithPeople, payload.OnlyPhotosWithoutPeople, payload.OnlyFavorites, payload.MinimumRating,
             payload.LocationFilter, payload.DateFilter, payload.Quality, payload.MediaTypes, payload.Memories });
     }
 

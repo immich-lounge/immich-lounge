@@ -7,6 +7,11 @@ public class ProfileValidator : IProfileValidator
 {
     public string? Validate(Profile profile)
     {
+        if (profile.OnlyPhotosWithPeople && profile.OnlyPhotosWithoutPeople)
+        {
+            return "Choose either photos with people or photos without people, not both.";
+        }
+
         if (profile.MinimumRating is < 1 or > 5)
         {
             return "minimumRating must be 1–5, or null for any rating.";
