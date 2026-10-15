@@ -91,6 +91,16 @@ Choose **Preview selection** to check the matching count and sample photos, then
 
 For API-managed profiles, set `"onlyFavorites": true` and/or `"minimumRating": 4` at the top level. Omit these fields (or use `false` and `null`) to leave the selection unfiltered. The minimum rating must be an integer from 1 to 5; unrated photos are skipped when a minimum is set.
 
+### Newest photo limit
+
+Under **Photos → Filters**, set **Newest photo limit** to a positive whole number, or leave it blank to include every match. For example, **All photos** plus a limit of **100** shows the newest 100 matching photos. Add **Only favorites** to show the newest 100 favorites.
+
+The companion applies all other filters first, then selects up to N playable photos by capture date. Memories count toward the same limit; memory priority changes playback order, not which photos qualify. Shuffle and oldest/newest playback order apply after selection. Both Roku apps use the resulting playlist.
+
+Capture date uses Immich's original EXIF date, falling back to its file-created date. Photos with no usable date sort last; ties use the asset ID for stable selection. **Preview selection** shows the capped count and samples. New matching photos enter on the next playlist rebuild. Existing profiles have no limit.
+
+For API-managed profiles, set the top-level `"newestPhotoCount": 100`. Omit it or use `null` for no limit; zero and negative values are rejected.
+
 ### Only photos with people
 
 To show photos containing anyone, without choosing specific people:

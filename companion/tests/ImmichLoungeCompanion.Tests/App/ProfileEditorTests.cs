@@ -671,6 +671,43 @@ public sealed class ProfileEditorTests : IDisposable
         Assert.AreEqual(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/profiles", payload)).StatusCode);
     }
 
+    [TestMethod]
+    public async Task NewestLimitPersistsPreviewsAndCanBeCleared()
+    {
+        using var client = _factory.CreateClient();
+        var (editor, profile) = await LoadEditorAsync(client, new Profile { Id = "newest-limit", Name = "Recent" });
+        Assert.IsNull(profile.NewestPhotoCount);
+        var snapshot = typeof(ProfileEditor).GetMethod("BuildPreviewSnapshot", PrivateInstance)!;
+        var before = (string)snapshot.Invoke(editor, null)!;
+        profile.NewestPhotoCount = 1;
+        Assert.AreNotEqual(before, (string)snapshot.Invoke(editor, null)!);
+        _factory.ImmichClient.SearchAssetsAllPagesAsync(Arg.Any<ImmichSettings>(), Arg.Any<SearchAssetsRequest>()).Returns([
+            new ImmichAsset { Id = "old", Type = "IMAGE", FileCreatedAt = "2020-01-01" },
+            new ImmichAsset { Id = "new", Type = "IMAGE", FileCreatedAt = "2025-01-01" }
+        ]);
+        var preview = await client.PostAsJsonAsync("/api/profiles/preview-count", BuildPayload(editor));
+        preview.EnsureSuccessStatusCode();
+        Assert.AreEqual(1, (await preview.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("matchedAssets").GetInt32());
+        (await client.PutAsJsonAsync("/api/profiles/newest-limit", BuildPayload(editor))).EnsureSuccessStatusCode();
+        var (reloadedEditor, reloaded) = await ReloadEditorAsync(client, "newest-limit");
+        Assert.AreEqual(1, reloaded.NewestPhotoCount);
+        reloaded.NewestPhotoCount = null;
+        (await client.PutAsJsonAsync("/api/profiles/newest-limit", BuildPayload(reloadedEditor))).EnsureSuccessStatusCode();
+        Assert.IsNull((await client.GetFromJsonAsync<Profile>("/api/profiles/newest-limit"))!.NewestPhotoCount);
+    }
+
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(-1)]
+    public async Task InvalidNewestLimitRejectedBySaveAndPreview(int limit)
+    {
+        using var client = _factory.CreateClient();
+        var (editor, profile) = await LoadEditorAsync(client, new Profile { Id = "invalid-limit", Name = "Invalid" });
+        profile.NewestPhotoCount = limit;
+        Assert.AreEqual(HttpStatusCode.BadRequest, (await client.PutAsJsonAsync("/api/profiles/invalid-limit", BuildPayload(editor))).StatusCode);
+        Assert.AreEqual(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/profiles/preview-count", BuildPayload(editor))).StatusCode);
+    }
+
     private static async Task<(ProfileEditor Editor, Profile Profile)> LoadEditorAsync(HttpClient client, Profile profile)
     {
         var created = await client.PostAsJsonAsync("/api/profiles", profile);

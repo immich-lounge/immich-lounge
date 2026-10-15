@@ -7,6 +7,11 @@ public class ProfileValidator : IProfileValidator
 {
     public string? Validate(Profile profile)
     {
+        if (profile.NewestPhotoCount is <= 0)
+        {
+            return "newestPhotoCount must be a positive integer, or null for no limit.";
+        }
+
         if (profile.MinimumRating is < 1 or > 5)
         {
             return "minimumRating must be 1–5, or null for any rating.";
