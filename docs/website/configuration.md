@@ -89,8 +89,6 @@ Text wraps to a maximum of two lines; longer descriptions are truncated. Missing
 
 Character coverage depends on Roku's built-in fonts; unsupported characters may appear as boxes.
 
-For API-managed profiles, add `"description"` to `display.overlayFields` alongside the other fields you want to show. Remove it to hide descriptions.
-
 ### Favorites and ratings
 
 Under **Photos → Filters**, enable **Only favorites** or choose a **Minimum rating** of 1–5 stars. The rating includes that many stars or higher; **Any rating** includes unrated photos too. Both filters must match when used together.
