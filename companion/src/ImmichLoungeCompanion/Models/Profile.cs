@@ -128,6 +128,8 @@ public class DisplaySettings
 {
     public bool ZoomToFit { get; set; } = false;
     public bool SideBySidePortraits { get; set; } = false;
+    public bool RightAlignPairedOverlay { get; set; } = true;
+    public int PairedOverlayBrightness { get; set; } = 85;
     public DisplayFormatSource FormatSource { get; set; } = DisplayFormatSource.Roku;
     public string OverlayStyle { get; set; } = "bottom";
     public string LocationFormat { get; set; } = "cityCountry";

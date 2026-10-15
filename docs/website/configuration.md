@@ -191,7 +191,11 @@ The channel and screensaver preload the next pair while the current slide is sho
 
 ![Two portrait photos shown side by side on Roku](./assets/screenshots/slideshow-portraits.jpg){ .doc-screenshot .on-glb }
 
-The setting is off by default and works in both the channel and screensaver, including cached playlists. The overlay describes the left photo. Pairs fade together (or switch immediately if transitions are set to None); Ken Burns motion still applies to single photos.
+The setting is off by default and works in both the channel and screensaver, including cached playlists. Each photo has its own metadata overlay within its half of the screen, with brighter text and a dark background for contrast. The left caption aligns left and the right caption aligns right by default. Right corner captions sit below the shared clock and weather. Both overlays show and hide together and share one fade timer; clock, weather, and progress remain shared. Single photos keep the full-screen metadata overlay. Pairs fade together (or switch immediately if transitions are set to None); Ken Burns motion still applies to single photos.
+
+Under **Appearance → Text and overlays**, **Right-align the right photo's caption in portrait pairs** is enabled by default. Turn it off to left-align both captions. This setting does not change single-photo captions.
+
+Use **Paired caption brightness** in the same section to adjust both captions from 50% to 100% (default: 85%). This changes the text brightness while keeping the dark background for contrast. Clock, weather, progress, and single-photo captions are unchanged.
 
 If the right photo cannot load, the left shows alone and the right is retried as the next item. Changes apply to the next photo displayed after the profile refresh.
 

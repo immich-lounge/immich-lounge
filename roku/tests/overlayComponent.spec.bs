@@ -4,6 +4,87 @@ namespace tests
 
     @describe("Location format")
 
+    @it("Caption brightness changes paired text without dimming its background or single photos")
+    function test_pairedBrightness()
+      overlay = CreateObject("roSGNode", "OverlayComponent")
+      originalColor = overlay.findNode("dateLine").color
+      overlay.viewportWidth = 960
+      overlay.pairedTextBrightness = 100
+      brightColor = overlay.findNode("dateLine").color
+      backdropOpacity = overlay.findNode("bottomBackdrop").opacity
+      overlay.pairedTextBrightness = 50
+      m.assertNotEqual(overlay.findNode("dateLine").color, brightColor)
+      m.assertEqual(overlay.findNode("bottomBackdrop").opacity, backdropOpacity)
+      overlay.viewportWidth = 1920
+      m.assertEqual(overlay.findNode("dateLine").color, originalColor)
+    end function
+
+    @it("Paired contrast backgrounds follow content and visibility without changing single photos")
+    function test_pairedContrast()
+      overlay = CreateObject("roSGNode", "OverlayComponent")
+      overlay.viewportWidth = 960
+      overlay.overlayStyle = "bottom"
+      overlay.overlayFields = ["location"]
+      overlay.assetMeta = { exifInfo: { city: "Paris" } }
+      m.assertTrue(overlay.findNode("bottomBackdrop").visible)
+      overlay.visible = false
+      m.assertFalse(overlay.findNode("bottomBackdrop").visible)
+      overlay.visible = true
+      overlay.assetMeta = {}
+      m.assertFalse(overlay.findNode("bottomBackdrop").visible)
+      overlay.assetMeta = { exifInfo: { city: "Paris" } }
+      overlay.viewportWidth = 1920
+      m.assertFalse(overlay.findNode("bottomBackdrop").visible)
+      m.assertEqual(overlay.findNode("locationLine").horizAlign, "left")
+    end function
+
+    @it("Right captions align to the outer edge and corner captions avoid the shared clock")
+    function test_pairedAlignment()
+      overlay = CreateObject("roSGNode", "OverlayComponent")
+      overlay.viewportWidth = 960
+      overlay.textAlignment = "right"
+      m.assertEqual(overlay.findNode("dateLine").horizAlign, "right")
+      m.assertEqual(overlay.findNode("albumLine").horizAlign, "right")
+      m.assertEqual(overlay.findNode("cornerDate").translation, [504.0, 198.0])
+      overlay.textAlignment = "left"
+      m.assertEqual(overlay.findNode("dateLine").horizAlign, "left")
+      m.assertEqual(overlay.findNode("cornerDate").translation, [60.0, 54.0])
+      overlay.viewportWidth = 1920
+      m.assertEqual(overlay.findNode("cornerLocation").translation, [55.0, 90.0])
+    end function
+
+    @it("Paired widths contain long labels and restore the original single layout")
+    function test_pairedWidths()
+      overlay = CreateObject("roSGNode", "OverlayComponent")
+      overlay.viewportWidth = 960
+      m.assertEqual(overlay.findNode("dateLine").width, 840.0)
+      m.assertEqual(overlay.findNode("peopleLine").width, 840.0)
+      m.assertEqual(overlay.findNode("albumLine").width, 840.0)
+      overlay.viewportWidth = 1920
+      m.assertEqual(overlay.findNode("dateLine").width, 1800.0)
+      m.assertEqual(overlay.findNode("albumLine").width, 900.0)
+    end function
+
+    @it("Late metadata cannot reveal an externally hidden paired overlay")
+    function test_pairedLateMetadata()
+      for each style in ["bottom", "corner"]
+        overlay = CreateObject("roSGNode", "OverlayComponent")
+        overlay.externallyManaged = true
+        overlay.overlayStyle = style
+        overlay.overlayFields = ["location"]
+        overlay.overlayBehavior = "always"
+        overlay.visible = false
+        overlay.assetMeta = { exifInfo: { city: "Zurich", country: "Switzerland" } }
+        m.assertFalse(overlay.visible)
+        labelId = "locationLine"
+        if style = "corner" then labelId = "cornerLocation"
+        m.assertFalse(overlay.findNode(labelId).visible)
+        overlay.visible = true
+        m.assertEqual(overlay.findNode(labelId).text, "Zurich, Switzerland")
+        m.assertTrue(overlay.findNode(labelId).visible)
+      end for
+    end function
+
     @it("Supports all five formats with the original default")
     function test_locationFormats()
       meta = { exifInfo: { city: "Springfield", state: "Illinois", country: "USA" } }

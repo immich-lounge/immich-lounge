@@ -19,6 +19,10 @@ sub InitPlaybackSceneForScene(ctx as Object)
     ctx.pendingScheduledAt = 0
 
     ctx.overlay = ctx.top.findNode("overlay")
+    ctx.pairedOverlay = ctx.top.findNode("pairedOverlay")
+    ctx.pairedOverlayTimer = CreateObject("roSGNode", "Timer")
+    ctx.pairedOverlayTimer.repeat = false
+    ctx.pairedOverlayTimer.observeField("fire", "OnPairedOverlayFade")
     ctx.toast = ctx.top.findNode("toast")
     ctx.progressBar = ctx.top.findNode("progressBar")
     ctx.errorGroup = ctx.top.findNode("errorGroup")

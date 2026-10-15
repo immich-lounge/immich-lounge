@@ -77,6 +77,11 @@ public class ProfileValidator : IProfileValidator
             return "Invalid weatherUnit. Must be celsius or fahrenheit.";
         }
 
+        if (profile.Display.PairedOverlayBrightness is < 50 or > 100)
+        {
+            return "pairedOverlayBrightness must be 50–100 percent.";
+        }
+
         if (!IsSlideshowValid(profile.Slideshow))
         {
             return "intervalSeconds must be 3–3600; refreshIntervalMinutes must be 5–1440.";
