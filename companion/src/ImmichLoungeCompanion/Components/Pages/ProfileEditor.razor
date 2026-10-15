@@ -91,6 +91,8 @@ else
                 @if (LocationSummary.Length > 0) { <p class="criteria-detail">Limited to: @LocationSummary</p> }
                 @if (_profile.DateFilter != null) { <p class="criteria-detail">Date filter: @DateFilterSummary</p> }
                 @if (_profile.OnlyPhotosWithPeople) { <p class="criteria-detail">Only photos with people</p> }
+                @if (_profile.OnlyFavorites) { <p class="criteria-detail">Only favorites</p> }
+                @if (_profile.MinimumRating is { } minimumRating) { <p class="criteria-detail">Minimum rating: @minimumRating @(minimumRating == 1 ? "star" : "stars")</p> }
                 @if (_profile.ExcludedPeople.Count > 0) { <p class="criteria-detail">Excluding: @string.Join(", ", _profile.ExcludedPeople.Select(person => person.Label))</p> }
                 @if (_profile.Quality.MinFileSizeKb > 0) { <p class="criteria-detail">Minimum file size: @_profile.Quality.MinFileSizeKb KB</p> }
             </section>
@@ -181,6 +183,21 @@ else
             {
                 <p class="section-intro">Requires Immich 3.2 or later. Unavailable until the companion detects a supported server. An enabled filter must be turned off to use an older server.</p>
             }
+            <label>
+                <input id="only-favorites" type="checkbox" @bind="_profile.OnlyFavorites" @bind:after="CriteriaChanged" /> Only favorites
+            </label>
+            <label>
+                Minimum rating:
+                <select id="minimum-rating" @bind="_profile.MinimumRating" @bind:after="CriteriaChanged">
+                    <option value="">Any rating</option>
+                    <option value="1">1 star or higher</option>
+                    <option value="2">2 stars or higher</option>
+                    <option value="3">3 stars or higher</option>
+                    <option value="4">4 stars or higher</option>
+                    <option value="5">5 stars</option>
+                </select>
+            </label>
+            <p class="section-intro">Limits all sources, including memories. Both filters must match when enabled together. Favorites belong to the configured Immich account; photos shared by other accounts are not reported as favorites. A minimum rating skips unrated photos.</p>
             @if (_connectionConfigured)
             {
                 <label>Exclude people (NOT):</label>
@@ -840,7 +857,7 @@ else
     {
         if (_profile == null) return "";
         var payload = BuildProfilePayloadForRequest();
-        return JsonSerializer.Serialize(new { payload.PhotoSource, payload.AssetFilter, payload.ContentSources, payload.ExcludedPeople, payload.OnlyPhotosWithPeople,
+        return JsonSerializer.Serialize(new { payload.PhotoSource, payload.AssetFilter, payload.ContentSources, payload.ExcludedPeople, payload.OnlyPhotosWithPeople, payload.OnlyFavorites, payload.MinimumRating,
             payload.LocationFilter, payload.DateFilter, payload.Quality, payload.MediaTypes, payload.Memories });
     }
 

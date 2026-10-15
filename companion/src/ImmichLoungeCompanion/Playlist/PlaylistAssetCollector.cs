@@ -110,8 +110,40 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
             }
         }
 
+        await ApplyCurationFiltersAsync(allAssets, profile, immichSettings, ct);
         ApplyQualityFilter(allAssets, profile.Quality);
         return allAssets;
+    }
+
+    private async Task ApplyCurationFiltersAsync(Dictionary<string, CollectedAsset> assets,
+        Profile profile, ImmichSettings settings, CancellationToken ct)
+    {
+        if (!profile.OnlyFavorites && profile.MinimumRating == null) { return; }
+
+        // Filter the combined selection so legacy search, shared albums and memories
+        // use the same minimum-rating semantics. Legacy search only supports exact ratings.
+        foreach (var id in assets.Keys.ToList())
+        {
+            ct.ThrowIfCancellationRequested();
+            var entry = assets[id];
+            var asset = entry.Asset;
+            // Sanitized/abbreviated responses can omit favorite or EXIF metadata.
+            if ((profile.OnlyFavorites && asset.IsFavorite == null) ||
+                (profile.MinimumRating != null && asset.ExifInfo == null))
+            {
+                asset = await immich.GetAssetAsync(settings, id, ct);
+            }
+
+            if (asset == null || (profile.OnlyFavorites && asset.IsFavorite != true) ||
+                (profile.MinimumRating is { } minimum && !(asset.ExifInfo?.Rating >= minimum)))
+            {
+                assets.Remove(id);
+            }
+            else
+            {
+                assets[id] = entry with { Asset = asset };
+            }
+        }
     }
 
     private async Task<Dictionary<string, CollectedAsset>> FetchOptionalMemoriesAsync(

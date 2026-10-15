@@ -81,6 +81,16 @@ The companion collects all matching result pages and removes duplicates. With **
 | Playback | Interval, shuffle, transition effect, photo motion, and playlist refresh interval |
 | Display | Overlay style and fields, background effect, date and time formatting, weather, and image quality |
 
+### Favorites and ratings
+
+Under **Photos → Filters**, enable **Only favorites** or choose a **Minimum rating** of 1–5 stars. The rating includes that many stars or higher; **Any rating** includes unrated photos too. Both filters must match when used together.
+
+These filters narrow all selected sources, including memories and shared albums, and apply to both the channel and screensaver. Favorites use the account whose API key is configured in the companion. Immich does not report photos owned by other accounts as favorites, even when shared through an album or partner sharing. Ratings use the photo's Immich metadata.
+
+Choose **Preview selection** to check the matching count and sample photos, then save. Changes to favorites or ratings in Immich appear on the next playlist rebuild. Existing profiles keep both filters off. No extra Immich API permissions are needed.
+
+For API-managed profiles, set `"onlyFavorites": true` and/or `"minimumRating": 4` at the top level. Omit these fields (or use `false` and `null`) to leave the selection unfiltered. The minimum rating must be an integer from 1 to 5; unrated photos are skipped when a minimum is set.
+
 ### Only photos with people
 
 To show photos containing anyone, without choosing specific people:
