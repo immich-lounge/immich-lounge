@@ -33,6 +33,22 @@ public class NoFaceFilterTests
     }
 
     [TestMethod]
+    public async Task NewestLimitAppliesAfterNoFaceFiltering()
+    {
+        var client = Client();
+        var scenery = Photos("older-scenery", "newer-scenery");
+        scenery[0].ExifInfo!.DateTimeOriginal = "2020-01-01";
+        scenery[1].ExifInfo!.DateTimeOriginal = "2024-01-01";
+        var face = Photos("newest-face")[0];
+        face.ExifInfo!.DateTimeOriginal = "2025-01-01";
+        client.SearchAssetsAllPagesAsync(Settings, Arg.Any<SearchAssetsRequest>()).Returns(call =>
+            call.Arg<SearchAssetsRequest>().HasNoPeople ? scenery : [.. scenery, face]);
+        var profile = new Profile { PhotoSource = "all", OnlyPhotosWithoutPeople = true, NewestPhotoCount = 1 };
+        var entries = PlaylistEntryProjector.CreateEntries(await new PlaylistAssetCollector(client).CollectAsync(profile, Settings), profile);
+        CollectionAssert.AreEqual(new[] { "newer-scenery" }, entries.Select(entry => entry.Id).ToArray());
+    }
+
+    [TestMethod]
     [DataRow(AssetFilterGroupOperator.And)]
     [DataRow(AssetFilterGroupOperator.Or)]
     public async Task NestedSourcesAndSharedAlbumQueriesKeepNoFacePredicate(AssetFilterGroupOperator op)

@@ -93,6 +93,7 @@ else
                 @if (_profile.OnlyPhotosWithPeople) { <p class="criteria-detail">Only photos with people</p> }
                 @if (_profile.OnlyPhotosWithoutPeople) { <p class="criteria-detail">Only photos without people</p> }
                 @if (_profile.OnlyFavorites) { <p class="criteria-detail">Only favorites</p> }
+                @if (_profile.NewestPhotoCount is { } newestCount) { <p class="criteria-detail">Up to @newestCount newest matching photos</p> }
                 @if (_profile.MinimumRating is { } minimumRating) { <p class="criteria-detail">Minimum rating: @minimumRating @(minimumRating == 1 ? "star" : "stars")</p> }
                 @if (_profile.ExcludedPeople.Count > 0) { <p class="criteria-detail">Excluding: @string.Join(", ", _profile.ExcludedPeople.Select(person => person.Label))</p> }
                 @if (_profile.Quality.MinFileSizeKb > 0) { <p class="criteria-detail">Minimum file size: @_profile.Quality.MinFileSizeKb KB</p> }
@@ -203,6 +204,11 @@ else
                 </select>
             </label>
             <p class="section-intro">Limits all sources, including memories. Both filters must match when enabled together. Favorites belong to the configured Immich account; photos shared by other accounts are not reported as favorites. A minimum rating skips unrated photos.</p>
+            <label>
+                Newest photo limit:
+                <input id="newest-photo-count" type="number" min="1" step="1" @bind="_profile.NewestPhotoCount" @bind:after="CriteriaChanged" />
+            </label>
+            <p class="section-intro">Leave blank for all matches. Keeps up to this many newest photos by capture date after other filters, including memories. Shuffle and photo order apply afterward.</p>
             @if (_connectionConfigured)
             {
                 <label>Exclude people (NOT):</label>
@@ -862,7 +868,7 @@ else
     {
         if (_profile == null) return "";
         var payload = BuildProfilePayloadForRequest();
-        return JsonSerializer.Serialize(new { payload.PhotoSource, payload.AssetFilter, payload.ContentSources, payload.ExcludedPeople, payload.OnlyPhotosWithPeople, payload.OnlyPhotosWithoutPeople, payload.OnlyFavorites, payload.MinimumRating,
+        return JsonSerializer.Serialize(new { payload.PhotoSource, payload.AssetFilter, payload.ContentSources, payload.ExcludedPeople, payload.OnlyPhotosWithPeople, payload.OnlyPhotosWithoutPeople, payload.OnlyFavorites, payload.MinimumRating, payload.NewestPhotoCount,
             payload.LocationFilter, payload.DateFilter, payload.Quality, payload.MediaTypes, payload.Memories });
     }
 

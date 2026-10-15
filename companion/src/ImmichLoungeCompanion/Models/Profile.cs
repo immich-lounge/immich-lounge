@@ -18,6 +18,7 @@ public class Profile
     public bool OnlyPhotosWithoutPeople { get; set; }
     public bool OnlyFavorites { get; set; }
     public int? MinimumRating { get; set; }
+    public int? NewestPhotoCount { get; set; }
     public MediaTypes MediaTypes { get; set; } = new();
     public DateFilter? DateFilter { get; set; }
     public LocationFilter? LocationFilter { get; set; }

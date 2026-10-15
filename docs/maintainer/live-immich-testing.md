@@ -42,9 +42,9 @@ pwsh -NoProfile -File companion/tests/LiveImmich/Run-LiveImmich.ps1 -Action Test
 pwsh -NoProfile -File companion/tests/LiveImmich/Run-LiveImmich.ps1 -Action Test -Target Compatibility32
 ```
 
-Each native server run performs 20 checks covering version selection, full pagination with a page size of one, country/state/city combinations, empty results, inclusive date boundaries, album intersections, scoped suggestions, restricted-key connection and read access, the actual playlist collector, and invalid-key errors.
+Each native server run performs 22 checks covering version selection, full pagination with a page size of one, country/state/city combinations, empty results, inclusive date boundaries, album intersections, scoped suggestions, restricted-key connection and read access, the actual playlist collector, newest-photo limits before playback ordering, and invalid-key errors.
 
-Immich 3.2 and 3.3.1 repeat those checks with only its version probe hidden by a client handler. Searches and other calls reach the real server, verifying legacy fallback when version detection is unavailable. No-face checks add explicit-false wire verification on supported versions and rejection when capability detection is unavailable, for 107 checks across 3.1, 3.2, and 3.3.1.
+Immich 3.2 and 3.3.1 repeat those checks with only its version probe hidden by a client handler. Searches and other calls reach the real server, verifying legacy fallback when version detection is unavailable. No-face checks add explicit-false wire verification on supported versions and rejection when capability detection is unavailable, for 117 checks across 3.1, 3.2, and 3.3.1.
 
 Disposable 3.2 and 3.3.1 tests additionally insert one synthetic visible face without a person assignment into the database guarded by that test's unique marker. They verify no-face exclusion, a with-people positive control, and album-scoped filtering. These are metadata fixtures with machine learning disabled, not tests of face-detection accuracy. Persistent fixture accounts and Compose databases are not modified by this extra check.
 

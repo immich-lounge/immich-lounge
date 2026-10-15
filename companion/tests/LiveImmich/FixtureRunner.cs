@@ -215,6 +215,12 @@ internal static class FixtureRunner
                 catch (NotSupportedException) { unsupported = true; }
                 Check("no-face filter rejects legacy or unknown capability", unsupported);
             }
+            var newestProfile = new Profile { PhotoSource = "all", NewestPhotoCount = 2, Slideshow = new() { Shuffle = false } };
+            var newest = PlaylistEntryProjector.CreateEntries(await collector.CollectAsync(newestProfile, settings), newestProfile);
+            Check("newest limit across all pages", newest.Select(entry => entry.Id).SequenceEqual(new[] { state.Assets[3].Id, state.Assets[2].Id }));
+            newestProfile.Slideshow.DateOrder = "oldestFirst";
+            var oldestPlayback = PlaylistEntryProjector.CreateEntries(await collector.CollectAsync(newestProfile, settings), newestProfile);
+            Check("newest membership with oldest-first playback", oldestPlayback.Select(entry => entry.Id).SequenceEqual(new[] { state.Assets[2].Id, state.Assets[3].Id }));
 
             var failed = false;
             try
