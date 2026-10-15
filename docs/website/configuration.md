@@ -81,6 +81,14 @@ The companion collects all matching result pages and removes duplicates. With **
 | Playback | Interval, shuffle, transition effect, photo motion, and playlist refresh interval |
 | Display | Overlay style and fields, background effect, date and time formatting, weather, and image quality |
 
+### Photo descriptions
+
+Under **Appearance → Text and overlays**, enable **Show photo description** to display the description saved in Immich. It is off by default. Descriptions appear in both Bottom Bar and Corner Pill overlays, including each photo in portrait pairs, and follow the overlay visibility and fade settings. The None style hides descriptions too.
+
+Text wraps to a maximum of two lines; longer descriptions are truncated. Missing or blank descriptions are hidden. Roku reads descriptions from Immich with the photo metadata, so descriptions are unavailable when Immich is offline, even if the playlist is cached.
+
+Character coverage depends on Roku's built-in fonts; unsupported characters may appear as boxes.
+
 ### Favorites and ratings
 
 Under **Photos → Filters**, enable **Only favorites** or choose a **Minimum rating** of 1–5 stars. The rating includes that many stars or higher; **Any rating** includes unrated photos too. Both filters must match when used together.

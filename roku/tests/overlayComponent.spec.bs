@@ -4,6 +4,71 @@ namespace tests
 
     @describe("Location format")
 
+    @it("Malformed EXIF cannot crash date fallback before drawing descriptions")
+    function test_descriptionDateFallback()
+      for each exif in [invalid, "bad", 3, {}, { dateTimeOriginal: 3 }]
+        meta = { exifInfo: exif, fileCreatedAt: "2025-07-14T12:00:00Z" }
+        m.assertEqual(FormatAssetDateForDisplay(meta, "MMMM d, yyyy", "en-US"), "July 14, 2025")
+      end for
+      m.assertEqual(FormatAssetDateForDisplay({ exifInfo: {}, fileCreatedAt: 3 }, "MMMM d, yyyy", "en-US"), "")
+    end function
+
+    @it("The None overlay style hides descriptions even when selected")
+    function test_descriptionNone()
+      overlay = CreateObject("roSGNode", "OverlayComponent")
+      overlay.overlayStyle = "none"
+      overlay.overlayFields = ["description"]
+      overlay.assetMeta = { exifInfo: { description: "A mountain walk" } }
+      m.assertFalse(overlay.findNode("descriptionLine").visible)
+      m.assertFalse(overlay.findNode("cornerDescription").visible)
+    end function
+
+    @it("Descriptions are opt-in, wrap within each photo, and clear for missing metadata")
+    function test_descriptions()
+      for each style in ["bottom", "corner"]
+        overlay = CreateObject("roSGNode", "OverlayComponent")
+        overlay.overlayStyle = style
+        overlay.overlayBehavior = "always"
+        overlay.viewportWidth = 960
+        overlay.textAlignment = "right"
+        overlay.assetMeta = { exifInfo: { description: "A mountain walk" } }
+        labelId = "descriptionLine"
+        if style = "corner" then labelId = "cornerDescription"
+        label = overlay.findNode(labelId)
+        m.assertFalse(label.visible)
+        overlay.overlayFields = ["description"]
+        overlay.assetMeta = { exifInfo: { description: "  A mountain walk" + Chr(10) + "in summer  " } }
+        m.assertEqual(label.text, "A mountain walk in summer")
+        m.assertTrue(label.visible)
+        m.assertEqual(label.maxLines, 2)
+        m.assertEqual(label.height, 0.0)
+        m.assertEqual(label.horizAlign, "right")
+        if style = "bottom" then m.assertEqual(label.width, 840.0)
+        overlay.visible = false
+        m.assertFalse(label.visible)
+        overlay.visible = true
+        m.assertTrue(label.visible)
+        for each meta in [{}, { exifInfo: invalid }, { exifInfo: "bad" }, { exifInfo: { description: 3 } }, { exifInfo: { description: " " } }]
+          overlay.assetMeta = meta
+          m.assertEqual(label.text, "")
+          m.assertFalse(label.visible)
+        end for
+      end for
+    end function
+
+    @it("Late descriptions respect externally hidden portrait overlays")
+    function test_descriptionLateMetadata()
+      overlay = CreateObject("roSGNode", "OverlayComponent")
+      overlay.externallyManaged = true
+      overlay.overlayStyle = "bottom"
+      overlay.overlayFields = ["description"]
+      overlay.overlayBehavior = "always"
+      overlay.visible = false
+      overlay.assetMeta = { exifInfo: { description: "A mountain walk" } }
+      m.assertFalse(overlay.visible)
+      m.assertFalse(overlay.findNode("descriptionLine").visible)
+    end function
+
     @it("Caption brightness changes paired text without dimming its background or single photos")
     function test_pairedBrightness()
       overlay = CreateObject("roSGNode", "OverlayComponent")

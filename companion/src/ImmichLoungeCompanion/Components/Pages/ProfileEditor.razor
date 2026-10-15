@@ -396,6 +396,8 @@ else
         <details class="settings-card editor-card advanced-settings">
             <summary>Text and overlays</summary>
             <div class="advanced-settings-body">
+                <label><input id="show-photo-description" type="checkbox" @bind="ShowPhotoDescription" /> Show photo description</label>
+                <p class="field-hint">Uses the description saved in Immich. Shows up to two lines in either overlay style; photos without a description show no text.</p>
                 <label><input type="checkbox" @bind="_profile.Display.RightAlignPairedOverlay" /> Right-align the right photo's caption in portrait pairs</label>
                 <p class="field-hint">Turn off to left-align both captions. Single-photo captions are unchanged.</p>
                 <label>
@@ -506,6 +508,16 @@ else
     private bool _connectionConfigured;
     private string _editorView = "Photos";
     private string _sourcePickerType = "album";
+    private bool ShowPhotoDescription
+    {
+        get => _profile?.Display.OverlayFields.Contains("description") == true;
+        set
+        {
+            if (_profile == null) return;
+            _profile.Display.OverlayFields.RemoveAll(name => name == "description");
+            if (value) _profile.Display.OverlayFields.Add("description");
+        }
+    }
     private void CriteriaChanged()
     {
         _matchCount = null;

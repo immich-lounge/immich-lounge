@@ -78,10 +78,12 @@ function GetDefaultDateFormatForLocale(locale as String) as String
 end function
 
 function FormatAssetDateForDisplay(meta as Object, dateFormat as String, locale as String) as String
+    if GetInterface(meta, "ifAssociativeArray") = invalid then return ""
     dateStr = ""
-    if meta.exifInfo <> invalid and meta.exifInfo.dateTimeOriginal <> invalid then
-        dateStr = meta.exifInfo.dateTimeOriginal
-    else if meta.fileCreatedAt <> invalid then
+    if GetInterface(meta.exifInfo, "ifAssociativeArray") <> invalid then
+        if GetInterface(meta.exifInfo.dateTimeOriginal, "ifString") <> invalid then dateStr = meta.exifInfo.dateTimeOriginal
+    end if
+    if dateStr = "" and GetInterface(meta.fileCreatedAt, "ifString") <> invalid then
         dateStr = meta.fileCreatedAt
     end if
     if dateStr = "" then return ""
