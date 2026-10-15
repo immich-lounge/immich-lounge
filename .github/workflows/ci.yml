@@ -34,6 +34,36 @@ jobs:
       - name: Build development fixture tooling
         run: dotnet build tests/LiveImmich/LiveImmich.csproj --configuration Release
 
+  database:
+    name: Immich search and playlist contracts
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Test disposable Immich stacks
+        run: npm run test:database -- --configuration Release
+
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: immich-search-playlist-contracts
+          path: |
+            _out/testcontainers/lounge/**/*.trx
+            _out/testcontainers/lounge/**/*-results.json
+            _out/testcontainers/lounge/**/*-database.log
+            _out/testcontainers/lounge/**/*-redis.log
+            _out/testcontainers/lounge/**/*-server.log
+          include-hidden-files: true
+          if-no-files-found: ignore
+
   companion-docker:
     name: Companion Docker (${{ matrix.arch }})
     runs-on: ${{ matrix.runner }}
