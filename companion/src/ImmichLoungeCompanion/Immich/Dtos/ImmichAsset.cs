@@ -10,6 +10,7 @@ public class ImmichAsset
     public string Type { get; set; } = "";          // "IMAGE" | "VIDEO"
     public string? Visibility { get; set; }
     public string? LivePhotoVideoId { get; set; }
+    public bool? IsFavorite { get; set; }
     [JsonPropertyName("exifInfo")]
     public ImmichExifInfo? ExifInfo { get; set; }
     public List<ImmichPerson> People { get; set; } = [];
@@ -17,6 +18,7 @@ public class ImmichAsset
 
 public class ImmichExifInfo
 {
+    public int? Rating { get; set; }
     public string? DateTimeOriginal { get; set; }   // ISO 8601
     [JsonPropertyName("exifImageWidth")]
     public int? ExifImageWidth { get; set; }

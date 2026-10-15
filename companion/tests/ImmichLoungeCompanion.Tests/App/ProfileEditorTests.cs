@@ -514,12 +514,13 @@ public sealed class ProfileEditorTests : IDisposable
     [DataRow(true, false)]
     [DataRow(false, false)]
     [DataRow(false, true)]
-    public async Task PeoplePresenceCheckboxGatesNewSelectionsAndAllowsDisablingExistingFilter(bool supported, bool enabled)
+    public async Task PeoplePresenceGatingAndCurationControlsRenderSavedValues(bool supported, bool enabled)
     {
         _factory.ImmichClient.GetSearchApiCapabilitiesAsync(Arg.Any<ImmichSettings>(), Arg.Any<bool>())
             .Returns(new SearchApiCapabilities(supported ? "3.2.0" : "3.1.0", supported));
         using var client = _factory.CreateClient();
-        var profile = new Profile { Id = "render-people", Name = "People", OnlyPhotosWithPeople = enabled };
+        var profile = new Profile { Id = "render-people", Name = "People", OnlyPhotosWithPeople = enabled,
+            OnlyFavorites = enabled, MinimumRating = enabled ? 4 : null };
         Assert.AreEqual(HttpStatusCode.Created, (await client.PostAsJsonAsync("/api/profiles", profile)).StatusCode);
         var factory = Substitute.For<IHttpClientFactory>();
         factory.CreateClient("local").Returns(client);
@@ -541,6 +542,23 @@ public sealed class ProfileEditorTests : IDisposable
         Assert.AreEqual(!supported && !enabled, input.Value.Contains("disabled"));
         Assert.AreEqual(enabled, input.Value.Contains("checked"));
         Assert.AreEqual(!supported, html.Contains("Requires Immich 3.2 or later"));
+        StringAssert.Contains(html, "id=\"only-favorites\"");
+        StringAssert.Contains(html, "id=\"minimum-rating\"");
+        StringAssert.Contains(html, "Any rating");
+        StringAssert.Contains(html, "4 stars or higher");
+        var favorites = System.Text.RegularExpressions.Regex.Match(html, "<input[^>]*id=\"only-favorites\"[^>]*>");
+        Assert.AreEqual(enabled, favorites.Value.Contains("checked"));
+        Assert.IsFalse(favorites.Value.Contains("disabled"), "Curation does not require structured search.");
+        var rating = System.Text.RegularExpressions.Regex.Match(html, "<select[^>]*id=\"minimum-rating\"[^>]*>(.*?)</select>", System.Text.RegularExpressions.RegexOptions.Singleline);
+        if (enabled) { StringAssert.Contains(rating.Value, "value=\"4\" selected"); }
+        else
+        {
+            Assert.IsFalse(rating.Value.Contains(" selected"));
+            Assert.AreEqual("Any rating", System.Text.RegularExpressions.Regex.Match(rating.Value, "<option[^>]*>(.*?)</option>").Groups[1].Value);
+        }
+        var summary = System.Text.RegularExpressions.Regex.Match(html, "<section class=\"criteria-summary\"[^>]*>(.*?)</section>", System.Text.RegularExpressions.RegexOptions.Singleline);
+        Assert.AreEqual(enabled, summary.Value.Contains("Only favorites"));
+        Assert.AreEqual(enabled, summary.Value.Contains("Minimum rating: 4 stars"));
     }
 
     private sealed class EditorTestNavigation : NavigationManager
@@ -598,6 +616,59 @@ public sealed class ProfileEditorTests : IDisposable
         typeof(ProfileEditor).GetMethod("OnDateFilterModeChanged", PrivateInstance)!.Invoke(editor,
             [new ChangeEventArgs { Value = "none" }]);
         Assert.IsNull(BuildPayload(editor).DateFilter);
+    }
+
+    [TestMethod]
+    public async Task CurationFiltersSurviveSaveReloadAndInvalidatePreviewIndependently()
+    {
+        using var client = _factory.CreateClient();
+        var (editor, profile) = await LoadEditorAsync(client, new Profile { Id = "curation", Name = "Best photos" });
+        Assert.IsFalse(profile.OnlyFavorites);
+        Assert.IsNull(profile.MinimumRating);
+        var snapshot = typeof(ProfileEditor).GetMethod("BuildPreviewSnapshot", PrivateInstance)!;
+        var before = (string)snapshot.Invoke(editor, null)!;
+        profile.OnlyFavorites = true;
+        var favorites = (string)snapshot.Invoke(editor, null)!;
+        Assert.AreNotEqual(before, favorites);
+        profile.MinimumRating = 4;
+        Assert.AreNotEqual(favorites, (string)snapshot.Invoke(editor, null)!);
+
+        _factory.ImmichClient.SearchAssetsAllPagesAsync(Arg.Any<ImmichSettings>(), Arg.Any<SearchAssetsRequest>())
+            .Returns([
+                new ImmichAsset { Id = "good", Type = "IMAGE", IsFavorite = true, ExifInfo = new() { Rating = 5 } },
+                new ImmichAsset { Id = "low", Type = "IMAGE", IsFavorite = true, ExifInfo = new() { Rating = 3 } },
+                new ImmichAsset { Id = "not-favorite", Type = "IMAGE", IsFavorite = false, ExifInfo = new() { Rating = 5 } }
+            ]);
+        var preview = await client.PostAsJsonAsync("/api/profiles/preview-count", BuildPayload(editor));
+        preview.EnsureSuccessStatusCode();
+        var result = await preview.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.AreEqual(1, result.GetProperty("matchedAssets").GetInt32());
+        (await client.PutAsJsonAsync("/api/profiles/curation", BuildPayload(editor))).EnsureSuccessStatusCode();
+        var (reloadedEditor, reloaded) = await ReloadEditorAsync(client, "curation");
+        Assert.IsTrue(reloaded.OnlyFavorites);
+        Assert.AreEqual(4, reloaded.MinimumRating);
+        reloaded.OnlyFavorites = false;
+        reloaded.MinimumRating = null;
+        (await client.PutAsJsonAsync("/api/profiles/curation", BuildPayload(reloadedEditor))).EnsureSuccessStatusCode();
+        var cleared = (await client.GetFromJsonAsync<Profile>("/api/profiles/curation"))!;
+        Assert.IsFalse(cleared.OnlyFavorites);
+        Assert.IsNull(cleared.MinimumRating);
+    }
+
+    [TestMethod]
+    [DataRow(-1)]
+    [DataRow(0)]
+    [DataRow(6)]
+    public async Task InvalidMinimumRatingIsRejectedByCreateSaveAndPreview(int rating)
+    {
+        using var client = _factory.CreateClient();
+        var (editor, profile) = await LoadEditorAsync(client, new Profile { Id = "invalid-rating", Name = "Rating" });
+        profile.MinimumRating = rating;
+        var payload = BuildPayload(editor);
+        Assert.AreEqual(HttpStatusCode.BadRequest, (await client.PutAsJsonAsync("/api/profiles/invalid-rating", payload)).StatusCode);
+        Assert.AreEqual(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/profiles/preview-count", payload)).StatusCode);
+        payload.Id = "invalid-create";
+        Assert.AreEqual(HttpStatusCode.BadRequest, (await client.PostAsJsonAsync("/api/profiles", payload)).StatusCode);
     }
 
     private static async Task<(ProfileEditor Editor, Profile Profile)> LoadEditorAsync(HttpClient client, Profile profile)

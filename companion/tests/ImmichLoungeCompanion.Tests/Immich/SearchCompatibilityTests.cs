@@ -47,6 +47,21 @@ public class SearchCompatibilityTests
     }
 
     [TestMethod]
+    [DataRow(1)]
+    [DataRow(2)]
+    [DataRow(3)]
+    public async Task SearchReadsFavoriteAndRatingMetadata(int minor)
+    {
+        var client = Client(req => Task.FromResult(req.Method == HttpMethod.Get ? Version(minor) :
+            Json("""{"assets":{"items":[{"id":"rated","isFavorite":true,"exifInfo":{"rating":4}},{"id":"unrated","isFavorite":false,"exifInfo":{"rating":null}}],"nextPage":null,"nextCursor":null}}""")));
+        var assets = await client.SearchAssetsAllPagesAsync(Settings(), new());
+        Assert.AreEqual(true, assets[0].IsFavorite);
+        Assert.AreEqual(4, assets[0].ExifInfo!.Rating);
+        Assert.AreEqual(false, assets[1].IsFavorite);
+        Assert.IsNull(assets[1].ExifInfo!.Rating);
+    }
+
+    [TestMethod]
     public async Task V2PreservesAllFiltersAndUsesCursorWithoutMutatingRequest()
     {
         var bodies = new List<JsonElement>();

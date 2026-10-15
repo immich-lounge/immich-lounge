@@ -7,6 +7,11 @@ public class ProfileValidator : IProfileValidator
 {
     public string? Validate(Profile profile)
     {
+        if (profile.MinimumRating is < 1 or > 5)
+        {
+            return "minimumRating must be 1–5, or null for any rating.";
+        }
+
         if (profile.PhotoSource is not (null or "all" or "selected" or "memories"))
         {
             return "Invalid photoSource. Choose all, selected, or memories.";
