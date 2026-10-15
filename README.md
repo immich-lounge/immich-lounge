@@ -32,6 +32,8 @@ Roku install links:
 
 ![Immich Lounge slideshow on Roku](./docs/website/assets/screenshots/slideshow.jpg)
 
+![Portrait photos playing side by side in Immich Lounge](./docs/website/assets/screenshots/slideshow-portraits.jpg)
+
 
 ## Getting Started
 

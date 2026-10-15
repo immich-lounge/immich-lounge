@@ -112,7 +112,7 @@ http://192.168.1.10:4383
 
 Then choose a profile.
 
-![Roku companion connection screen](./assets/screenshots/change-companion.png){ .doc-screenshot .on-glb }
+![Roku companion connection screen](./assets/screenshots/change-companion.jpg){ .doc-screenshot .on-glb }
 <p class="doc-caption">Manual companion setup on Roku uses the companion host and port <code>4383</code>.</p>
 
 ## Screensaver setup
