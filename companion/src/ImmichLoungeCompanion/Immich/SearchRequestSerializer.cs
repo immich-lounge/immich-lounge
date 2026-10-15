@@ -14,11 +14,17 @@ internal static class SearchRequestSerializer
     {
         var after = NormalizeDate(request.TakenAfter);
         var before = NormalizeDate(request.TakenBefore, endOfDay: true);
+        if (request.HasPeople && request.HasNoPeople)
+        {
+            throw new ArgumentException("Choose either photos with people or photos without people, not both.");
+        }
         if (!structured)
         {
-            if (request.HasPeople)
+            if (request.HasPeople || request.HasNoPeople)
             {
-                throw new NotSupportedException("Only photos with people requires Immich 3.2 or later. Disable this filter or upgrade Immich.");
+                throw new NotSupportedException(request.HasNoPeople
+                    ? "Only photos without people requires Immich 3.2 or later. Disable this filter or upgrade Immich."
+                    : "Only photos with people requires Immich 3.2 or later. Disable this filter or upgrade Immich.");
             }
             return JsonSerializer.Serialize(new
             {
@@ -33,9 +39,9 @@ internal static class SearchRequestSerializer
         {
             ["visibility"] = new { NotIn = new[] { "hidden", "locked" } }
         };
-        if (request.HasPeople)
+        if (request.HasPeople || request.HasNoPeople)
         {
-            filter["hasPeople"] = new { Eq = true };
+            filter["hasPeople"] = new { Eq = request.HasPeople };
         }
         // Legacy ID lists require membership in ALL entries, not ANY.
         AddIds(filter, "albumIds", request.AlbumIds);

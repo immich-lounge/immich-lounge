@@ -136,7 +136,7 @@ public class ProfilesController(
         {
             entries = await playlistBuilder.BuildAsync(profile);
         }
-        catch (NotSupportedException ex) when (profile.OnlyPhotosWithPeople)
+        catch (NotSupportedException ex) when (profile.OnlyPhotosWithPeople || profile.OnlyPhotosWithoutPeople)
         {
             return BadRequest(new { error = ex.Message });
         }

@@ -84,6 +84,15 @@ public sealed class ImmichDatabaseTests
             Assert.AreEqual(0, seeded.ExitCode, "Could not apply synthetic fixture metadata.");
             await FixtureRunner.RunAsync(["test", name, directory], endpoint);
             TestContext.AddResultFile(Path.Combine(directory, $"{name}-results.json"));
+            if (name != "v31")
+            {
+                var faceSql = FixtureRunner.CreateNoFaceFixtureSql(Path.Combine(directory, $"{name}-account.json"));
+                var faceSeed = await database.ExecAsync(["psql", "-U", "postgres", "-d", "immich", "-v", "ON_ERROR_STOP=1", "-c", faceSql]);
+                Assert.AreEqual(0, faceSeed.ExitCode, "Could not add synthetic face to the guarded disposable database.");
+                var faceReport = Path.Combine(directory, $"{name}-no-face-results.json");
+                await FixtureRunner.VerifyNoFaceFixtureAsync(endpoint, Path.Combine(directory, $"{name}-account.json"), faceReport);
+                TestContext.AddResultFile(faceReport);
+            }
         }
         catch
         {

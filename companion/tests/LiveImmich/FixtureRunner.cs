@@ -199,6 +199,22 @@ internal static class FixtureRunner
                 LocationFilter = new() { Country = "Switzerland", State = "Bern" }
             }, settings);
             Check("actual playlist collector", results.Keys.Order().SequenceEqual(new[] { state.Assets[1].Id }.Order()));
+            var noFaceProfile = new Profile { PhotoSource = "all", OnlyPhotosWithoutPeople = true };
+            if (capabilities.StructuredSearch)
+            {
+                // Synthetic PNG fixtures have no faces; populated-face rejection is covered separately.
+                var noFaces = await collector.CollectAsync(noFaceProfile, settings);
+                Check("no-face filter on synthetic photos", noFaces.Keys.Order().SequenceEqual(state.Assets.Select(asset => asset.Id).Order()));
+                var noFaceBody = handler.Searches.Last().GetProperty("filter");
+                Check("no-face predicate on wire", !noFaceBody.GetProperty("hasPeople").GetProperty("eq").GetBoolean());
+            }
+            else
+            {
+                var unsupported = false;
+                try { await collector.CollectAsync(noFaceProfile, settings); }
+                catch (NotSupportedException) { unsupported = true; }
+                Check("no-face filter rejects legacy or unknown capability", unsupported);
+            }
             var newestProfile = new Profile { PhotoSource = "all", NewestPhotoCount = 2, Slideshow = new() { Shuffle = false } };
             var newest = PlaylistEntryProjector.CreateEntries(await collector.CollectAsync(newestProfile, settings), newestProfile);
             Check("newest limit across all pages", newest.Select(entry => entry.Id).SequenceEqual(new[] { state.Assets[3].Id, state.Assets[2].Id }));
@@ -297,6 +313,45 @@ internal static class FixtureRunner
         }
 
 
+    }
+
+    // Only called by the disposable harness after its unique database marker check.
+    internal static string CreateNoFaceFixtureSql(string accountPath)
+    {
+        var state = JsonSerializer.Deserialize<TestState>(File.ReadAllText(accountPath), new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+        var assetId = Guid.Parse(state.Assets[0].Id);
+        return $"INSERT INTO asset_face (\"assetId\", \"imageWidth\", \"imageHeight\", \"boundingBoxX1\", \"boundingBoxY1\", \"boundingBoxX2\", \"boundingBoxY2\") VALUES ('{assetId:D}', 96, 96, 10, 10, 40, 40);";
+    }
+
+    internal static async Task VerifyNoFaceFixtureAsync(Uri endpoint, string accountPath, string reportPath)
+    {
+        var state = JsonSerializer.Deserialize<TestState>(await File.ReadAllTextAsync(accountPath), new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+        using var http = new HttpClient();
+        var client = new ImmichClient(new Factory(http), NullLogger<ImmichClient>.Instance);
+        var settings = new ImmichSettings { ServerUrl = endpoint.ToString().TrimEnd('/'), ApiKey = state.ApiKey };
+        var collector = new PlaylistAssetCollector(client);
+        var without = await collector.CollectAsync(new() { PhotoSource = "all", OnlyPhotosWithoutPeople = true }, settings);
+        if (!without.Keys.ToHashSet().SetEquals(state.Assets.Skip(1).Select(asset => asset.Id)))
+        {
+            throw new InvalidOperationException("No-face filter failed to exclude synthetic unassigned face.");
+        }
+        var with = await collector.CollectAsync(new() { PhotoSource = "all", OnlyPhotosWithPeople = true }, settings);
+        if (!with.Keys.SequenceEqual(new[] { state.Assets[0].Id }))
+        {
+            throw new InvalidOperationException("With-people positive control did not find the synthetic face.");
+        }
+        var album = await collector.CollectAsync(new() { PhotoSource = "selected", OnlyPhotosWithoutPeople = true,
+            ContentSources = [new() { Type = "album", Id = state.AlbumA }] }, settings);
+        if (!album.Keys.SequenceEqual(new[] { state.Assets[1].Id }))
+        {
+            throw new InvalidOperationException("Album-scoped no-face filter failed.");
+        }
+        await File.WriteAllTextAsync(reportPath, JsonSerializer.Serialize(new
+        {
+            passed = true, noFaceMatches = without.Count, withFaceMatches = with.Count, albumMatches = album.Count,
+            fixture = "Synthetic visible face without a person assignment; machine learning is disabled"
+        }));
+        Console.WriteLine("PASS populated synthetic face: no-face excludes unassigned face, with-people positive control, album scope");
     }
 
     sealed class TestState

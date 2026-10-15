@@ -24,10 +24,17 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
         CancellationToken ct = default)
     {
         profile.NormalizeAssetFilter();
-        if (profile.OnlyPhotosWithPeople &&
+        if (profile.OnlyPhotosWithPeople && profile.OnlyPhotosWithoutPeople)
+        {
+            throw new InvalidOperationException("Choose either photos with people or photos without people, not both.");
+        }
+        bool? hasPeople = profile.OnlyPhotosWithPeople ? true : profile.OnlyPhotosWithoutPeople ? false : null;
+        if (hasPeople.HasValue &&
             (await immich.GetSearchApiCapabilitiesAsync(immichSettings))?.StructuredSearch != true)
         {
-            throw new NotSupportedException("Only photos with people requires Immich 3.2 or later. Disable this filter or upgrade Immich.");
+            throw new NotSupportedException(profile.OnlyPhotosWithoutPeople
+                ? "Only photos without people requires Immich 3.2 or later. Disable this filter or upgrade Immich."
+                : "Only photos with people requires Immich 3.2 or later. Disable this filter or upgrade Immich.");
         }
 
         var source = profile.EffectivePhotoSource();
@@ -36,24 +43,24 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
             : FindAlbumIds(profile.AssetFilter).Distinct(StringComparer.Ordinal).ToList();
 
         Dictionary<string, CollectedAsset> allAssets = source == "selected" && profile.AssetFilter != null
-            ? await EvaluateRuleAsync(profile.AssetFilter, immichSettings, profile.DateFilter, profile.LocationFilter, albumIds, profile.OnlyPhotosWithPeople, ct)
+            ? await EvaluateRuleAsync(profile.AssetFilter, immichSettings, profile.DateFilter, profile.LocationFilter, albumIds, hasPeople, ct)
             : source == "all"
-                ? await FetchAllAssetsAsync(immichSettings, profile.DateFilter, profile.LocationFilter, profile.OnlyPhotosWithPeople, ct)
+                ? await FetchAllAssetsAsync(immichSettings, profile.DateFilter, profile.LocationFilter, hasPeople, ct)
                 : new(StringComparer.Ordinal);
 
         if (profile.HasMemoriesSource())
         {
             // Explicit sources constrain memories too. Legacy profiles retain their additive behavior.
             var dateMatches = profile.PhotoSource != null && source == "memories" && profile.DateFilter != null
-                ? await FetchAllAssetsAsync(immichSettings, profile.DateFilter, profile.LocationFilter, profile.OnlyPhotosWithPeople, ct)
+                ? await FetchAllAssetsAsync(immichSettings, profile.DateFilter, profile.LocationFilter, hasPeople, ct)
                 : null;
             var memoryAssets = await FetchOptionalMemoriesAsync(profile, immichSettings, allAssets.Count > 0, ct);
-            if (profile.OnlyPhotosWithPeople && memoryAssets.Count > 0)
+            if (hasPeople.HasValue && memoryAssets.Count > 0)
             {
                 // Memories can omit faces and lie outside the regular date range.
                 // Use the server's face predicate, including selected shared album scopes.
                 var matching = await SearchPeopleAssetsAsync(immichSettings, null, albumIds,
-                    null, profile.LocationFilter, ct, onlyPhotosWithPeople: true);
+                    null, profile.LocationFilter, ct, hasPeople);
                 var matchingAssets = matching.ToDictionary(asset => asset.Id, StringComparer.Ordinal);
                 foreach (var id in memoryAssets.Keys.ToList())
                 {
@@ -187,12 +194,12 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
         ImmichSettings immichSettings,
         DateFilter? dateFilter,
         LocationFilter? locationFilter,
-        bool onlyPhotosWithPeople,
+        bool? hasPeople,
         CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
-        var request = new SearchAssetsRequest { HasPeople = onlyPhotosWithPeople, Type = onlyPhotosWithPeople ? "IMAGE" : null };
+        var request = new SearchAssetsRequest { HasPeople = hasPeople == true, HasNoPeople = hasPeople == false, Type = hasPeople.HasValue ? "IMAGE" : null };
         if (dateFilter != null)
         {
             ApplyDateFilter(request, dateFilter);
@@ -209,20 +216,20 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
         DateFilter? dateFilter,
         LocationFilter? locationFilter,
         IReadOnlyList<string> albumIds,
-        bool onlyPhotosWithPeople,
+        bool? hasPeople,
         CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
         if (rule.Kind == AssetFilterRuleKind.Condition)
         {
-            return await FetchConditionAssetsAsync(rule, immichSettings, dateFilter, locationFilter, albumIds, onlyPhotosWithPeople, ct);
+            return await FetchConditionAssetsAsync(rule, immichSettings, dateFilter, locationFilter, albumIds, hasPeople, ct);
         }
 
         var childResults = new List<Dictionary<string, CollectedAsset>>();
         foreach (var child in rule.Children)
         {
-            childResults.Add(await EvaluateRuleAsync(child, immichSettings, dateFilter, locationFilter, albumIds, onlyPhotosWithPeople, ct));
+            childResults.Add(await EvaluateRuleAsync(child, immichSettings, dateFilter, locationFilter, albumIds, hasPeople, ct));
         }
 
         if (childResults.Count == 0)
@@ -243,20 +250,21 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
         DateFilter? dateFilter,
         LocationFilter? locationFilter,
         IReadOnlyList<string> albumIds,
-        bool onlyPhotosWithPeople,
+        bool? hasPeople,
         CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
 
         if (rule.Type == AssetFilterConditionType.Person)
         {
-            var peopleAssets = await SearchPeopleAssetsAsync(immichSettings, rule.Id!, albumIds, dateFilter, locationFilter, ct, onlyPhotosWithPeople);
+            var peopleAssets = await SearchPeopleAssetsAsync(immichSettings, rule.Id!, albumIds, dateFilter, locationFilter, ct, hasPeople);
             return ToAssetDictionary(peopleAssets, null);
         }
 
         var request = BuildSearchRequest(rule, dateFilter);
-        request.HasPeople = onlyPhotosWithPeople;
-        request.Type = onlyPhotosWithPeople ? "IMAGE" : null;
+        request.HasPeople = hasPeople == true;
+        request.HasNoPeople = hasPeople == false;
+        request.Type = hasPeople.HasValue ? "IMAGE" : null;
         ApplyLocationFilter(request, locationFilter);
         var assets = await immich.SearchAssetsAllPagesAsync(immichSettings, request);
         var sourceLabel = rule.Type == AssetFilterConditionType.Album ? rule.Label : null;
@@ -286,7 +294,7 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
 
     private async Task<List<ImmichAsset>> SearchPeopleAssetsAsync(
         ImmichSettings settings, string? personId, IReadOnlyList<string> albumIds,
-        DateFilter? dateFilter, LocationFilter? locationFilter, CancellationToken ct, bool onlyPhotosWithPeople = false)
+        DateFilter? dateFilter, LocationFilter? locationFilter, CancellationToken ct, bool? hasPeople = null)
     {
         var assets = new Dictionary<string, ImmichAsset>(StringComparer.Ordinal);
         // Immich's default search covers owned/partner assets. Album-only shares
@@ -298,8 +306,9 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
             var request = new SearchAssetsRequest
             {
                 PersonIds = personId == null ? null : [personId],
-                HasPeople = onlyPhotosWithPeople,
-                Type = onlyPhotosWithPeople ? "IMAGE" : null
+                HasPeople = hasPeople == true,
+                HasNoPeople = hasPeople == false,
+                Type = hasPeople.HasValue ? "IMAGE" : null
             };
             if (albumId != null)
             {

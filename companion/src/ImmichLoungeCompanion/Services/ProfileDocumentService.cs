@@ -45,6 +45,7 @@ public class ProfileDocumentService(ISettingsRepository settings) : IProfileDocu
             profile.PhotoSource,
             profile.ExcludedPeople,
             profile.OnlyPhotosWithPeople,
+            profile.OnlyPhotosWithoutPeople,
             profile.OnlyFavorites,
             profile.MinimumRating,
             profile.NewestPhotoCount,

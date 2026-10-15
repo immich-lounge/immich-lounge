@@ -7,6 +7,11 @@ public class ProfileValidator : IProfileValidator
 {
     public string? Validate(Profile profile)
     {
+        if (profile.OnlyPhotosWithPeople && profile.OnlyPhotosWithoutPeople)
+        {
+            return "Choose either photos with people or photos without people, not both.";
+        }
+
         if (profile.NewestPhotoCount is <= 0)
         {
             return "newestPhotoCount must be a positive integer, or null for no limit.";
