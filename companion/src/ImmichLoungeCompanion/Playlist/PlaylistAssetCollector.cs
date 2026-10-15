@@ -112,6 +112,20 @@ public class PlaylistAssetCollector(IImmichClient immich, TimeProvider? timeProv
 
         await ApplyCurationFiltersAsync(allAssets, profile, immichSettings, ct);
         ApplyQualityFilter(allAssets, profile.Quality);
+        if (profile.NewestPhotoCount != null)
+        {
+            // Abbreviated responses must not make a recent photo look undated.
+            foreach (var id in allAssets.Keys.ToList())
+            {
+                ct.ThrowIfCancellationRequested();
+                var entry = allAssets[id];
+                if (!string.IsNullOrWhiteSpace(entry.Asset.ExifInfo?.DateTimeOriginal) ||
+                    !string.IsNullOrWhiteSpace(entry.Asset.FileCreatedAt)) { continue; }
+                var asset = await immich.GetAssetAsync(immichSettings, id, ct);
+                if (asset == null) { allAssets.Remove(id); }
+                else { allAssets[id] = entry with { Asset = asset }; }
+            }
+        }
         return allAssets;
     }
 

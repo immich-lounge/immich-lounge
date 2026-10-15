@@ -9,6 +9,7 @@ public class ImmichAsset
     public string Id { get; set; } = "";
     public string Type { get; set; } = "";          // "IMAGE" | "VIDEO"
     public string? Visibility { get; set; }
+    public string? FileCreatedAt { get; set; }
     public string? LivePhotoVideoId { get; set; }
     public bool? IsFavorite { get; set; }
     [JsonPropertyName("exifInfo")]
