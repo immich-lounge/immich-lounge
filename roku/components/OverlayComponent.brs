@@ -11,6 +11,20 @@ sub init()
     m.cornerLocShadow  = m.top.findNode("cornerLocationShadow")
     m.cornerDate   = m.top.findNode("cornerDate")
     m.cornerLoc    = m.top.findNode("cornerLocation")
+    m.bottomBackdrop = m.top.findNode("bottomBackdrop")
+    m.cornerBackdrop = m.top.findNode("cornerBackdrop")
+    ' A soft dark gradient keeps bright and detailed photos from swallowing captions.
+    alpha = [0, 16, 32, 56, 88, 120, 152, 176, 192, 200, 208, 208, 208, 208]
+    for i = 0 to 103
+        band = m.bottomBackdrop.createChild("Rectangle")
+        band.translation = [0, 768 + i * 3]
+        band.width = m.top.viewportWidth
+        band.height = 3
+        band.color = "#000000FF"
+        stepIndex = Int(i / 8)
+        fraction = (i mod 8) / 8.0
+        band.opacity = (alpha[stepIndex] + (alpha[stepIndex + 1] - alpha[stepIndex]) * fraction) / 255.0
+    end for
 
     m.fadeTimer = CreateObject("roSGNode", "Timer")
     m.fadeTimer.repeat = false
@@ -21,16 +35,94 @@ sub init()
     m.shouldShowLocation = false
     m.shouldShowAlbum    = false
     m.shouldShowPeople   = false
+    ' visible is inherited from Group; observe it explicitly on device.
+    m.top.observeField("visible", "OnVisibleChanged")
+    OnViewportChanged()
 end sub
 
 sub OnVisibleChanged()
+    m.fadeTimer.control = "stop"
     v = m.top.visible
     ApplyVisibility(v)
-    if v and m.top.overlayBehavior = "fade" then
+    if v and not m.top.externallyManaged and m.top.overlayBehavior = "fade" then
         m.fadeTimer.duration = m.top.fadeSeconds
         m.fadeTimer.control = "start"
     end if
 end sub
+
+sub OnVisibilityModeChanged()
+    m.fadeTimer.control = "stop"
+end sub
+
+sub OnViewportChanged()
+    ' Keep text inside its photo's half; retain the original single-photo widths.
+    for each id in ["dateLine", "dateShadowLine", "locationLine", "locationShadowLine", "peopleLine", "peopleShadowLine"]
+        m.top.findNode(id).width = m.top.viewportWidth - 120
+    end for
+    width = 900
+    if m.top.viewportWidth < 1920 then width = m.top.viewportWidth - 120
+    m.albumLine.width = width
+    m.albumShadowLine.width = width
+    paired = m.top.viewportWidth < 1920
+    alignment = "left"
+    if paired and m.top.textAlignment = "right" then alignment = "right"
+    for each id in ["dateLine", "dateShadowLine", "locationLine", "locationShadowLine", "albumLine", "albumShadowLine", "peopleLine", "peopleShadowLine", "cornerDate", "cornerDateShadow", "cornerLocation", "cornerLocationShadow"]
+        m.top.findNode(id).horizAlign = alignment
+    end for
+    for each band in m.bottomBackdrop.getChildren(-1, 0)
+        band.width = m.top.viewportWidth
+    end for
+    if paired then
+        primaryColor = PairedCaptionColor(255, m.top.pairedTextBrightness)
+        secondaryColor = PairedCaptionColor(238, m.top.pairedTextBrightness)
+        m.dateLine.color = primaryColor
+        m.locationLine.color = primaryColor
+        m.albumLine.color = secondaryColor
+        m.peopleLine.color = secondaryColor
+        m.cornerDate.color = primaryColor
+        m.cornerLoc.color = primaryColor
+    else
+        m.dateLine.color = "#FFFFFFEE"
+        m.locationLine.color = "#DDDDDDCC"
+        m.albumLine.color = "#AAAAAA99"
+        m.peopleLine.color = "#AAAAAA99"
+        m.cornerDate.color = "#FFFFFFEE"
+        m.cornerLoc.color = "#CCCCCCCC"
+    end if
+    ' Right corner captions sit below the shared clock/weather area.
+    cornerX = 55
+    cornerY = 50
+    if paired then
+        cornerX = 60
+        cornerY = 54
+        if alignment = "right" then
+            cornerX = m.top.viewportWidth - 456
+            cornerY = 198
+        end if
+    end if
+    m.cornerDate.translation = [cornerX, cornerY]
+    m.cornerDateShadow.translation = [cornerX + 3, cornerY + 3]
+    m.cornerLoc.translation = [cornerX, cornerY + 42]
+    m.cornerLocShadow.translation = [cornerX + 3, cornerY + 45]
+    if not paired then
+        m.cornerDateShadow.translation = [57, 52]
+        m.cornerLoc.translation = [55, 90]
+        m.cornerLocShadow.translation = [57, 92]
+    end if
+    m.cornerBackdrop.translation = [cornerX - 24, cornerY - 18]
+    m.cornerBackdrop.width = 450
+    ApplyVisibility(m.top.visible)
+end sub
+
+function PairedCaptionColor(peak as Integer, brightness as Integer) as String
+    if brightness < 50 then brightness = 50
+    if brightness > 100 then brightness = 100
+    level = Int(peak * brightness / 100.0)
+    digits = "0123456789ABCDEF"
+    shade = digits.Mid(Int(level / 16), 1) + digits.Mid(level mod 16, 1)
+    ' Change the text luminance, keeping it opaque over the contrast background.
+    return "#" + shade + shade + shade + "FF"
+end function
 
 sub OnFadeTimer()
     ApplyVisibility(false)
@@ -38,6 +130,9 @@ end sub
 
 sub ApplyVisibility(v as Boolean)
     style = m.top.overlayStyle
+    hasContent = m.shouldShowDate or m.shouldShowLocation or m.shouldShowAlbum or m.shouldShowPeople
+    m.bottomBackdrop.visible = v and m.top.viewportWidth < 1920 and style = "bottom" and hasContent
+    m.cornerBackdrop.visible = v and m.top.viewportWidth < 1920 and style = "corner" and (m.shouldShowDate or m.shouldShowLocation)
 
     ' Only show labels if overlay is visible AND the field has content
     m.dateShadowLine.visible     = v and style = "bottom" and m.shouldShowDate
@@ -120,6 +215,7 @@ sub OnMetaChanged()
     end if
 
     ' Handle overlay behavior for fade timer
+    if m.top.externallyManaged then return
     behavior = m.top.overlayBehavior
     if behavior = "always" then
         ' Always visible - ensure it's shown

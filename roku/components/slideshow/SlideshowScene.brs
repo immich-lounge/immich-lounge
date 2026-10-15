@@ -99,6 +99,14 @@ sub OnMetaResult()
     OnMetaResultForScene(m)
 end sub
 
+sub OnPairedMetaResult()
+    OnPairedMetaResultForScene(m)
+end sub
+
+sub OnPairedOverlayFade()
+    SetPairedOverlayVisibilityForScene(m, false)
+end sub
+
 ' ---- Clock ----
 
 sub OnClockTick()

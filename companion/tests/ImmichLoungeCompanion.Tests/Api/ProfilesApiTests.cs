@@ -258,11 +258,48 @@ public class ProfilesApiTests : IDisposable
         Assert.AreEqual(HttpStatusCode.Created, created.StatusCode);
         var saved = await _client.GetFromJsonAsync<Profile>("/api/profiles/portrait-pair");
         Assert.IsTrue(saved!.Display.SideBySidePortraits);
+        Assert.IsTrue(saved.Display.RightAlignPairedOverlay);
+        saved.Display.RightAlignPairedOverlay = false;
         saved.Display.SideBySidePortraits = false;
         var updated = await _client.PutAsJsonAsync("/api/profiles/portrait-pair", saved);
         Assert.AreEqual(HttpStatusCode.OK, updated.StatusCode);
         var reloaded = await _client.GetFromJsonAsync<Profile>("/api/profiles/portrait-pair");
         Assert.IsFalse(reloaded!.Display.SideBySidePortraits);
+        Assert.IsFalse(reloaded.Display.RightAlignPairedOverlay);
+    }
+
+    [TestMethod]
+    [DataRow(50, true)]
+    [DataRow(85, true)]
+    [DataRow(100, true)]
+    [DataRow(49, false)]
+    [DataRow(101, false)]
+    public async Task PairedOverlayBrightness_ValidatesAndRoundTrips(int brightness, bool valid)
+    {
+        var profile = new Profile { Id = "caption-brightness", Name = "Captions",
+            Display = new() { PairedOverlayBrightness = brightness } };
+        Assert.AreEqual(valid ? HttpStatusCode.Created : HttpStatusCode.BadRequest,
+            (await _client.PostAsJsonAsync("/api/profiles", profile)).StatusCode);
+        Assert.AreEqual(valid ? HttpStatusCode.OK : HttpStatusCode.BadRequest,
+            (await _client.PostAsJsonAsync("/api/profiles/preview-count", profile)).StatusCode);
+        if (!valid)
+        {
+            return;
+        }
+        var saved = (await _client.GetFromJsonAsync<Profile>("/api/profiles/caption-brightness"))!;
+        Assert.AreEqual(brightness, saved.Display.PairedOverlayBrightness);
+        saved.Display.PairedOverlayBrightness = brightness == 50 ? 100 : 50;
+        (await _client.PutAsJsonAsync("/api/profiles/caption-brightness", saved)).EnsureSuccessStatusCode();
+        Assert.AreEqual(saved.Display.PairedOverlayBrightness,
+            (await _client.GetFromJsonAsync<Profile>("/api/profiles/caption-brightness"))!.Display.PairedOverlayBrightness);
+    }
+
+    [TestMethod]
+    public async Task LegacyPairedOverlayBrightness_DefaultsTo85Percent()
+    {
+        (await _client.PostAsJsonAsync("/api/profiles",
+            new { id = "legacy-caption-brightness", name = "Legacy", display = new { sideBySidePortraits = true } })).EnsureSuccessStatusCode();
+        Assert.AreEqual(85, (await _client.GetFromJsonAsync<Profile>("/api/profiles/legacy-caption-brightness"))!.Display.PairedOverlayBrightness);
     }
 
     [TestMethod]

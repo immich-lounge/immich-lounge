@@ -20,6 +20,7 @@
 
     <!-- Overlay component -->
     <OverlayComponent id="overlay" />
+    <OverlayComponent id="pairedOverlay" translation="[960, 0]" viewportWidth="960" externallyManaged="true" visible="false" />
 
     <WeatherAndClockOverlay id="persistentLayer" translation="[1524, 54]" opacity="0.82" />
 

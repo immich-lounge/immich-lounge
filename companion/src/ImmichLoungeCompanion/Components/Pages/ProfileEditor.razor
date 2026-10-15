@@ -304,7 +304,7 @@ else
             <label><input type="checkbox" @bind="_profile.Display.ZoomToFit" /> Fill the screen with landscape photos</label>
             <p class="section-intro">Fill the screen by cropping the edges of landscape photos. Portrait and square photos still show the whole image.</p>
             <label><input type="checkbox" @bind="_profile.Display.SideBySidePortraits" /> Pair portrait photos side by side</label>
-            <p class="section-intro">Pair consecutive portrait photos without cropping. The overlay describes the left photo. Pairs fade together without photo motion.</p>
+            <p class="section-intro">Pair consecutive portrait photos without cropping. Each photo has its own caption. Pairs fade together without photo motion.</p>
 
             <details class="advanced-settings"><summary>More playback options</summary><div class="advanced-settings-body">
                 <label>Refresh interval (minutes): <input type="number" value="@_profile.Slideshow.RefreshIntervalMinutes" @oninput="OnRefreshIntervalMinutesChanged" min="5" max="1440" /></label>
@@ -396,6 +396,13 @@ else
         <details class="settings-card editor-card advanced-settings">
             <summary>Text and overlays</summary>
             <div class="advanced-settings-body">
+                <label><input type="checkbox" @bind="_profile.Display.RightAlignPairedOverlay" /> Right-align the right photo's caption in portrait pairs</label>
+                <p class="field-hint">Turn off to left-align both captions. Single-photo captions are unchanged.</p>
+                <label>
+                    Paired caption brightness: @(_profile.Display.PairedOverlayBrightness)%
+                    <input type="range" min="50" max="100" step="5" @bind="_profile.Display.PairedOverlayBrightness" @bind:event="oninput" />
+                </label>
+                <p class="field-hint">Dim or brighten both portrait-pair captions. The dark background stays the same for contrast.</p>
                 <label>
                     Location format:
                     <select @bind="_profile.Display.LocationFormat">

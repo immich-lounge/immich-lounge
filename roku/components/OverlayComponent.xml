@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <component name="OverlayComponent" extends="Group">
   <interface>
+    <!-- Paired slides share a scene-owned visibility/fade timer. -->
+    <field id="externallyManaged" type="boolean" value="false" onChange="OnVisibilityModeChanged" />
+    <field id="viewportWidth" type="float" value="1920" onChange="OnViewportChanged" />
+    <field id="textAlignment" type="string" value="left" onChange="OnViewportChanged" />
+    <field id="pairedTextBrightness" type="integer" value="85" onChange="OnViewportChanged" />
     <!-- "bottom" | "corner" | "none" -->
     <field id="overlayStyle"    type="string"     value="none" />
     <field id="overlayFields"   type="array"      value="[]" />
@@ -8,7 +13,7 @@
     <!-- "always" | "fade" | "manual" -->
     <field id="overlayBehavior" type="string"     value="manual" />
     <field id="fadeSeconds"     type="float"      value="5.0" />
-    <field id="visible"         type="boolean"    value="true" onChange="OnVisibleChanged" />
+    <field id="visible"         type="boolean"    value="true" />
     <!-- Asset metadata (AA from GET /api/assets/:id) -->
     <field id="assetMeta"       type="assocarray" value="{}" onChange="OnMetaChanged" />
     <field id="clockFormat"     type="string"     value="HH:mm" />
@@ -19,6 +24,8 @@
     <field id="birthdayCaption" type="string"     value="" onChange="OnMetaChanged" />
   </interface>
   <children>
+    <Group id="bottomBackdrop" visible="false" />
+    <Rectangle id="cornerBackdrop" color="#000000B8" translation="[36, 36]" width="444" height="108" visible="false" />
     <!-- Overlay text lines (bottom style) -->
     <Label id="dateShadowLine"     color="#000000AA" font="font:MediumBoldSystemFont"
            translation="[62, 882]"  width="1800" visible="false" />

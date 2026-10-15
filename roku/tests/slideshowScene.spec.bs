@@ -81,6 +81,106 @@ namespace tests
 
     @describe("Portrait pairs")
 
+    @it("Caption brightness accepts valid settings and defaults safely for cached profiles")
+    function test_pairedOverlayBrightnessSetting()
+      m.assertEqual(PairedOverlayBrightness(invalid), 85)
+      m.assertEqual(PairedOverlayBrightness({}), 85)
+      for each value in [invalid, "75", {}, true, 0, 49, 101]
+        m.assertEqual(PairedOverlayBrightness({ display: { pairedOverlayBrightness: value } }), 85)
+      end for
+      for each value in [50, 75, 85, 100]
+        m.assertEqual(PairedOverlayBrightness({ display: { pairedOverlayBrightness: value } }), value)
+      end for
+    end function
+
+    @it("Right caption alignment defaults right and respects the profile setting")
+    function test_pairedOverlayAlignmentSetting()
+      m.assertEqual(PairedOverlayAlignment(invalid), "right")
+      m.assertEqual(PairedOverlayAlignment({}), "right")
+      m.assertEqual(PairedOverlayAlignment({ display: {} }), "right")
+      m.assertEqual(PairedOverlayAlignment({ display: { rightAlignPairedOverlay: true } }), "right")
+      m.assertEqual(PairedOverlayAlignment({ display: { rightAlignPairedOverlay: false } }), "left")
+    end function
+
+    @it("Fetches each photo independently and detaches the partner when returning to single playback")
+    function test_pairMetadataFetch()
+      m.stubCall(CreatePhotoMetaTaskForScene, function(_ctx as object, entry as object, callback as string) as object
+        return {
+          assetId: entry.id, callback: callback, detached: false
+          unobserveField: sub(_field as string)
+            m.detached = true
+          end sub
+        }
+      end function)
+      ctx = {
+        overlay: CreateObject("roSGNode", "OverlayComponent")
+        pairedOverlay: CreateObject("roSGNode", "OverlayComponent")
+        pairedOverlayTimer: CreateObject("roSGNode", "Timer")
+        slideAssetCount: 2, overlayVisible: true, profile: { immich: {} }
+        pendingPairEntry: { id: "right", sourceLabel: "Right album", birthdayCaption: "Right birthday" }
+      }
+      ctx.pairedOverlay.externallyManaged = true
+      ctx.overlay.overlayStyle = "bottom"
+      FetchCurrentMetaForScene(ctx, { id: "left", sourceLabel: "Left album", birthdayCaption: "Left birthday" })
+      m.assertEqual(ctx.currentMetaTask.assetId, "left")
+      m.assertEqual(ctx.currentPairMetaTask.assetId, "right")
+      m.assertEqual(ctx.currentPairMetaTask.callback, "OnPairedMetaResult")
+      m.assertEqual(ctx.overlay.sourceLabel, "Left album")
+      m.assertEqual(ctx.pairedOverlay.sourceLabel, "Right album")
+      m.assertEqual(ctx.overlay.birthdayCaption, "Left birthday")
+      m.assertEqual(ctx.pairedOverlay.birthdayCaption, "Right birthday")
+      oldPartnerTask = ctx.currentPairMetaTask
+      ctx.slideAssetCount = 1
+      FetchCurrentMetaForScene(ctx, { id: "single" })
+      m.assertTrue(oldPartnerTask.detached)
+      m.assertInvalid(ctx.currentPairMetaTask)
+      m.assertEqual(ctx.pairedOverlay.birthdayCaption, "")
+      m.assertFalse(ctx.pairedOverlay.visible)
+    end function
+
+    @it("Photo overlays keep separate metadata, share visibility, and restore single slides")
+    function test_pairedPhotoOverlays()
+      ctx = {
+        overlay: CreateObject("roSGNode", "OverlayComponent")
+        pairedOverlay: CreateObject("roSGNode", "OverlayComponent")
+        pairedOverlayTimer: CreateObject("roSGNode", "Timer")
+        slideAssetCount: 2, overlayVisible: true
+      }
+      ctx.pairedOverlay.externallyManaged = true
+      ctx.overlay.overlayStyle = "bottom"
+      ctx.overlay.overlayFields = ["location"]
+      ctx.overlay.overlayBehavior = "fade"
+      ctx.overlay.fadeSeconds = 3
+      ConfigurePhotoOverlaysForScene(ctx)
+      ctx.overlay.assetMeta = { exifInfo: { city: "Paris", country: "France" } }
+      ctx.currentPairMetaTask = { metaResult: { ok: true, data: { exifInfo: { city: "Rome", country: "Italy" } } } }
+      OnPairedMetaResultForScene(ctx)
+      m.assertEqual(ctx.overlay.findNode("locationLine").text, "Paris, France")
+      m.assertEqual(ctx.pairedOverlay.findNode("locationLine").text, "Rome, Italy")
+      m.assertTrue(Abs(ctx.pairedOverlayTimer.duration - 3) < 0.00001)
+      SetPairedOverlayVisibilityForScene(ctx, false)
+      m.assertFalse(ctx.overlay.visible)
+      m.assertFalse(ctx.pairedOverlay.visible)
+      OnPairedMetaResultForScene(ctx)
+      m.assertFalse(ctx.pairedOverlay.visible)
+      ' The next slide may be loading while this pair is still displayed.
+      ctx.slideAssetCount = 1
+      ShowOverlayForScene(ctx)
+      m.assertTrue(ctx.overlay.visible)
+      m.assertTrue(ctx.pairedOverlay.visible)
+      ctx.currentPairMetaTask = { metaResult: { ok: false } }
+      OnPairedMetaResultForScene(ctx)
+      m.assertEqual(ctx.pairedOverlay.findNode("locationLine").text, "")
+      m.assertEqual(ctx.overlay.findNode("locationLine").text, "Paris, France")
+      ctx.slideAssetCount = 1
+      ConfigurePhotoOverlaysForScene(ctx)
+      m.assertFalse(ctx.overlay.externallyManaged)
+      m.assertEqual(ctx.overlay.viewportWidth, 1920.0)
+      m.assertFalse(ctx.pairedOverlay.visible)
+      m.assertTrue(ctx.overlay.visible)
+      ctx.pairedOverlayTimer.control = "stop"
+    end function
+
     function portraitPreloadContext()
       m.stubCall(BuildMediaUrl, function(entry as object, _profile as object) as string
         return entry.id
