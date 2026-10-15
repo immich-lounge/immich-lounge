@@ -29,10 +29,10 @@ The Roku screensaver uses the same companion connection, but it behaves a little
 5. If you also want the screensaver, go to `Settings` -> `Theme` -> `Screensavers` and switch the active screensaver to **Immich Lounge Screensaver**.
 6. After it is selected, open **Configure Screensaver** to choose the companion and profile for screensaver mode.
 
-![Roku companion connection screen](./assets/screenshots/change-companion.png){ .doc-screenshot .on-glb }
+![Roku companion connection screen](./assets/screenshots/change-companion.jpg){ .doc-screenshot .on-glb }
 <p class="doc-caption">Connect the Roku to the companion with the host address and default port <code>4383</code>.</p>
 
-![Roku profile selection screen](./assets/screenshots/change-profile.png){ .doc-screenshot .on-glb }
+![Roku profile selection screen](./assets/screenshots/change-profile.jpg){ .doc-screenshot .on-glb }
 <p class="doc-caption">Choose the Roku profile after the companion returns the available list.</p>
 
 ## Change the Roku Screensaver
@@ -49,6 +49,13 @@ Use Roku system settings to change which screensaver the device runs:
 Roku's support article for changing screensavers is here: [How to change the screensaver on your Roku streaming device](https://support.roku.com/article/212015418).
 
 If **Immich Lounge Screensaver** is already selected, you only need **Configure Screensaver** to switch it to a different companion or profile.
+
+## Photo display
+
+Landscape photos can fill the screen. Portrait photos can play side by side without cropping, with a background effect behind them. Choose these options in the companion profile's **Playback** and **Appearance** views.
+
+![Two portrait photos playing side by side in Immich Lounge](./assets/screenshots/slideshow-portraits.jpg){ .doc-screenshot .on-glb }
+<p class="doc-caption">Quiet Evenings pairs portrait photos with Ambilight Glow. The photo information describes the left image.</p>
 
 ## Remote Controls
 
@@ -79,7 +86,7 @@ Press `*` during playback in the channel to open the settings dialog.
 | `Change Companion` | Switches the Roku to a different companion host. |
 | `Clear Cache` | Removes cached profile and playlist data for the current mode. |
 
-![Roku settings dialog](./assets/screenshots/config-dialog.png){ .doc-screenshot .on-glb }
+![Roku settings dialog](./assets/screenshots/config-dialog.jpg){ .doc-screenshot .on-glb }
 <p class="doc-caption">The Roku settings dialog is available from the <code>*</code> button during channel playback.</p>
 
 The Roku also checks the active profile configuration about every 5 minutes and applies display, clock, and weather changes without replacing the current playlist. Use **Refresh Now** when you intentionally want to re-fetch both the profile and playlist immediately.

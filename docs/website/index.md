@@ -22,8 +22,8 @@ Display your <a href="https://immich.app">Immich</a> photos as a slideshow or sc
 </div>
 
 <figure class="screenshot-card home-playback">
-  <img class="on-glb" src="./assets/screenshots/slideshow.jpg" alt="Immich Lounge fullscreen slideshow on Roku with an album label and clock" />
-  <figcaption>Your photos on the TV, with optional information, clock, and weather.</figcaption>
+  <img class="on-glb" src="./assets/screenshots/slideshow.jpg" alt="Mountain lake playing full screen on Roku, with the Alpine Escapes album name, photo date, and clock" />
+  <figcaption>Your photos on the TV, with optional photo information, clock, and date.</figcaption>
 </figure>
 
 <div class="section-intro">
@@ -74,20 +74,29 @@ Add the Roku apps to your account:
   </div>
 </div>
 
-## In Action
+<figure class="screenshot-card home-playback">
+  <img class="on-glb" src="./assets/screenshots/slideshow-portraits.jpg" alt="Mountain reflection and waterfall portrait photos playing side by side with background glow" />
+  <figcaption>Pair portrait photos side by side and choose a background that suits the room.</figcaption>
+</figure>
+
+## Make it your own
 
 <div class="screenshot-grid">
   <figure class="screenshot-card">
-    <img class="on-glb" src="./assets/screenshots/companion-connection.png" alt="Immich Lounge companion connection page" />
-    <figcaption>Configure the companion with your immich server URL and API key.</figcaption>
+    <img class="on-glb" src="./assets/screenshots/companion-photo-selection.png" alt="Alpine Escapes album selected in the companion, with previews of three matching photos" />
+    <figcaption>Choose an album and preview the photos that will play.</figcaption>
   </figure>
   <figure class="screenshot-card">
-    <img class="on-glb" src="./assets/screenshots/change-profile.png" alt="Immich Lounge profile selection screen" />
-    <figcaption>Select a profile on the Roku after connecting to the companion.</figcaption>
+    <img class="on-glb" src="./assets/screenshots/companion-appearance.png" alt="Companion appearance settings for photo information, backgrounds, clock, and date" />
+    <figcaption>Choose the background and the details shown on your TV.</figcaption>
   </figure>
   <figure class="screenshot-card">
-    <img class="on-glb" src="./assets/screenshots/config-dialog.png" alt="Immich Lounge Roku settings dialog" />
-    <figcaption>Refresh, switch profile, change companion, or clear cache from the Roku menu.</figcaption>
+    <img class="on-glb" src="./assets/screenshots/companion-profiles.png" alt="Alpine Escapes, Quiet Evenings, and Travel Favourites profiles in the companion" />
+    <figcaption>Keep different photo selections and display settings in named profiles.</figcaption>
+  </figure>
+  <figure class="screenshot-card">
+    <img class="on-glb" src="./assets/screenshots/companion-schedule-overview.png" alt="Living Room schedule with a weekday Alpine Escapes time slot and Travel Favourites as the fallback" />
+    <figcaption>Switch profiles by time and day, with a fallback for the rest of the week.</figcaption>
   </figure>
 </div>
 

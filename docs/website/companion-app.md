@@ -72,8 +72,14 @@ You can edit display settings before connecting Immich. Follow **Configure conne
 | Playback | Interval, shuffle, transitions, photo motion, and refresh timing |
 | Appearance | Photo details, backgrounds, clock, date formatting, weather, and image quality |
 
-![Immich Lounge companion profile editor](./assets/screenshots/companion-profile-editor.jpg){ .doc-screenshot .on-glb }
+![Immich Lounge companion profile editor](./assets/screenshots/companion-profile-editor.png){ .doc-screenshot .on-glb }
 <p class="doc-caption">The profile editor separates photos, playback, and appearance into focused views.</p>
+
+![Immich Lounge playback settings](./assets/screenshots/companion-playback.png){ .doc-screenshot .on-glb }
+<p class="doc-caption">Set the pace, transitions, photo motion, and portrait pairing for each profile.</p>
+
+![Immich Lounge appearance settings](./assets/screenshots/companion-appearance.png){ .doc-screenshot .on-glb }
+<p class="doc-caption">Choose the background, photo information, clock, and date.</p>
 
 ## Schedules page
 
@@ -87,6 +93,9 @@ Schedules choose which profile plays at different times; profiles still hold the
 The schedule ID is generated from the name. Expand **Customize schedule ID** to change it before saving, including when the generated ID is already in use. Existing schedule IDs stay fixed.
 
 Outside the time slots, the fallback profile plays. Overlapping slots use the first matching row; move rows up to change priority. The channel and screensaver can follow different schedules.
+
+![Living Room weekly schedule in the Immich Lounge companion](./assets/screenshots/companion-schedule.png){ .doc-screenshot .on-glb }
+<p class="doc-caption">Alpine Escapes plays on weekdays, Quiet Evenings plays each evening, and Travel Favourites fills the remaining time.</p>
 
 Deleting a schedule keeps its profiles. Choose another schedule or profile on any Roku that used the deleted schedule.
 
