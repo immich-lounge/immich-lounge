@@ -25,6 +25,10 @@
   </interface>
   <children>
     <Group id="bottomBackdrop" visible="false" />
+    <Label id="descriptionShadowLine" color="#000000AA" font="font:SmallSystemFont"
+           translation="[63, 783]" width="1800" wrap="true" maxLines="2" visible="false" />
+    <Label id="descriptionLine" color="#DDDDDDCC" font="font:SmallSystemFont"
+           translation="[60, 780]" width="1800" wrap="true" maxLines="2" visible="false" />
     <Rectangle id="cornerBackdrop" color="#000000B8" translation="[36, 36]" width="444" height="108" visible="false" />
     <!-- Overlay text lines (bottom style) -->
     <Label id="dateShadowLine"     color="#000000AA" font="font:MediumBoldSystemFont"
@@ -45,13 +49,17 @@
            translation="[60, 1010]" width="1800" visible="false" />
 
     <!-- Corner style labels -->
+    <Label id="cornerDescriptionShadow" color="#000000AA" font="font:SmallestSystemFont"
+           translation="[63, 138]" width="396" wrap="true" maxLines="2" visible="false" />
+    <Label id="cornerDescription" color="#CCCCCCCC" font="font:SmallestSystemFont"
+           translation="[60, 135]" width="396" wrap="true" maxLines="2" visible="false" />
     <Label id="cornerDateShadow"     color="#000000AA" font="font:SmallBoldSystemFont"
            translation="[57, 52]"  width="400" visible="false" />
-    <Label id="cornerLocationShadow" color="#00000088" font="font:VerySmallSystemFont"
+    <Label id="cornerLocationShadow" color="#00000088" font="font:SmallestSystemFont"
            translation="[57, 92]"  width="400" visible="false" />
     <Label id="cornerDate"     color="#FFFFFFEE" font="font:SmallBoldSystemFont"
            translation="[55, 50]"  width="400" visible="false" />
-    <Label id="cornerLocation" color="#CCCCCCCC" font="font:VerySmallSystemFont"
+    <Label id="cornerLocation" color="#CCCCCCCC" font="font:SmallestSystemFont"
            translation="[55, 90]"  width="400" visible="false" />
   </children>
   <script type="text/brightscript" uri="pkg:/source/Utils.brs" />

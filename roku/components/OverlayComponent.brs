@@ -7,6 +7,10 @@ sub init()
     m.locationLine = m.top.findNode("locationLine")
     m.albumLine    = m.top.findNode("albumLine")
     m.peopleLine   = m.top.findNode("peopleLine")
+    m.descriptionLine = m.top.findNode("descriptionLine")
+    m.descriptionShadowLine = m.top.findNode("descriptionShadowLine")
+    m.cornerDescription = m.top.findNode("cornerDescription")
+    m.cornerDescriptionShadow = m.top.findNode("cornerDescriptionShadow")
     m.cornerDateShadow = m.top.findNode("cornerDateShadow")
     m.cornerLocShadow  = m.top.findNode("cornerLocationShadow")
     m.cornerDate   = m.top.findNode("cornerDate")
@@ -35,6 +39,7 @@ sub init()
     m.shouldShowLocation = false
     m.shouldShowAlbum    = false
     m.shouldShowPeople   = false
+    m.shouldShowDescription = false
     ' visible is inherited from Group; observe it explicitly on device.
     m.top.observeField("visible", "OnVisibleChanged")
     OnViewportChanged()
@@ -56,7 +61,7 @@ end sub
 
 sub OnViewportChanged()
     ' Keep text inside its photo's half; retain the original single-photo widths.
-    for each id in ["dateLine", "dateShadowLine", "locationLine", "locationShadowLine", "peopleLine", "peopleShadowLine"]
+    for each id in ["dateLine", "dateShadowLine", "locationLine", "locationShadowLine", "peopleLine", "peopleShadowLine", "descriptionLine", "descriptionShadowLine"]
         m.top.findNode(id).width = m.top.viewportWidth - 120
     end for
     width = 900
@@ -66,7 +71,7 @@ sub OnViewportChanged()
     paired = m.top.viewportWidth < 1920
     alignment = "left"
     if paired and m.top.textAlignment = "right" then alignment = "right"
-    for each id in ["dateLine", "dateShadowLine", "locationLine", "locationShadowLine", "albumLine", "albumShadowLine", "peopleLine", "peopleShadowLine", "cornerDate", "cornerDateShadow", "cornerLocation", "cornerLocationShadow"]
+    for each id in ["dateLine", "dateShadowLine", "locationLine", "locationShadowLine", "albumLine", "albumShadowLine", "peopleLine", "peopleShadowLine", "cornerDate", "cornerDateShadow", "cornerLocation", "cornerLocationShadow", "descriptionLine", "descriptionShadowLine", "cornerDescription", "cornerDescriptionShadow"]
         m.top.findNode(id).horizAlign = alignment
     end for
     for each band in m.bottomBackdrop.getChildren(-1, 0)
@@ -79,6 +84,8 @@ sub OnViewportChanged()
         m.locationLine.color = primaryColor
         m.albumLine.color = secondaryColor
         m.peopleLine.color = secondaryColor
+        m.descriptionLine.color = primaryColor
+        m.cornerDescription.color = primaryColor
         m.cornerDate.color = primaryColor
         m.cornerLoc.color = primaryColor
     else
@@ -86,6 +93,8 @@ sub OnViewportChanged()
         m.locationLine.color = "#DDDDDDCC"
         m.albumLine.color = "#AAAAAA99"
         m.peopleLine.color = "#AAAAAA99"
+        m.descriptionLine.color = "#DDDDDDCC"
+        m.cornerDescription.color = "#CCCCCCCC"
         m.cornerDate.color = "#FFFFFFEE"
         m.cornerLoc.color = "#CCCCCCCC"
     end if
@@ -110,6 +119,11 @@ sub OnViewportChanged()
         m.cornerLocShadow.translation = [57, 92]
     end if
     m.cornerBackdrop.translation = [cornerX - 24, cornerY - 18]
+    ' Snap new description text to the three-pixel layout grid.
+    descriptionX = Int(cornerX / 3) * 3
+    descriptionY = Int(cornerY / 3) * 3 + 84
+    m.cornerDescription.translation = [descriptionX, descriptionY]
+    m.cornerDescriptionShadow.translation = [descriptionX + 3, descriptionY + 3]
     m.cornerBackdrop.width = 450
     ApplyVisibility(m.top.visible)
 end sub
@@ -130,9 +144,15 @@ end sub
 
 sub ApplyVisibility(v as Boolean)
     style = m.top.overlayStyle
-    hasContent = m.shouldShowDate or m.shouldShowLocation or m.shouldShowAlbum or m.shouldShowPeople
+    hasContent = m.shouldShowDate or m.shouldShowLocation or m.shouldShowAlbum or m.shouldShowPeople or m.shouldShowDescription
     m.bottomBackdrop.visible = v and m.top.viewportWidth < 1920 and style = "bottom" and hasContent
-    m.cornerBackdrop.visible = v and m.top.viewportWidth < 1920 and style = "corner" and (m.shouldShowDate or m.shouldShowLocation)
+    m.cornerBackdrop.visible = v and m.top.viewportWidth < 1920 and style = "corner" and (m.shouldShowDate or m.shouldShowLocation or m.shouldShowDescription)
+    m.cornerBackdrop.height = 108
+    if m.shouldShowDescription then m.cornerBackdrop.height = 186
+    m.descriptionLine.visible = v and style = "bottom" and m.shouldShowDescription
+    m.descriptionShadowLine.visible = v and style = "bottom" and m.shouldShowDescription
+    m.cornerDescription.visible = v and style = "corner" and m.shouldShowDescription
+    m.cornerDescriptionShadow.visible = v and style = "corner" and m.shouldShowDescription
 
     ' Only show labels if overlay is visible AND the field has content
     m.dateShadowLine.visible     = v and style = "bottom" and m.shouldShowDate
@@ -208,6 +228,19 @@ sub OnMetaChanged()
     m.peopleShadowLine.text = iif(showPeople, peopleStr, "")
     m.peopleLine.text = iif(showPeople, peopleStr, "")
     m.shouldShowPeople = showPeople and peopleStr <> ""
+
+    description = ""
+    if GetInterface(meta.exifInfo, "ifAssociativeArray") <> invalid then
+        if GetInterface(meta.exifInfo.description, "ifString") <> invalid then
+            description = meta.exifInfo.description.Replace(Chr(13), " ").Replace(Chr(10), " ").Replace(Chr(9), " ").Trim()
+        end if
+    end if
+    if not IsFieldEnabled("description", fields) then description = ""
+    m.descriptionLine.text = description
+    m.descriptionShadowLine.text = description
+    m.cornerDescription.text = description
+    m.cornerDescriptionShadow.text = description
+    m.shouldShowDescription = description <> ""
 
     ' Apply visibility if overlay is currently visible
     if m.top.visible then

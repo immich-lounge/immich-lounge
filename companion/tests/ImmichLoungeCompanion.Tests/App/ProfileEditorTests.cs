@@ -24,6 +24,56 @@ public sealed class ProfileEditorTests : IDisposable
     public void Dispose() => _factory.Dispose();
 
     [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public async Task PhotoDescriptionCheckboxRendersSavedValue(bool enabled)
+    {
+        using var client = _factory.CreateClient();
+        var profile = new Profile { Id = "render-description", Name = "Description" };
+        if (enabled) { profile.Display.OverlayFields.Add("description"); }
+        (await client.PostAsJsonAsync("/api/profiles", profile)).EnsureSuccessStatusCode();
+        var factory = Substitute.For<IHttpClientFactory>();
+        factory.CreateClient("local").Returns(client);
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton(factory);
+        services.AddSingleton<NavigationManager>(new EditorTestNavigation());
+        services.AddSingleton(Substitute.For<IJSRuntime>());
+        services.AddSingleton(Substitute.For<ImmichLoungeCompanion.Services.IDisplayDateFormattingService>());
+        await using var provider = services.BuildServiceProvider();
+        await using var renderer = new HtmlRenderer(provider, provider.GetRequiredService<ILoggerFactory>());
+        var html = await renderer.Dispatcher.InvokeAsync(async () =>
+        {
+            var output = await renderer.RenderComponentAsync<AppearanceProfileEditor>(ParameterView.FromDictionary(new Dictionary<string, object?> { ["Id"] = profile.Id }));
+            return output.ToHtmlString();
+        });
+        var input = System.Text.RegularExpressions.Regex.Match(html, "<input[^>]*id=\"show-photo-description\"[^>]*>");
+        Assert.IsTrue(input.Success);
+        Assert.AreEqual(enabled, input.Value.Contains("checked"));
+        Assert.IsFalse(input.Value.Contains("disabled"));
+    }
+
+    [TestMethod]
+    public async Task PhotoDescriptionIsOptInAndSurvivesEditorSaveReload()
+    {
+        using var client = _factory.CreateClient();
+        var (editor, profile) = await LoadEditorAsync(client, new Profile { Id = "description", Name = "Description" });
+        var setting = typeof(ProfileEditor).GetProperty("ShowPhotoDescription", PrivateInstance)!;
+        Assert.IsFalse((bool)setting.GetValue(editor)!);
+        var originalFields = profile.Display.OverlayFields.ToArray();
+        setting.SetValue(editor, true);
+        setting.SetValue(editor, true);
+        Assert.AreEqual(1, BuildPayload(editor).Display.OverlayFields.Count(field => field == "description"));
+        (await client.PutAsJsonAsync("/api/profiles/description", BuildPayload(editor))).EnsureSuccessStatusCode();
+        var (reloadedEditor, _) = await ReloadEditorAsync(client, "description");
+        Assert.IsTrue((bool)setting.GetValue(reloadedEditor)!);
+        setting.SetValue(reloadedEditor, false);
+        CollectionAssert.AreEqual(originalFields, BuildPayload(reloadedEditor).Display.OverlayFields.ToArray());
+        (await client.PutAsJsonAsync("/api/profiles/description", BuildPayload(reloadedEditor))).EnsureSuccessStatusCode();
+        Assert.IsFalse((await client.GetFromJsonAsync<Profile>("/api/profiles/description"))!.Display.OverlayFields.Contains("description"));
+    }
+
+    [TestMethod]
     public async Task ExplicitPhotoSource_SurvivesEditorPreviewAndSave()
     {
         using var client = _factory.CreateClient();
@@ -759,6 +809,15 @@ public sealed class ProfileEditorTests : IDisposable
 
     private static object? GetField(ProfileEditor editor, string name) =>
         typeof(ProfileEditor).GetField(name, PrivateInstance)!.GetValue(editor);
+
+    public sealed class AppearanceProfileEditor : ProfileEditor
+    {
+        protected override async Task OnParametersSetAsync()
+        {
+            await base.OnParametersSetAsync();
+            typeof(ProfileEditor).GetField("_editorView", PrivateInstance)!.SetValue(this, "Appearance");
+        }
+    }
 
     private static Profile BuildPayload(ProfileEditor editor) =>
         (Profile)typeof(ProfileEditor).GetMethod("BuildProfilePayloadForRequest", PrivateInstance)!.Invoke(editor, null)!;
