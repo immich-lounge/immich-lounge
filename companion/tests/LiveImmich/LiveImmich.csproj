@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="ImmichLounge.Database.Tests" />
     <ProjectReference Include="../../src/ImmichLoungeCompanion/ImmichLoungeCompanion.csproj" />
   </ItemGroup>
 </Project>

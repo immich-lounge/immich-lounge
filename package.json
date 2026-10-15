@@ -3,6 +3,7 @@
   "private": true,
   "description": "Task runner for Immich Lounge local workflows",
   "scripts": {
+    "test:database": "dotnet test --project companion/tests/ImmichLounge.Database.Tests/ImmichLounge.Database.Tests.csproj --results-directory _out/testcontainers/lounge --report-trx",
     "docker:build": "docker compose -f docker-compose.local.yml build --no-cache immich-lounge-companion",
     "docker:up": "docker compose -f docker-compose.local.yml build --no-cache immich-lounge-companion && docker compose -f docker-compose.local.yml up -d --force-recreate",
     "docker:down": "docker compose -f docker-compose.local.yml down"

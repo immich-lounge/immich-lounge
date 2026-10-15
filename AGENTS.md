@@ -61,6 +61,16 @@ docker-compose up -d
 - **`Immich/`** — `ImmichClient` calls Immich REST API for search and memories
 - **`Services/CompanionState.cs`** — Scoped Blazor circuit state
 
+### Disposable Immich integration tests
+
+- Run `npm run test:database` from the repository root when changing Immich API/version compatibility, search/pagination, playlist collection, permissions, or their fixtures. It uses Testcontainers for .NET and requires a running Docker engine with Linux containers.
+- The suite lives in `companion/tests/ImmichLounge.Database.Tests/`, separate from the normal companion test project. CI runs it as a separate integration job; ordinary companion tests do not require Docker.
+- Reuse the seeding and assertions in `companion/tests/LiveImmich/FixtureRunner.cs`; keep disposable tests and persistent Compose checks aligned, including legacy fallback on newer servers.
+- Keep images pinned by digest, ports dynamically assigned, and each test's network, volumes, credentials, and synthetic fixtures isolated. Preserve server-version and database-marker checks, plus automatic resource cleanup. Do not use production settings or persistent `.local/immich/` state.
+- Persistent Compose stacks are for manual inspection. Do not delete their volumes or account files as Testcontainers cleanup. Reports and redacted failure logs belong under `_out/testcontainers/`; never commit or upload credentials or API keys.
+- These checks exercise the real Immich client and playlist collector. They do not replace companion HTTP/UI tests, production-image smoke checks, or physical Roku playback/screensaver tests. If Docker is unavailable, report that the suite was not run.
+- Details: [Live Immich search compatibility tests](docs/maintainer/live-immich-testing.md).
+
 **Live Immich development servers:** Use the dedicated Docker stacks and setup script documented in [docs/maintainer/immich-development.md](docs/maintainer/immich-development.md). From the repository root, run `pwsh -NoProfile -File companion/tests/LiveImmich/Run-LiveImmich.ps1 -Action Start`. The persistent 3.3.1 development server is at `http://127.0.0.1:13283`; the 3.2 compatibility server uses port `14283`, and the 3.1 compatibility server uses port `12283`. Docker projects are named `immich-lounge-dev-immich`, `immich-lounge-compat-v32`, and `immich-lounge-compat-v31`. The local account reference is `.local/immich/ACCOUNTS.local.md` in the primary checkout. Credentials and mounted configuration live in the primary checkout's gitignored `.local/immich/`, surviving feature-worktree removal. Use the development admin account for manual data and keep the separate fixture account unchanged. Never repoint this runner at a production library, delete its persistent volumes as routine cleanup, or commit generated credentials.
 
 **DI lifetime rules (important):** `ImmichClient` and `PlaylistCacheWorker` are registered as **Singletons** — never change to Scoped, as `PlaylistCacheWorker` depends on `IImmichClient` and a Singleton cannot capture a Scoped service. `CompanionState` is **Scoped**.

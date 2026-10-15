@@ -1,5 +1,35 @@
 # Live Immich search compatibility tests
 
+## Automated disposable checks
+
+From the repository root, with the .NET 10 SDK and Docker running in Linux-container mode:
+
+```bash
+npm run test:database
+```
+
+Testcontainers starts a fresh isolated Immich stack for each pinned version: 3.1.0, 3.2.0,
+and 3.3.1. It reuses the fixture seeding and search/playlist checks below, including the
+legacy fallback checks on newer servers. Images are pinned by digest. Networks, database
+and media volumes, accounts, and dynamically assigned ports are separate from the persistent
+development stacks. Existing Immich settings and host database environment variables are unused.
+Configuration is copied into containers, so no host bind mounts are required.
+
+The fixture version is checked before account creation. A unique database marker is checked
+before applying synthetic fixture SQL. Containers, volumes, and networks are disposed after
+success or failure; leave the Testcontainers resource reaper enabled for cleanup after an
+interrupted process. Docker retains downloaded images for later runs.
+
+CI runs this as a separate integration job. The existing companion test command stays fast
+and does not require Docker. TRX reports and attached check results or failure logs go under
+`_out/testcontainers/lounge/`; account files and API keys are not uploaded.
+
+This validates the companion's real Immich client and playlist collector. It does not start
+the companion web service, replace production-image smoke tests, or test Roku playback,
+screensaver behavior, people/tag matching, or device networking.
+
+## Persistent manual checks
+
 Use the [persistent development setup](immich-development.md) for Docker prerequisites, accounts, container names, state migration, and lifecycle instructions. Accounts and mounted configuration live in the primary checkout's gitignored `.local/immich/`.
 
 Run from the repository or feature worktree:

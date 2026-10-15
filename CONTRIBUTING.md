@@ -129,3 +129,10 @@ _out/docs-venv/Scripts/python -m zensical build --clean --strict
 On Linux or macOS, create the environment with `python3` and use `_out/docs-venv/bin/python` for the remaining commands. Build and preview from the repository root so snippets resolve against the checked-out source files. Update the pinned requirement when upgrading Zensical, then run the strict build before opening a PR. Strict validation makes broken internal links and anchors fail the build.
 
 If you need temporary local build output that is not part of the normal project layout, prefer a dedicated folder under `_out/` instead of creating new top-level build directories.
+
+### Disposable Immich integration tests
+
+With the .NET 10 SDK and Docker running in Linux-container mode, run `npm run test:database`
+from the repository root. This runs the same search and playlist checks as CI against fresh,
+isolated Immich stacks and removes them afterward. See [Live Immich search compatibility tests](docs/maintainer/live-immich-testing.md)
+for coverage, reports, and the persistent Compose workflow for manual inspection.
