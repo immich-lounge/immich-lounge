@@ -7,12 +7,12 @@ Use the current application UI with curated demo photos, named profiles, and a w
 Start the dedicated development Immich server as described in [Immich development](immich-development.md). Then run from the primary checkout root, where the persistent `.local/immich/` account files live:
 
 ```powershell
-node scripts/screenshots/prepare-demo.mjs
+node scripts/screenshots/prepare-demo.js
 dotnet build companion/src/ImmichLoungeCompanion/ImmichLoungeCompanion.csproj --no-restore -o _out/codex/screenshots/app
 dotnet _out/codex/screenshots/app/ImmichLoungeCompanion.dll --urls=http://127.0.0.1:4463 --ASPNETCORE_URLS=http://127.0.0.1:4463 --DataDirectory="$PWD/_out/codex/screenshots/data" --contentRoot="$PWD/companion/src/ImmichLoungeCompanion" --environment=Development
 ```
 
-In another terminal, run `node scripts/screenshots/capture-companion.mjs`. It requires Playwright and its Chromium browser. If using an existing installation, set `PLAYWRIGHT_MODULE` to its module path and `SCREENSHOT_BROWSER` to the browser executable. No new repository dependency is required.
+In another terminal, run `node scripts/screenshots/capture-companion.js`. It requires Playwright and its Chromium browser. If using an existing installation, set `PLAYWRIGHT_MODULE` to its module path and `SCREENSHOT_BROWSER` to the browser executable. No new repository dependency is required.
 
 The preparation script adds four demo photos and three dedicated albums to the development administrator account. It leaves the fixture account unchanged. Upload IDs and the demo read key are retained in `.local/immich/screenshots-demo.json`; companion configuration and captures are under `_out/codex/screenshots/`. Rerunning preparation reuses the uploads and resets only the dedicated companion demo profiles and schedule.
 
@@ -21,9 +21,9 @@ The browser captures the real Blazor UI and real match previews. The connection 
 ## Roku captures
 
 ```powershell
-node scripts/screenshots/prepare-roku.mjs
+node scripts/screenshots/prepare-roku.js
 # Only after agreeing to replace the installed development app:
-node scripts/screenshots/capture-roku.mjs --replace-dev-app
+node scripts/screenshots/capture-roku.js --replace-dev-app
 ```
 
 The preparation script changes generated staging files under `roku/_out/screenshots/` only. It uses the current SceneGraph playback, profile selector, manual connection form, and settings UI. Selected demo photos and sanitized asset metadata are bundled in the package, replacing network transport for this capture session. No API key or development-server access is needed on Roku. Registry writes and deletes are disabled in the generated capture build to preserve saved setup, caches, and resume state.
